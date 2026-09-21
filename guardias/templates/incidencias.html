@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% from "_macros.html" import etiqueta_estado %}
+{% block titulo %}Incidencias{% endblock %}
+{% block contenido %}
+<h1>Incidencias ({{ filas|length }})</h1>
+
+<form class="caja" method="get" action="/incidencias">
+  <div class="rejilla">
+    <div>
+      <label for="f_planta">Planta</label>
+      <select id="f_planta" name="planta_id">
+        <option value="">Todas</option>
+        {% for p in plantas %}
+        <option value="{{ p.id }}"{% if planta_id == p.id %} selected{% endif %}>{{ p.codigo }} — {{ p.nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="f_estado">Estado</label>
+      <select id="f_estado" name="estado">
+        <option value="">Todos</option>
+        {% for e in ['abierta', 'en curso', 'seguimiento', 'cerrada'] %}
+        <option value="{{ e }}"{% if estado == e %} selected{% endif %}>{{ e }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <div class="acciones">
+    <button type="submit">Filtrar</button>
+    <a class="boton sec" href="/incidencias/nueva">Nuevo aviso</a>
+  </div>
+</form>
+
+<div class="tabla-envuelta">
+<table>
+  <tr><th>Recibido</th><th>Planta</th><th>Aviso</th><th>Área</th>
+      <th>Estado</th><th>Crit.</th><th>Parada</th><th>Remoto</th></tr>
+  {% for i in filas %}
+  <tr>
+    <td class="mono">{{ i.recibido }}</td>
+    <td><a href="/plantas/{{ i.planta_id }}">{{ i.planta_codigo }}</a></td>
+    <td><a href="/incidencias/{{ i.id }}">{{ i.titulo }}</a></td>
+    <td>{{ i.area or '' }}</td>
+    <td>{{ etiqueta_estado(i.estado) }}</td>
+    <td><span class="etq {{ i.criticidad }}">{{ i.criticidad }}</span></td>
+    <td>{{ i.parada_min if i.parada_min is not none else '' }}</td>
+    <td>{{ 'sí' if i.resuelto_remoto else '' }}</td>
+  </tr>
+  {% else %}<tr><td colspan="8" class="suave">Sin resultados.</td></tr>{% endfor %}
+</table>
+</div>
+{% endblock %}

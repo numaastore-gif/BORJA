@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% from "_macros.html" import campo, area, borrar %}
+{% block titulo %}Turnos de guardia{% endblock %}
+{% block contenido %}
+<h1>Turnos de guardia</h1>
+{% if activa %}
+<div class="aviso"><strong>Turno en curso:</strong> {{ activa.tecnico }}
+  <span class="suave">({{ activa.inicio }} → {{ activa.fin }})</span></div>
+{% endif %}
+
+<div class="tabla-envuelta">
+<table>
+  <tr><th>Técnico</th><th>Inicio</th><th>Fin</th><th>Teléfono</th><th>Avisos</th><th>Notas</th><th></th></tr>
+  {% for g in filas %}
+  <tr>
+    <td>{{ g.tecnico }}</td><td class="mono">{{ g.inicio }}</td><td class="mono">{{ g.fin }}</td>
+    <td class="mono">{{ g.telefono or '' }}</td><td>{{ g.avisos }}</td><td>{{ g.notas or '' }}</td>
+    <td>{{ borrar('guardia', g.id, '/guardias') }}</td>
+  </tr>
+  {% else %}<tr><td colspan="7" class="suave">Sin turnos cargados.</td></tr>{% endfor %}
+</table>
+</div>
+
+<h2>Nuevo turno</h2>
+<form class="caja" method="post" action="/guardias">
+  <div class="rejilla">
+    {{ campo('tecnico', 'Técnico *', '', requerido=true) }}
+    {{ campo('inicio', 'Inicio *', '', 'datetime-local', requerido=true) }}
+    {{ campo('fin', 'Fin *', '', 'datetime-local', requerido=true) }}
+    {{ campo('telefono', 'Teléfono de guardia') }}
+    {{ area('notas', 'Notas') }}
+  </div>
+  <div class="acciones"><button type="submit">Añadir turno</button></div>
+</form>
+<p class="suave">Los avisos que registres mientras un turno esté en curso se le asignan solos.</p>
+{% endblock %}

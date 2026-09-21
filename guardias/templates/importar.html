@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% from "_macros.html" import campo, selector_planta %}
+{% block titulo %}Importar{% endblock %}
+{% block contenido %}
+<h1>Importar de PCS7 / WinCC</h1>
+{% if mensaje %}<div class="aviso">{{ mensaje }}</div>{% endif %}
+
+<h2>Lista de alarmas del SCADA</h2>
+<form class="caja" method="post" action="/importar/alarmas" enctype="multipart/form-data">
+  <div class="rejilla">
+    {{ selector_planta(plantas, none, 'Planta', false, 'Comunes a todas') }}
+    <div>
+      <label for="f_alarmas">Fichero (.csv, .txt, .sdf)</label>
+      <input id="f_alarmas" type="file" name="fichero" required>
+    </div>
+  </div>
+  <div class="acciones"><button type="submit">Importar alarmas</button></div>
+  <p class="suave">Exportación de la lista de mensajes de WinCC. Se reconocen las
+    cabeceras en alemán, inglés y español. Al reimportar se refrescan texto y clase,
+    pero <strong>nunca</strong> se pisan la causa ni la actuación que hayas escrito.</p>
+</form>
+
+<h2>Tabla de símbolos de STEP7</h2>
+<form class="caja" method="post" action="/importar/simbolos" enctype="multipart/form-data">
+  <div class="rejilla">
+    <div>
+      <label for="f_proy">Proyecto destino</label>
+      <select id="f_proy" name="proyecto_id" required>
+        {% for pr in proyectos %}
+        <option value="{{ pr.id }}">{{ pr.codigo }} · {{ pr.nombre }}</option>
+        {% else %}
+        <option value="" disabled>Registra antes un proyecto</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="f_simbolos">Fichero (.asc, .sdf, .csv, .txt)</label>
+      <input id="f_simbolos" type="file" name="fichero" required>
+    </div>
+  </div>
+  <div class="acciones"><button type="submit">Importar símbolos</button></div>
+  <p class="suave">Sustituye la tabla anterior del proyecto, que es lo que toca
+    al subir una versión nueva del programa.</p>
+</form>
+
+<h2>Archivo de proyecto (.zap / .zip)</h2>
+<form class="caja" method="post" action="/importar/proyecto" enctype="multipart/form-data">
+  <div class="rejilla">
+    {{ selector_planta(plantas, none) }}
+    {{ campo('nombre', 'Nombre (opcional)') }}
+    {{ campo('origen', 'Origen / quién lo entrega') }}
+    <div>
+      <label for="f_proyecto">Archivo</label>
+      <input id="f_proyecto" type="file" name="fichero" required>
+    </div>
+  </div>
+  <div class="acciones"><button type="submit">Registrar proyecto</button></div>
+  <p class="suave">Se guarda fuera del repositorio, en <span class="mono">datos/adjuntos/proyectos/</span>,
+    y en la base solo quedan la huella sha256 y el inventario de ficheros.
+    Si vuelves a subir la misma copia no se duplica.</p>
+</form>
+{% endblock %}

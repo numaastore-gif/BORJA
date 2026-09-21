@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% from "_macros.html" import etiqueta_estado %}
+{% block titulo %}Panel de guardia{% endblock %}
+{% block contenido %}
+<h1>Panel de guardia</h1>
+
+{% if activa %}
+  <div class="aviso"><strong>De guardia ahora:</strong> {{ activa.tecnico }}
+    {% if activa.telefono %}· {{ activa.telefono }}{% endif %}
+    <span class="suave">(hasta {{ activa.fin }})</span></div>
+{% elif proxima %}
+  <div class="aviso">Sin guardia activa. La siguiente es de <strong>{{ proxima.tecnico }}</strong>
+    el {{ proxima.inicio }}.</div>
+{% else %}
+  <div class="aviso">No hay turnos de guardia cargados. <a href="/guardias">Añade el calendario</a>.</div>
+{% endif %}
+
+<div class="tarjetas">
+  <div class="tarjeta"><div class="cifra">{{ resumen.plantas }}</div><div class="rotulo">Plantas</div></div>
+  <div class="tarjeta"><div class="cifra">{{ resumen.abiertas }}</div><div class="rotulo">Avisos abiertos</div></div>
+  <div class="tarjeta"><div class="cifra">{{ resumen.ultimos_30d }}</div><div class="rotulo">Avisos 30 días</div></div>
+  <div class="tarjeta"><div class="cifra">{{ resumen.parada_30d }}</div><div class="rotulo">Min. parada 30 d</div></div>
+  <div class="tarjeta"><div class="cifra">{{ resumen.alarmas }}</div><div class="rotulo">Alarmas en base</div></div>
+</div>
+
+<h2>Avisos abiertos</h2>
+{% if abiertas %}
+<div class="tabla-envuelta">
+<table>
+  <tr><th>Recibido</th><th>Planta</th><th>Aviso</th><th>Estado</th><th>Criticidad</th></tr>
+  {% for i in abiertas %}
+  <tr>
+    <td class="mono">{{ i.recibido }}</td>
+    <td><a href="/plantas/{{ i.planta_id }}">{{ i.planta_codigo }}</a></td>
+    <td><a href="/incidencias/{{ i.id }}">{{ i.titulo }}</a></td>
+    <td>{{ etiqueta_estado(i.estado) }}</td>
+    <td><span class="etq {{ i.criticidad }}">{{ i.criticidad }}</span></td>
+  </tr>
+  {% endfor %}
+</table>
+</div>
+{% else %}
+<p class="vacio">Nada abierto. <a href="/incidencias/nueva">Registrar un aviso</a>.</p>
+{% endif %}
+
+<h2>Carga por planta (90 días)</h2>
+<div class="tabla-envuelta">
+<table>
+  <tr><th>Planta</th><th>Avisos</th><th>Min. parada</th><th>Resueltos en remoto</th></tr>
+  {% for a in actividad %}
+  <tr>
+    <td><a href="/plantas/{{ a.id }}">{{ a.codigo }} — {{ a.nombre }}</a></td>
+    <td>{{ a.avisos }}</td>
+    <td>{{ a.parada }}</td>
+    <td>{{ a.remotas or 0 }}</td>
+  </tr>
+  {% else %}
+  <tr><td colspan="4" class="suave">Aún no hay plantas dadas de alta.</td></tr>
+  {% endfor %}
+</table>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Guardia dosificado{% endblock %}</title>
+  <link rel="stylesheet" href="/static/estilo.css">
+</head>
+<body>
+<header class="barra">
+  <span class="marca"><a href="/">Guardia · Dosificado</a></span>
+  <nav>
+    <a href="/">Panel</a>
+    <a href="/plantas">Plantas</a>
+    <a href="/incidencias">Incidencias</a>
+    <a href="/alarmas">Alarmas</a>
+    <a href="/guardias">Guardias</a>
+    <a href="/importar">Importar</a>
+  </nav>
+  <form class="buscador" action="/buscar" method="get">
+    <input type="search" name="q" placeholder="Buscar alarma, avería, variable…"
+           value="{{ q|default('') }}" autofocus>
+    <button type="submit">Buscar</button>
+  </form>
+</header>
+<main>
+{% block contenido %}{% endblock %}
+</main>
+</body>
+</html>

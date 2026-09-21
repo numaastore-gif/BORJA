@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% from "_macros.html" import campo, area, opciones, casilla, selector_planta %}
+{% block titulo %}Nuevo aviso{% endblock %}
+{% block contenido %}
+<h1>Nuevo aviso de guardia</h1>
+{% if guardia %}
+  <div class="aviso">Se asignará al turno activo de <strong>{{ guardia.tecnico }}</strong>.</div>
+{% endif %}
+{% if alarma %}
+  <div class="aviso">Partiendo de la alarma <span class="mono">{{ alarma.codigo or '' }}</span>
+    «{{ alarma.texto }}».</div>
+{% endif %}
+
+<form class="caja" method="post" action="/incidencias">
+  {% if alarma %}<input type="hidden" name="alarma_id" value="{{ alarma.id }}">{% endif %}
+  <div class="rejilla">
+    {{ selector_planta(plantas, planta_id or (alarma.planta_id if alarma else none)) }}
+    {{ campo('titulo', 'Título del aviso *', alarma.texto if alarma else '', requerido=true) }}
+    {{ campo('recibido', 'Recibido', '', 'datetime-local') }}
+    {{ opciones('canal', 'Canal', ['teléfono', 'correo', 'WhatsApp', 'SCADA', 'presencial']) }}
+    {{ campo('avisado_por', 'Quién avisa') }}
+    {{ campo('area', 'Área / unidad', alarma.area if alarma else '') }}
+    {{ opciones('criticidad', 'Criticidad', ['media', 'alta', 'baja'],
+                alarma.criticidad if alarma else 'media') }}
+    {{ opciones('estado', 'Estado', ['abierta', 'en curso', 'seguimiento', 'cerrada']) }}
+    {{ area('sintoma', 'Síntoma: qué se ve en el SCADA / en la línea') }}
+  </div>
+  <div class="acciones"><button type="submit">Registrar aviso</button></div>
+</form>
+<p class="suave">Si dejas «Recibido» en blanco se sella con la hora actual.
+  El diagnóstico y la solución se rellenan luego, al ir resolviendo.</p>
+{% endblock %}

@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% from "_macros.html" import campo, area, opciones, casilla, borrar, etiqueta_estado %}
+{% block titulo %}{{ planta.codigo }} · {{ planta.nombre }}{% endblock %}
+{% block contenido %}
+<h1>{{ planta.codigo }} — {{ planta.nombre }}
+  <span class="etq {{ planta.criticidad }}">{{ planta.criticidad }}</span></h1>
+<p class="suave">
+  {{ planta.localidad or '' }}{% if planta.provincia %} ({{ planta.provincia }}){% endif %}
+  {% if planta.tipo_linea %} · {{ planta.tipo_linea }}{% endif %}
+  {% if planta.horario %} · {{ planta.horario }}{% endif %}
+</p>
+<div class="acciones">
+  <a class="boton" href="/incidencias/nueva?planta_id={{ planta.id }}">Nuevo aviso</a>
+  <a class="boton sec" href="/incidencias?planta_id={{ planta.id }}">Histórico</a>
+  <a class="boton sec" href="/alarmas?planta_id={{ planta.id }}">Alarmas</a>
+</div>
+
+{% if planta.acceso_remoto %}
+<div class="aviso"><strong>Acceso remoto:</strong> {{ planta.acceso_remoto }}</div>
+{% endif %}
+{% if planta.notas %}<div class="aviso">{{ planta.notas }}</div>{% endif %}
+
+<h2 id="contactos">Contactos</h2>
+<div class="tabla-envuelta">
+<table>
+  <tr><th>Pr.</th><th>Nombre</th><th>Rol</th><th>Teléfono</th><th>Correo</th><th>Horario</th><th></th></tr>
+  {% for c in contactos %}
+  <tr>
+    <td>{{ c.prioridad }}</td><td>{{ c.nombre }}</td><td>{{ c.rol or '' }}</td>
+    <td class="mono">{{ c.telefono or '' }}</td><td>{{ c.email or '' }}</td>
+    <td>{{ c.horario or '' }}</td>
+    <td>{{ borrar('contacto', c.id, '/plantas/' ~ planta.id ~ '#contactos') }}</td>
+  </tr>
+  {% else %}<tr><td colspan="7" class="suave">Sin contactos.</td></tr>{% endfor %}
+</table>
+</div>
+<details><summary>+ Añadir contacto</summary>
+<form class="caja" method="post" action="/plantas/{{ planta.id }}/contactos">
+  <div class="rejilla">
+    {{ campo('nombre', 'Nombre *', '', requerido=true) }}
+    {{ campo('rol', 'Rol') }}
+    {{ campo('telefono', 'Teléfono') }}
+    {{ campo('email', 'Correo', '', 'email') }}
+    {{ campo('horario', 'Horario') }}
+    {{ campo('prioridad', 'Prioridad (1 = primero)', '5', 'number') }}
+    {{ area('notas', 'Notas') }}
+  </div>
+  <div class="acciones"><button type="submit">Añadir</button></div>
+</form>
+</details>
+
+<h2 id="equipos">Equipos</h2>
+<div class="tabla-envuelta">
+<table>
+  <tr><th>Tipo</th><th>Nombre</th><th>Modelo</th><th>Referencia</th><th>Firmware</th>
+      <th>IP</th><th>Red</th><th>Ubicación</th><th>Rep.</th><th></th></tr>
+  {% for e in equipos %}
+  <tr>
+    <td><span class="etq">{{ e.tipo }}</span></td><td>{{ e.nombre }}</td>
+    <td>{{ e.modelo or '' }}</td><td class="mono">{{ e.referencia or '' }}</td>
+    <td class="mono">{{ e.firmware or '' }}</td><td class="mono">{{ e.ip or '' }}</td>
+    <td>{{ e.red or '' }}</td><td>{{ e.ubicacion or '' }}</td>
+    <td>{{ 'sí' if e.repuesto else '' }}</td>
+    <td>{{ borrar('equipo', e.id, '/plantas/' ~ planta.id ~ '#equipos') }}</td>
+  </tr>
+  {% else %}<tr><td colspan="10" class="suave">Sin equipos inventariados.</td></tr>{% endfor %}
+</table>
+</div>
+<details><summary>+ Añadir equipo</summary>
+<form class="caja" method="post" action="/plantas/{{ planta.id }}/equipos">
+  <div class="rejilla">
+    {{ opciones('tipo', 'Tipo', ['AS', 'OS', 'ES', 'ET200', 'variador', 'bascula', 'red', 'otro']) }}
+    {{ campo('nombre', 'Nombre *', '', requerido=true) }}
+    {{ campo('fabricante', 'Fabricante', 'Siemens') }}
+    {{ campo('modelo', 'Modelo') }}
+    {{ campo('referencia', 'Referencia / MLFB') }}
+    {{ campo('firmware', 'Firmware') }}
+    {{ campo('ip', 'IP') }}
+    {{ campo('red', 'Red') }}
+    {{ campo('ubicacion', 'Ubicación') }}
+    {{ casilla('repuesto', '¿Hay repuesto en planta?') }}
+    {{ area('notas', 'Notas') }}
+  </div>
+  <div class="acciones"><button type="submit">Añadir</button></div>
+</form>
+</details>
+
+<h2 id="software">Software</h2>
+<div class="tabla-envuelta">
+<table>
+  <tr><th>Producto</th><th>Versión</th><th>SP</th><th>Licencia</th><th>Notas</th><th></th></tr>
+  {% for s in software %}
+  <tr>
+    <td>{{ s.producto }}</td><td class="mono">{{ s.version or '' }}</td>
+    <td class="mono">{{ s.service_pack or '' }}</td><td>{{ s.licencia or '' }}</td>
+    <td>{{ s.notas or '' }}</td>
+    <td>{{ borrar('software', s.id, '/plantas/' ~ planta.id ~ '#software') }}</td>
+  </tr>
+  {% else %}<tr><td colspan="6" class="suave">Sin software anotado.</td></tr>{% endfor %}
+</table>
+</div>
+<details><summary>+ Añadir software</summary>
+<form class="caja" method="post" action="/plantas/{{ planta.id }}/software">
+  <div class="rejilla">
+    {{ campo('producto', 'Producto *', '', requerido=true) }}
+    {{ campo('version', 'Versión') }}
+    {{ campo('service_pack', 'Service pack') }}
+    {{ campo('licencia', 'Licencia / dongle') }}
+    {{ area('notas', 'Notas') }}
+  </div>
+  <div class="acciones"><button type="submit">Añadir</button></div>
+</form>
+</details>
+
+<h2>Proyectos PCS7</h2>
+<div class="tabla-envuelta">
+<table>
+  <tr><th>Nombre</th><th>Versión</th><th>Fecha</th><th>Símbolos</th><th>Tamaño</th><th>Origen</th></tr>
+  {% for p in proyectos %}
+  <tr>
+    <td><a href="/proyectos/{{ p.id }}">{{ p.nombre }}</a></td>
+    <td>{{ p.version_pcs7 or '' }}</td><td class="mono">{{ p.fecha_version or '' }}</td>
+    <td>{{ p.simbolos }}</td>
+    <td class="mono">{{ '%.1f MB'|format((p.tam_bytes or 0) / 1048576) }}</td>
+    <td>{{ p.origen or '' }}</td>
+  </tr>
+  {% else %}
+  <tr><td colspan="6" class="suave">Sin proyectos. Súbelos desde <a href="/importar">Importar</a>.</td></tr>
+  {% endfor %}
+</table>
+</div>
+
+<h2>Últimos avisos</h2>
+<div class="tabla-envuelta">
+<table>
+  <tr><th>Recibido</th><th>Aviso</th><th>Estado</th><th>Parada</th></tr>
+  {% for i in incidencias %}
+  <tr>
+    <td class="mono">{{ i.recibido }}</td>
+    <td><a href="/incidencias/{{ i.id }}">{{ i.titulo }}</a></td>
+    <td>{{ etiqueta_estado(i.estado) }}</td>
+    <td>{{ i.parada_min if i.parada_min is not none else '' }}</td>
+  </tr>
+  {% else %}<tr><td colspan="4" class="suave">Sin avisos registrados.</td></tr>{% endfor %}
+</table>
+</div>
+
+<h2>Ficha técnica</h2>
+<details><summary>Editar los datos de la planta</summary>
+<form class="caja" method="post" action="/plantas/{{ planta.id }}">
+  <div class="rejilla">
+    {{ campo('codigo', 'Código *', planta.codigo, requerido=true) }}
+    {{ campo('nombre', 'Nombre *', planta.nombre, requerido=true) }}
+    {{ campo('localidad', 'Localidad', planta.localidad) }}
+    {{ campo('provincia', 'Provincia', planta.provincia) }}
+    {{ campo('cliente', 'Cliente', planta.cliente) }}
+    {{ campo('tipo_linea', 'Tipo de línea', planta.tipo_linea) }}
+    {{ opciones('criticidad', 'Criticidad', ['media', 'alta', 'baja'], planta.criticidad) }}
+    {{ campo('horario', 'Horario', planta.horario) }}
+    {{ area('acceso_remoto', 'Acceso remoto', planta.acceso_remoto) }}
+    {{ area('direccion', 'Dirección', planta.direccion) }}
+    {{ area('notas', 'Notas', planta.notas) }}
+  </div>
+  <div class="acciones">
+    <button type="submit">Guardar</button>
+    {{ borrar('planta', planta.id, '/plantas', 'Borrar planta y todo su histórico') }}
+  </div>
+</form>
+</details>
+{% endblock %}

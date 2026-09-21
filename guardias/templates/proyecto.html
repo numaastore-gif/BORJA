@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block titulo %}Proyecto {{ p.nombre }}{% endblock %}
+{% block contenido %}
+<h1>{{ p.nombre }}</h1>
+<p class="suave">
+  <a href="/plantas/{{ planta.id }}">{{ planta.codigo }} — {{ planta.nombre }}</a>
+  {% if p.version_pcs7 %} · {{ p.version_pcs7 }}{% endif %}
+  {% if p.fecha_version %} · copia de {{ p.fecha_version }}{% endif %}
+  {% if p.origen %} · entregado por {{ p.origen }}{% endif %}
+</p>
+<p class="mono suave">
+  {{ '%.1f MB'|format((p.tam_bytes or 0) / 1048576) }} · sha256 {{ (p.sha256 or '')[:16] }}…<br>
+  {{ p.ruta_archivo or '' }}
+</p>
+{% if p.notas %}<div class="aviso">{{ p.notas }}</div>{% endif %}
+
+<h2>Variables</h2>
+<form class="caja" method="get" action="/proyectos/{{ p.id }}">
+  <div class="rejilla">
+    <div class="ancho">
+      <label for="q">Buscar por símbolo, dirección o comentario</label>
+      <input id="q" name="q" type="search" value="{{ q }}" placeholder="p. ej. DB12 o tolva">
+    </div>
+  </div>
+  <div class="acciones"><button type="submit">Buscar</button></div>
+</form>
+<div class="tabla-envuelta">
+<table>
+  <tr><th>Símbolo</th><th>Dirección</th><th>Tipo</th><th>Comentario</th></tr>
+  {% for s in simbolos %}
+  <tr>
+    <td class="mono">{{ s.nombre }}</td><td class="mono">{{ s.direccion or '' }}</td>
+    <td class="mono">{{ s.tipo_dato or '' }}</td><td>{{ s.comentario or '' }}</td>
+  </tr>
+  {% else %}
+  <tr><td colspan="4" class="suave">Sin tabla de símbolos.
+      Súbela desde <a href="/importar">Importar</a>.</td></tr>
+  {% endfor %}
+</table>
+</div>
+
+<h2>Contenido del archivo ({{ entradas|length }} ficheros)</h2>
+<details><summary>Ver inventario</summary>
+<div class="tabla-envuelta">
+<table>
+  <tr><th>Ruta</th><th>Tamaño</th><th>Modificado</th></tr>
+  {% for e in entradas %}
+  <tr><td class="mono">{{ e.ruta }}</td>
+      <td class="mono">{{ e.tam_bytes }}</td>
+      <td class="mono">{{ e.modificado or '' }}</td></tr>
+  {% endfor %}
+</table>
+</div>
+</details>
+{% endblock %}

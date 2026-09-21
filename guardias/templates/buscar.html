@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block titulo %}Buscar{% endblock %}
+{% block contenido %}
+<h1>Resultados para «{{ q }}»</h1>
+
+<h2>Alarmas e incidencias</h2>
+{% if resultados %}
+<div class="tabla-envuelta">
+<table>
+  <tr><th>Tipo</th><th>Título</th><th>Contexto</th></tr>
+  {% for r in resultados %}
+  <tr>
+    <td><span class="etq">{{ r.entidad }}</span></td>
+    <td><a href="/{{ 'alarmas' if r.entidad == 'alarma' else 'incidencias' }}/{{ r.entidad_id }}">{{ r.titulo }}</a></td>
+    <td class="suave">{{ r.extracto|resaltar }}</td>
+  </tr>
+  {% endfor %}
+</table>
+</div>
+{% else %}
+<p class="vacio">Sin coincidencias{% if q %} para «{{ q }}»{% endif %}.</p>
+{% endif %}
+
+{% if simbolos %}
+<h2>Variables del programa</h2>
+<div class="tabla-envuelta">
+<table>
+  <tr><th>Símbolo</th><th>Dirección</th><th>Tipo</th><th>Comentario</th><th>Proyecto</th></tr>
+  {% for s in simbolos %}
+  <tr>
+    <td class="mono">{{ s.nombre }}</td><td class="mono">{{ s.direccion or '' }}</td>
+    <td class="mono">{{ s.tipo_dato or '' }}</td><td>{{ s.comentario or '' }}</td>
+    <td><a href="/proyectos/{{ s.proyecto_id }}">{{ s.proyecto }}</a></td>
+  </tr>
+  {% endfor %}
+</table>
+</div>
+{% endif %}
+{% endblock %}

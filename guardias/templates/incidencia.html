@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% from "_macros.html" import campo, area, opciones, casilla, borrar, etiqueta_estado %}
+{% block titulo %}Aviso #{{ i.id }}{% endblock %}
+{% block contenido %}
+<h1>#{{ i.id }} · {{ i.titulo }} {{ etiqueta_estado(i.estado) }}</h1>
+<p class="suave">
+  <a href="/plantas/{{ planta.id }}">{{ planta.codigo }} — {{ planta.nombre }}</a>
+  · recibido {{ i.recibido }}{% if i.cerrado %} · cerrado {{ i.cerrado }}{% endif %}
+  {% if i.canal %} · por {{ i.canal }}{% endif %}
+  {% if i.avisado_por %} · avisa {{ i.avisado_por }}{% endif %}
+</p>
+
+{% if parecidas %}
+<div class="aviso">
+  <strong>Ya pasó antes en esta planta:</strong>
+  <ul>
+  {% for p in parecidas %}
+    <li><a href="/incidencias/{{ p.entidad_id }}">{{ p.titulo }}</a>
+        <span class="suave">{{ p.extracto|resaltar }}</span></li>
+  {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<form class="caja" method="post" action="/incidencias/{{ i.id }}">
+  <input type="hidden" name="planta_id" value="{{ i.planta_id }}">
+  <div class="rejilla">
+    {{ campo('titulo', 'Título', i.titulo, requerido=true) }}
+    {{ campo('recibido', 'Recibido', i.recibido) }}
+    {{ campo('cerrado', 'Cerrado', i.cerrado) }}
+    {{ opciones('estado', 'Estado', ['abierta', 'en curso', 'seguimiento', 'cerrada'], i.estado) }}
+    {{ opciones('criticidad', 'Criticidad', ['media', 'alta', 'baja'], i.criticidad) }}
+    {{ campo('area', 'Área / unidad', i.area) }}
+    <div>
+      <label for="c_equipo_id">Equipo implicado</label>
+      <select id="c_equipo_id" name="equipo_id">
+        <option value="">—</option>
+        {% for e in equipos %}
+        <option value="{{ e.id }}"{% if i.equipo_id == e.id %} selected{% endif %}>{{ e.tipo }} · {{ e.nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {{ campo('parada_min', 'Minutos de parada', i.parada_min, 'number') }}
+    {{ campo('avisado_por', 'Quién avisa', i.avisado_por) }}
+    {{ campo('canal', 'Canal', i.canal) }}
+    {{ casilla('resuelto_remoto', 'Resuelto en remoto', i.resuelto_remoto) }}
+    {{ campo('etiquetas', 'Etiquetas (separadas por coma)', i.etiquetas) }}
+    {{ area('sintoma', 'Síntoma', i.sintoma) }}
+    {{ area('diagnostico', 'Diagnóstico', i.diagnostico) }}
+    {{ area('solucion', 'Solución aplicada', i.solucion) }}
+    {{ area('acciones', 'Acciones pendientes / mejora preventiva', i.acciones) }}
+  </div>
+  <div class="acciones">
+    <button type="submit">Guardar</button>
+    {% if i.alarma_id %}<a class="boton sec" href="/alarmas/{{ i.alarma_id }}">Ver alarma asociada</a>{% endif %}
+    {{ borrar('incidencia', i.id, '/incidencias') }}
+  </div>
+</form>
+<p class="suave">Cuando la solución esté clara y se repita, pásala a la
+  <a href="/alarmas">base de alarmas</a>: ahí es donde la encontrarás en la próxima llamada.</p>
+{% endblock %}

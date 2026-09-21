@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% from "_macros.html" import campo, area, opciones, casilla, borrar, selector_planta, etiqueta_estado %}
+{% block titulo %}Alarma {{ a.codigo or a.id }}{% endblock %}
+{% block contenido %}
+<h1><span class="mono">{{ a.codigo or '#' ~ a.id }}</span> · {{ a.texto }}</h1>
+<p class="suave">
+  <span class="etq {{ a.criticidad }}">{{ a.criticidad }}</span>
+  {% if a.requiere_parada %}<span class="etq alta">obliga a parar</span>{% endif %}
+  {% if a.verificada %}<span class="etq baja">comprobada en campo</span>
+  {% else %}<span class="etq">sin comprobar</span>{% endif %}
+  {% if a.area %} · {{ a.area }}{% endif %}
+</p>
+
+{% if a.actuacion %}
+<div class="aviso"><strong>Actuación:</strong>
+  <div class="lineas">{{ a.actuacion }}</div></div>
+{% endif %}
+
+<div class="acciones">
+  <a class="boton" href="/incidencias/nueva?alarma_id={{ a.id }}">Abrir aviso con esta alarma</a>
+</div>
+
+<h2>Veces que ha saltado</h2>
+<div class="tabla-envuelta">
+<table>
+  <tr><th>Recibido</th><th>Planta</th><th>Aviso</th><th>Solución</th><th>Estado</th></tr>
+  {% for i in historico %}
+  <tr>
+    <td class="mono">{{ i.recibido }}</td>
+    <td>{{ i.planta_codigo }}</td>
+    <td><a href="/incidencias/{{ i.id }}">{{ i.titulo }}</a></td>
+    <td class="suave">{{ (i.solucion or '')[:80] }}</td>
+    <td>{{ etiqueta_estado(i.estado) }}</td>
+  </tr>
+  {% else %}<tr><td colspan="5" class="suave">Todavía no se ha registrado ningún aviso con esta alarma.</td></tr>{% endfor %}
+</table>
+</div>
+
+<h2>Editar</h2>
+<form class="caja" method="post" action="/alarmas/{{ a.id }}">
+  <div class="rejilla">
+    {{ selector_planta(plantas, a.planta_id, 'Planta', false, 'Todas las plantas') }}
+    {{ campo('codigo', 'Código', a.codigo) }}
+    {{ campo('texto', 'Texto *', a.texto, requerido=true) }}
+    {{ campo('clase', 'Clase', a.clase) }}
+    {{ campo('area', 'Área', a.area) }}
+    {{ opciones('criticidad', 'Criticidad', ['media', 'alta', 'baja'], a.criticidad) }}
+    {{ casilla('requiere_parada', 'Obliga a parar línea', a.requiere_parada) }}
+    {{ casilla('verificada', 'Comprobada en campo', a.verificada) }}
+    {{ area('causa', 'Causa probable', a.causa) }}
+    {{ area('actuacion', 'Actuación paso a paso', a.actuacion) }}
+    {{ area('referencias', 'Referencias', a.referencias) }}
+  </div>
+  <div class="acciones">
+    <button type="submit">Guardar</button>
+    {{ borrar('alarma', a.id, '/alarmas') }}
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,16 @@
+# La base de datos y los adjuntos son datos de trabajo, no código.
+datos/
+*.db
+*.db-wal
+*.db-shm
+
+# Nunca subir programas ni copias de proyecto al repositorio.
+*.zap*
+*.s7p
+*.zip
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/

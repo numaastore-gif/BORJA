@@ -1,0 +1,57 @@
+{% macro campo(nombre, etiqueta, valor='', tipo='text', ancho=false, requerido=false) %}
+<div{% if ancho %} class="ancho"{% endif %}>
+  <label for="c_{{ nombre }}">{{ etiqueta }}</label>
+  <input id="c_{{ nombre }}" type="{{ tipo }}" name="{{ nombre }}"
+         value="{{ valor if valor is not none else '' }}"{% if requerido %} required{% endif %}>
+</div>
+{% endmacro %}
+
+{% macro area(nombre, etiqueta, valor='') %}
+<div class="ancho">
+  <label for="c_{{ nombre }}">{{ etiqueta }}</label>
+  <textarea id="c_{{ nombre }}" name="{{ nombre }}">{{ valor if valor is not none else '' }}</textarea>
+</div>
+{% endmacro %}
+
+{% macro opciones(nombre, etiqueta, valores, actual='') %}
+<div>
+  <label for="c_{{ nombre }}">{{ etiqueta }}</label>
+  <select id="c_{{ nombre }}" name="{{ nombre }}">
+    {% for v in valores %}
+      <option value="{{ v }}"{% if v == actual %} selected{% endif %}>{{ v }}</option>
+    {% endfor %}
+  </select>
+</div>
+{% endmacro %}
+
+{% macro selector_planta(plantas, actual=none, etiqueta='Planta', requerido=true, vacio=none) %}
+<div>
+  <label for="c_planta_id">{{ etiqueta }}</label>
+  <select id="c_planta_id" name="planta_id"{% if requerido %} required{% endif %}>
+    {% if vacio %}<option value="">{{ vacio }}</option>{% endif %}
+    {% for p in plantas %}
+      <option value="{{ p.id }}"{% if actual and p.id == actual %} selected{% endif %}>
+        {{ p.codigo }} — {{ p.nombre }}</option>
+    {% endfor %}
+  </select>
+</div>
+{% endmacro %}
+
+{% macro casilla(nombre, etiqueta, marcada=false) %}
+<div>
+  <label for="c_{{ nombre }}">{{ etiqueta }}</label>
+  <input id="c_{{ nombre }}" type="checkbox" name="{{ nombre }}" value="1"{% if marcada %} checked{% endif %}>
+</div>
+{% endmacro %}
+
+{% macro borrar(tabla, id_, destino, texto='Borrar') %}
+<form method="post" action="/borrar/{{ tabla }}/{{ id_ }}" style="display:inline"
+      onsubmit="return confirm('¿Borrar definitivamente?')">
+  <input type="hidden" name="destino" value="{{ destino }}">
+  <button class="peligro" type="submit">{{ texto }}</button>
+</form>
+{% endmacro %}
+
+{% macro etiqueta_estado(estado) %}
+<span class="etq {{ 'cerrada' if estado == 'cerrada' else 'abierta' }}">{{ estado }}</span>
+{% endmacro %}

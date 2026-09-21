@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "_macros.html" import campo, area, opciones %}
+{% block titulo %}Plantas{% endblock %}
+{% block contenido %}
+<h1>Plantas ({{ filas|length }})</h1>
+
+<div class="tabla-envuelta">
+<table>
+  <tr><th>Código</th><th>Nombre</th><th>Localidad</th><th>Línea</th>
+      <th>Criticidad</th><th>Abiertos</th><th>Alarmas</th></tr>
+  {% for p in filas %}
+  <tr>
+    <td class="mono"><a href="/plantas/{{ p.id }}">{{ p.codigo }}</a></td>
+    <td>{{ p.nombre }}</td>
+    <td>{{ p.localidad or '' }}{% if p.provincia %} ({{ p.provincia }}){% endif %}</td>
+    <td>{{ p.tipo_linea or '' }}</td>
+    <td><span class="etq {{ p.criticidad }}">{{ p.criticidad }}</span></td>
+    <td>{{ p.abiertas }}</td>
+    <td>{{ p.n_alarmas }}</td>
+  </tr>
+  {% else %}
+  <tr><td colspan="7" class="suave">Todavía no hay plantas. Da de alta la primera abajo.</td></tr>
+  {% endfor %}
+</table>
+</div>
+
+<h2>Nueva planta</h2>
+<form class="caja" method="post" action="/plantas">
+  <div class="rejilla">
+    {{ campo('codigo', 'Código *', '', requerido=true) }}
+    {{ campo('nombre', 'Nombre *', '', requerido=true) }}
+    {{ campo('localidad', 'Localidad') }}
+    {{ campo('provincia', 'Provincia') }}
+    {{ campo('cliente', 'Cliente', 'Mercadona') }}
+    {{ campo('tipo_linea', 'Tipo de línea') }}
+    {{ opciones('criticidad', 'Criticidad', ['media', 'alta', 'baja']) }}
+    {{ campo('horario', 'Horario de producción') }}
+    {{ area('acceso_remoto', 'Acceso remoto (VPN, salto, dónde están las credenciales)') }}
+    {{ area('direccion', 'Dirección') }}
+    {{ area('notas', 'Notas') }}
+  </div>
+  <div class="acciones"><button type="submit">Crear planta</button></div>
+</form>
+{% endblock %}

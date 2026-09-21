@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% from "_macros.html" import campo, area, opciones, casilla, selector_planta %}
+{% block titulo %}Alarmas{% endblock %}
+{% block contenido %}
+<h1>Base de conocimiento de alarmas</h1>
+
+<form class="caja" method="get" action="/alarmas">
+  <div class="rejilla">
+    <div class="ancho">
+      <label for="q">Texto de la alarma tal y como te lo dictan</label>
+      <input id="q" name="q" type="search" value="{{ q }}" placeholder="p. ej. sobrecarga dosificador harina">
+    </div>
+  </div>
+  <div class="acciones">
+    <button type="submit">Buscar</button>
+    {% if q or planta_id %}<a class="boton sec" href="/alarmas">Ver todas</a>{% endif %}
+  </div>
+</form>
+
+<div class="tabla-envuelta">
+<table>
+  <tr><th>Código</th><th>Texto</th><th>Planta</th><th>Área</th>
+      <th>Causa probable</th><th>Crit.</th><th>Verif.</th></tr>
+  {% for a in filas %}
+  <tr>
+    <td class="mono"><a href="/alarmas/{{ a.id }}">{{ a.codigo or a.id }}</a></td>
+    <td>{{ a.texto }}</td>
+    <td>{{ a.planta_codigo or 'todas' }}</td>
+    <td>{{ a.area or '' }}</td>
+    <td class="suave">{{ (a.causa or '')[:90] }}</td>
+    <td><span class="etq {{ a.criticidad }}">{{ a.criticidad }}</span></td>
+    <td>{{ '✓' if a.verificada else '' }}</td>
+  </tr>
+  {% else %}
+  <tr><td colspan="7" class="suave">Sin alarmas. Impórtalas desde
+      <a href="/importar">la lista de mensajes del SCADA</a> o créalas a mano abajo.</td></tr>
+  {% endfor %}
+</table>
+</div>
+
+<h2>Nueva alarma</h2>
+<form class="caja" method="post" action="/alarmas">
+  <div class="rejilla">
+    {{ selector_planta(plantas, planta_id, 'Planta', false, 'Todas las plantas') }}
+    {{ campo('codigo', 'Código / nº de mensaje') }}
+    {{ campo('texto', 'Texto de la alarma *', '', requerido=true) }}
+    {{ campo('clase', 'Clase') }}
+    {{ campo('area', 'Área / unidad') }}
+    {{ opciones('criticidad', 'Criticidad', ['media', 'alta', 'baja']) }}
+    {{ casilla('requiere_parada', 'Obliga a parar línea') }}
+    {{ casilla('verificada', 'Comprobada en campo') }}
+    {{ area('causa', 'Causa probable') }}
+    {{ area('actuacion', 'Actuación paso a paso') }}
+    {{ area('referencias', 'Referencias (planos, bloques, manuales)') }}
+  </div>
+  <div class="acciones"><button type="submit">Crear alarma</button></div>
+</form>
+{% endblock %}
