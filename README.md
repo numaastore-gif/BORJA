@@ -79,6 +79,17 @@ escribir, así que una entrada con `../` no puede salirse de la carpeta destino.
 inventario de ficheros y la versión deducida. Subir dos veces la misma copia no
 la duplica.
 
+**Carpeta de un multiproyecto STEP7/PCS7.** Aunque el programa esté en binario,
+la carpeta del multiproyecto trae dos ficheros legibles que son justo la ficha
+de planta: `ApiLog/Step7Bas.ver` (inventario del software de la estación de
+ingeniería con versiones y service packs) y `s7extref/s7envref.xml` (los
+proyectos que cuelgan del multiproyecto, con el nombre de la ES y la ruta local
+de cada `.s7p`). `importar_estacion()` los vuelca en la ficha de la planta.
+
+Si una estación tiene instaladas dos versiones de la misma librería —la
+heredada y la actual— se guardan las dos: saber que la vieja sigue ahí importa
+durante una guardia.
+
 ## Compartir un proyecto sin mandar el proyecto
 
 Un archivado de PCS7 son cientos de megas de binarios: no se puede adjuntar ni
@@ -122,7 +133,7 @@ python -m pytest tests -q
 | `guardias/db.py` | Conexión y utilidades de escritura. |
 | `guardias/consultas.py` | Consultas del dominio (panel, fichas, búsqueda). |
 | `guardias/web.py` | Rutas de la interfaz. |
-| `guardias/importadores/` | Lectura de exportaciones de Siemens. |
+| `guardias/importadores/` | Exportaciones de Siemens y carpeta del multiproyecto. |
 | `guardias/archivar.py` | Localiza y extrae archivados desde la red del cliente. |
 | `guardias/radiografia.py` | Resumen ligero de un proyecto, para compartir o consultar. |
 | `guardias/templates/` | Plantillas Jinja2. |
