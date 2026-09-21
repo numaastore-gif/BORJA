@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markupsafe import Markup, escape
 
-from . import __version__, consultas
+from . import __version__, consultas, diagnostico
 from .db import abrir, actualizar, borrar, insertar, ruta_adjuntos, todos, uno
 from .importadores import importar_alarmas, importar_proyecto, importar_simbolos
 from .importadores.estacion import importar_estacion
@@ -143,6 +143,16 @@ def crear_app(ruta_bd: str | Path | None = None) -> FastAPI:
             q=q,
             resultados=consultas.buscar(con, q) if q else [],
             simbolos=consultas.buscar_simbolos(con, q, limite=30) if q else [],
+        )
+
+    @app.get("/diagnostico", response_class=HTMLResponse)
+    def ver_diagnostico(peticion: Request, q: str = "", planta_id: int | None = None):
+        return render(
+            peticion,
+            "diagnostico.html",
+            q=q,
+            planta_id=planta_id,
+            r=diagnostico.diagnosticar(con, q, planta_id=planta_id),
         )
 
     @app.get("/api/buscar")

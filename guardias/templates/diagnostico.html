@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% from "_macros.html" import selector_planta %}
+{% block titulo %}Diagnóstico{% endblock %}
+{% block contenido %}
+<h1>¿Por dónde puede venir?</h1>
+
+<form class="caja" method="get" action="/diagnostico">
+  <div class="rejilla">
+    <div class="ancho">
+      <label for="q">Pega el texto de la alarma tal y como te lo dictan</label>
+      <input id="q" name="q" type="search" value="{{ q }}" autofocus
+             placeholder="p. ej. Dosificador harina 1: sobrecarga motor">
+    </div>
+    {{ selector_planta(plantas, planta_id, 'Planta (para acotar el histórico)', false, 'Todas') }}
+  </div>
+  <div class="acciones"><button type="submit">Orientarme</button></div>
+</form>
+
+{% if q %}
+
+{% if r.alarmas %}
+<h2>En tu base de alarmas</h2>
+{% for a in r.alarmas %}
+<div class="caja">
+  <strong class="mono">{{ a.codigo or '#' ~ a.id }}</strong> — {{ a.texto }}
+  <span class="etq {{ a.criticidad }}">{{ a.criticidad }}</span>
+  {% if a.verificada %}<span class="etq baja">comprobada en campo</span>{% endif %}
+  {% if a.planta_codigo %}<span class="etq">{{ a.planta_codigo }}</span>{% endif %}
+  {% if a.causa %}<p><strong>Causa:</strong> <span class="lineas">{{ a.causa }}</span></p>{% endif %}
+  {% if a.actuacion %}<p><strong>Actuación:</strong></p><div class="lineas">{{ a.actuacion }}</div>{% endif %}
+  <div class="acciones">
+    <a class="boton sec" href="/alarmas/{{ a.id }}">Abrir ficha</a>
+    <a class="boton sec" href="/incidencias/nueva?alarma_id={{ a.id }}">Registrar aviso</a>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if r.incidencias %}
+<h2>Ya te pasó antes</h2>
+<div class="tabla-envuelta">
+<table>
+  <tr><th>Aviso</th><th>Qué se vio</th></tr>
+  {% for i in r.incidencias %}
+  <tr>
+    <td><a href="/incidencias/{{ i.entidad_id }}">{{ i.titulo }}</a></td>
+    <td class="suave">{{ i.extracto|resaltar }}</td>
+  </tr>
+  {% endfor %}
+</table>
+</div>
+{% endif %}
+
+{% if r.pistas %}
+<h2>Causas típicas</h2>
+<p class="suave">Conocimiento genérico de líneas de dosificado, <strong>no de tu planta</strong>.
+  Sirve para no partir de cero. En cuanto confirmes una causa, pásala a tu base de
+  alarmas con su actuación: eso sí es tuyo y es lo que vale a la tercera llamada.</p>
+{% for p in r.pistas %}
+<div class="caja">
+  <h3>{{ p.titulo }} <span class="etq {{ p.criticidad }}">{{ p.criticidad }}</span></h3>
+  <p><strong>Por dónde puede venir</strong></p>
+  <ul>{% for c in p.causas %}<li>{{ c }}</li>{% endfor %}</ul>
+  <p><strong>Qué mirar, y en este orden</strong></p>
+  <ul>{% for c in p.comprobaciones %}<li>{{ c }}</li>{% endfor %}</ul>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if r.simbolos %}
+<h2>Variables del programa que encajan</h2>
+<div class="tabla-envuelta">
+<table>
+  <tr><th>Símbolo</th><th>Dirección</th><th>Tipo</th><th>Comentario</th></tr>
+  {% for s in r.simbolos %}
+  <tr>
+    <td class="mono">{{ s.nombre }}</td><td class="mono">{{ s.direccion or '' }}</td>
+    <td class="mono">{{ s.tipo_dato or '' }}</td><td>{{ s.comentario or '' }}</td>
+  </tr>
+  {% endfor %}
+</table>
+</div>
+{% endif %}
+
+{% if not r.alarmas and not r.incidencias and not r.pistas and not r.simbolos %}
+<p class="vacio">No tengo nada para «{{ q }}».
+  Prueba con menos palabras, o con la palabra clave del fallo (sobrecarga, báscula,
+  nivel, comunicación, válvula, tiempo…).</p>
+{% endif %}
+
+{% else %}
+<div class="aviso">
+  Escribe arriba el texto de la alarma. Te muestro, por este orden:
+  lo que ya tienes escrito en tu base, los avisos anteriores parecidos,
+  las causas típicas de ese tipo de fallo y las variables del programa que encajen.
+</div>
+{% endif %}
+{% endblock %}

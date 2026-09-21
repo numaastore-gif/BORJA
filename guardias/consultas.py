@@ -150,6 +150,7 @@ def reincidencias(con: sqlite3.Connection, incidencia: sqlite3.Row) -> list[sqli
         limite=6,
         excluir_id=incidencia["id"],
         planta_id=incidencia["planta_id"],
+        flexible=True,
     )
 
 
@@ -158,19 +159,25 @@ def reincidencias(con: sqlite3.Connection, incidencia: sqlite3.Row) -> list[sqli
 _RE_PALABRA = re.compile(r"[\wáéíóúüñÁÉÍÓÚÜÑ]+", re.UNICODE)
 
 
-def consulta_fts(texto: str) -> str:
+def consulta_fts(texto: str, *, flexible: bool = False) -> str:
     """Convierte lo que se teclea en una consulta FTS5 segura.
 
     El operario dicta el texto de la alarma tal cual, con comillas, guiones y
     signos que FTS5 interpretaría como sintaxis; se quedan solo las palabras y
     a la última se le añade ``*`` para que busque mientras escribes.
+
+    Con ``flexible`` las palabras se unen con OR en vez de exigirlas todas. Es
+    lo que hace falta al diagnosticar: el texto pegado del SCADA nunca coincide
+    palabra por palabra con el título que escribiste tú en un aviso de hace
+    tres meses, y exigiéndolas todas ese aviso no aparece nunca. El orden por
+    relevancia ya deja arriba los que coinciden en más palabras.
     """
     palabras = _RE_PALABRA.findall(texto or "")
     if not palabras:
         return ""
     terminos = [f'"{p}"' for p in palabras[:-1]]
     terminos.append(f'"{palabras[-1]}"*')
-    return " ".join(terminos)
+    return (" OR " if flexible else " ").join(terminos)
 
 
 def buscar(
@@ -181,9 +188,10 @@ def buscar(
     limite: int = 40,
     excluir_id: int | None = None,
     planta_id: int | None = None,
+    flexible: bool = False,
 ) -> list[sqlite3.Row]:
     """Busca en alarmas e incidencias por texto libre."""
-    consulta = consulta_fts(texto)
+    consulta = consulta_fts(texto, flexible=flexible)
     if not consulta:
         return []
 

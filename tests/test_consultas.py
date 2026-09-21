@@ -115,3 +115,34 @@ def test_buscar_simbolos_por_direccion_y_comentario(con, planta):
     assert consultas.buscar_simbolos(con, "DB12")
     assert consultas.buscar_simbolos(con, "tolva")
     assert consultas.buscar_simbolos(con, "no_existe") == []
+
+
+def test_busqueda_flexible_encuentra_aunque_falte_una_palabra(con, planta):
+    # El texto pegado del SCADA no coincide palabra por palabra con el título
+    # que se escribió en el aviso de hace meses.
+    insertar(con, "incidencia", {"planta_id": planta, "titulo": "Sobrecarga dosificador harina 1"})
+    consulta = "Dosificador harina 1: sobrecarga motor"
+
+    assert consultas.buscar(con, consulta, entidad="incidencia") == []
+    assert consultas.buscar(con, consulta, entidad="incidencia", flexible=True)
+
+
+def test_la_busqueda_flexible_ordena_por_coincidencias(con, planta):
+    insertar(con, "incidencia", {"planta_id": planta, "titulo": "Sobrecarga dosificador harina 1"})
+    insertar(con, "incidencia", {"planta_id": planta, "titulo": "Fallo del motor de la divisora"})
+
+    filas = consultas.buscar(con, "sobrecarga dosificador harina motor",
+                             entidad="incidencia", flexible=True)
+    assert filas[0]["titulo"] == "Sobrecarga dosificador harina 1"
+
+
+def test_la_busqueda_estricta_sigue_exigiendo_todas_las_palabras(con, planta):
+    insertar(con, "alarma", {"planta_id": planta, "texto": "Fallo báscula 2"})
+    assert consultas.buscar(con, "fallo bascula") 
+    assert consultas.buscar(con, "fallo bascula amasadora") == []
+
+
+def test_consulta_fts_flexible():
+    assert consultas.consulta_fts("fallo bascula") == '"fallo" "bascula"*'
+    assert consultas.consulta_fts("fallo bascula", flexible=True) == '"fallo" OR "bascula"*'
+    assert consultas.consulta_fts("", flexible=True) == ""

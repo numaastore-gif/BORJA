@@ -287,3 +287,30 @@ def test_multiproyecto_que_no_es_zip_no_rompe(cliente):
     )
     assert r.status_code == 303
     assert "No se ha podido abrir" in unquote(r.headers["location"])
+
+
+def test_pagina_de_diagnostico(cliente):
+    planta = crear_planta(cliente, "C700", "Ribarroja")
+    cliente.post("/alarmas", data={
+        "planta_id": str(planta), "codigo": "4711",
+        "texto": "Dosificador harina 1: sobrecarga motor",
+        "causa": "Tolva atascada por humedad",
+        "actuacion": "Vaciar la tolva y rearmar el variador",
+    })
+
+    r = cliente.get("/diagnostico?q=sobrecarga+dosificador+harina")
+    assert r.status_code == 200
+    assert "Tolva atascada por humedad" in r.text          # lo que ya sabe
+    assert "Sobrecarga o disparo térmico del motor" in r.text   # causas típicas
+    assert "no de tu planta" in r.text                     # y lo dice claramente
+
+
+def test_diagnostico_sin_texto_solo_explica(cliente):
+    r = cliente.get("/diagnostico")
+    assert r.status_code == 200
+    assert "Escribe arriba el texto de la alarma" in r.text
+
+
+def test_diagnostico_sin_coincidencias(cliente):
+    r = cliente.get("/diagnostico?q=blablabla")
+    assert "No tengo nada para" in r.text

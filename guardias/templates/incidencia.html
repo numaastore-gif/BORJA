@@ -52,6 +52,7 @@
   </div>
   <div class="acciones">
     <button type="submit">Guardar</button>
+    <a class="boton sec" href="/diagnostico?q={{ i.titulo|urlencode }}&planta_id={{ i.planta_id }}">¿Por dónde puede venir?</a>
     {% if i.alarma_id %}<a class="boton sec" href="/alarmas/{{ i.alarma_id }}">Ver alarma asociada</a>{% endif %}
     {{ borrar('incidencia', i.id, '/incidencias') }}
   </div>

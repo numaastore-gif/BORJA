@@ -27,6 +27,7 @@ Opciones útiles: `--puerto 8080`, `--recargar` (desarrollo), `--host 0.0.0.0`
 | **Plantas** | Ficha técnica: hardware (AS, OS, ET200, básculas), versiones de PCS7/WinCC, IPs, cómo se entra en remoto y a quién se llama. |
 | **Incidencias** | Histórico de avisos: síntoma, diagnóstico, solución, minutos de parada. Al abrir uno te muestra los parecidos anteriores de esa misma planta. |
 | **Alarmas** | Base de conocimiento: texto de la alarma → causa probable y actuación paso a paso. |
+| **Diagnóstico** | Pegas el texto de la alarma y te orienta: lo que ya tienes escrito, los avisos anteriores parecidos, las causas típicas de esa familia de fallo y las variables del programa que encajen. |
 | **Guardias** | Calendario de turnos. Los avisos se asignan solos al turno en curso. |
 | **Importar** | Carga de exportaciones de PCS7/WinCC (abajo). |
 
@@ -90,6 +91,21 @@ Si una estación tiene instaladas dos versiones de la misma librería —la
 heredada y la actual— se guardan las dos: saber que la vieja sigue ahí importa
 durante una guardia.
 
+## Diagnóstico
+
+Con el texto de la alarma, **Diagnóstico** reúne tres fuentes por orden de
+fiabilidad: lo que tú escribiste en la base de alarmas, los avisos anteriores
+parecidos, y un catálogo de causas típicas de líneas de dosificado (sobrecarga,
+báscula, nivel, timeout, válvula, comunicación, CPU, temperatura, señal
+analógica, seguridad, receta). El catálogo es **conocimiento genérico, no de tu
+planta**: sirve para no partir de cero, y en cuanto confirmes una causa en campo
+la pasas a tu base de alarmas.
+
+Ahí la búsqueda es flexible (las palabras se unen con OR y se ordena por
+relevancia), porque el texto pegado del SCADA no coincide palabra por palabra
+con el título que escribiste en un aviso de hace meses; exigiéndolas todas, ese
+aviso no aparecería nunca.
+
 ## Compartir un proyecto sin mandar el proyecto
 
 Un archivado de PCS7 son cientos de megas de binarios: no se puede adjuntar ni
@@ -132,6 +148,7 @@ python -m pytest tests -q
 | `guardias/schema.sql` | Esquema y disparadores del índice de búsqueda FTS5. |
 | `guardias/db.py` | Conexión y utilidades de escritura. |
 | `guardias/consultas.py` | Consultas del dominio (panel, fichas, búsqueda). |
+| `guardias/diagnostico.py` | Catálogo de causas típicas y orientación ante una alarma. |
 | `guardias/web.py` | Rutas de la interfaz. |
 | `guardias/importadores/` | Exportaciones de Siemens y carpeta del multiproyecto. |
 | `guardias/archivar.py` | Localiza y extrae archivados desde la red del cliente. |
