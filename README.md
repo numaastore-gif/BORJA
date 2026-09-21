@@ -78,6 +78,25 @@ escribir, así que una entrada con `../` no puede salirse de la carpeta destino.
 inventario de ficheros y la versión deducida. Subir dos veces la misma copia no
 la duplica.
 
+## Compartir un proyecto sin mandar el proyecto
+
+Un archivado de PCS7 son cientos de megas de binarios: no se puede adjuntar ni
+leer de un vistazo. Este comando saca una **radiografía** — solo lo que es texto
+y sirve para entender el programa — en unas decenas de KB:
+
+```bash
+python -m guardias.radiografia "D:\proyectos\Dosificado_C700_20260918.zap" \
+    --salida ficha_C700.json --markdown ficha_C700.md
+```
+
+Devuelve estaciones, versión deducida, recuento por extensión, tablas de
+símbolos con muestra de filas, listas de mensajes, y los bloques y pantallas que
+contiene. Funciona igual sobre el `.zip`/`.zap` que sobre la carpeta ya
+extraída. `--muestra N` ajusta cuántas filas de ejemplo lleva cada tabla.
+
+Un `.txt` cualquiera del proyecto no se cuela como lista de mensajes: solo
+cuenta como tal si la mayoría de sus filas traen código de mensaje.
+
 ## Dónde viven los datos
 
 | Qué | Dónde | Variable de entorno |
@@ -104,6 +123,7 @@ python -m pytest tests -q
 | `guardias/web.py` | Rutas de la interfaz. |
 | `guardias/importadores/` | Lectura de exportaciones de Siemens. |
 | `guardias/archivar.py` | Localiza y extrae archivados desde la red del cliente. |
+| `guardias/radiografia.py` | Resumen ligero de un proyecto, para compartir o consultar. |
 | `guardias/templates/` | Plantillas Jinja2. |
 
 Las marcas de tiempo se guardan en hora local (`datetime('now','localtime')`),
