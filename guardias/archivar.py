@@ -32,8 +32,13 @@ EXT_SIMBOLOS = (".asc", ".sdf", ".seq")
 # Fechas tal y como aparecen en los nombres de archivado, de más a menos
 # específica. El año de dos cifras se interpreta como 20xx.
 _FORMATOS = (
+    # aaaammdd: 20260911, 2026-09-11, 2026_09_11
     (re.compile(r"(20\d{2})[-_.]?(\d{2})[-_.]?(\d{2})"), ("a", "m", "d")),
+    # ddmmaaaa pegado, la convención de C700_DOSE_11092026
+    (re.compile(r"(?<!\d)(\d{2})(\d{2})(20\d{2})(?!\d)"), ("d", "m", "a")),
+    # dd-mm-aaaa con separadores
     (re.compile(r"(\d{2})[-_.](\d{2})[-_.](20\d{2})"), ("d", "m", "a")),
+    # ddmmaa de dos cifras
     (re.compile(r"(?<!\d)(\d{2})(\d{2})(\d{2})(?!\d)"), ("d", "m", "a2")),
 )
 

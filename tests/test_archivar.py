@@ -20,6 +20,10 @@ def zap(directorio, nombre, entradas=(("AS01/programa.txt", "bloques"),)):
     "nombre, esperada",
     [
         ("Dosificado_C700_20260918.zap17", date(2026, 9, 18)),
+        # Convención real del C700: ddmmaaaa pegado, sin separadores.
+        ("C700_DOSE_11092026", date(2026, 9, 11)),
+        ("C700_DOSE_11092026.zap", date(2026, 9, 11)),
+        ("C700_DOSE_01022026", date(2026, 2, 1)),
         ("C700 21-09-2026.zip", date(2026, 9, 21)),
         ("PLC_C700_210926.zap", date(2026, 9, 21)),
         ("Copia 2026-09-21 final.zip", date(2026, 9, 21)),
@@ -29,6 +33,20 @@ def zap(directorio, nombre, entradas=(("AS01/programa.txt", "bloques"),)):
 )
 def test_fecha_de_nombre(nombre, esperada):
     assert fecha_de_nombre(nombre) == esperada
+
+
+def test_no_confunde_aaaammdd_con_ddmmaaaa():
+    # 20260911 es 11 de septiembre de 2026, no el día 20 del mes 26.
+    assert fecha_de_nombre("C700_20260911") == date(2026, 9, 11)
+
+
+def test_ordena_bien_la_convencion_ddmmaaaa(tmp_path):
+    zap(tmp_path, "C700_DOSE_11092026.zap17")
+    zap(tmp_path, "C700_DOSE_03082026.zap17")
+    assert [c["nombre"] for c in candidatos(tmp_path)] == [
+        "C700_DOSE_11092026.zap17",
+        "C700_DOSE_03082026.zap17",
+    ]
 
 
 def test_la_fecha_del_nombre_manda_sobre_el_mtime(tmp_path):

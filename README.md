@@ -62,8 +62,9 @@ python -m guardias.archivar "\\10.103.160.72\Proyectos\Maval\C700\Dosificado\PLC
     --planta C700 --extraer
 ```
 
-Elige por la fecha del nombre del fichero (`..._20260918.zap`, `21-09-2026`,
-`210926`) y solo recurre a la fecha de modificación cuando el nombre no la
+Elige por la fecha del nombre del fichero — `20260918` (aaaammdd),
+`11092026` (ddmmaaaa, la convención del C700), `21-09-2026` y `210926` — y solo
+recurre a la fecha de modificación cuando el nombre no la
 lleva: el mtime se altera al copiar entre unidades de red y engaña. Opciones:
 `--nombre` para forzar un archivado concreto, `--copiar` para traerte una copia
 local, `--crear-planta` para darla de alta al vuelo, `--destino` para elegir
