@@ -17,6 +17,7 @@ from markupsafe import Markup, escape
 from . import __version__, consultas
 from .db import abrir, actualizar, borrar, insertar, ruta_adjuntos, todos, uno
 from .importadores import importar_alarmas, importar_proyecto, importar_simbolos
+from .importadores.estacion import importar_estacion
 
 BASE = Path(__file__).resolve().parent
 plantillas = Jinja2Templates(directory=str(BASE / "templates"))
@@ -172,11 +173,11 @@ def crear_app(ruta_bd: str | Path | None = None) -> FastAPI:
         return volver(f"/plantas/{planta_id}")
 
     @app.get("/plantas/{planta_id}", response_class=HTMLResponse)
-    def ver_planta(peticion: Request, planta_id: int):
+    def ver_planta(peticion: Request, planta_id: int, mensaje: str = ""):
         ficha = consultas.ficha_planta(con, planta_id)
         if ficha is None:
             return volver("/plantas")
-        return render(peticion, "planta.html", **ficha)
+        return render(peticion, "planta.html", mensaje=mensaje, **ficha)
 
     @app.post("/plantas/{planta_id}")
     async def editar_planta(peticion: Request, planta_id: int):
@@ -411,6 +412,33 @@ def crear_app(ruta_bd: str | Path | None = None) -> FastAPI:
     async def subir_simbolos(fichero: UploadFile, proyecto_id: int = Form(...)):
         r = importar_simbolos(con, proyecto_id, await fichero.read())
         return volver(f"/importar?mensaje=Símbolos importados: {r['importados']}.")
+
+    @app.post("/importar/estacion")
+    async def subir_estacion(fichero: UploadFile, planta_id: int = Form(...),
+                             todo: str = Form("")):
+        """Carpeta del multiproyecto comprimida: rellena el software de la ficha."""
+        import tempfile
+
+        from .archivar import extraer
+
+        with tempfile.TemporaryDirectory() as tmp:
+            copia = Path(tmp) / Path(fichero.filename or "multiproyecto.zip").name
+            with copia.open("wb") as salida:
+                shutil.copyfileobj(fichero.file, salida)
+            try:
+                carpeta = extraer(copia, Path(tmp) / "extraido")
+            except ValueError as error:
+                return volver(f"/importar?mensaje=No se ha podido abrir: {error}")
+            r = importar_estacion(con, planta_id, carpeta, todo=bool(todo))
+
+        aviso = " El multiproyecto viene sin el programa (no hay ningún .s7p)." if r["vacio"] else ""
+        estacion = f" Estación: {r['estacion_ingenieria']}." if r["estacion_ingenieria"] else ""
+        proyectos = ", ".join(p["nombre"] for p in r["proyectos"])
+        return volver(
+            f"/plantas/{planta_id}?mensaje=Software: {r['nuevos']} productos nuevos"
+            f" de {r['guardados']}.{estacion}"
+            f"{' Proyectos: ' + proyectos + '.' if proyectos else ''}{aviso}"
+        )
 
     @app.post("/importar/proyecto")
     async def subir_proyecto(

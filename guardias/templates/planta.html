@@ -15,6 +15,7 @@
   <a class="boton sec" href="/alarmas?planta_id={{ planta.id }}">Alarmas</a>
 </div>
 
+{% if mensaje %}<div class="aviso">{{ mensaje }}</div>{% endif %}
 {% if planta.acceso_remoto %}
 <div class="aviso"><strong>Acceso remoto:</strong> {{ planta.acceso_remoto }}</div>
 {% endif %}

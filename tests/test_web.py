@@ -244,3 +244,46 @@ def test_el_extracto_de_busqueda_escapa_el_html(cliente):
     assert "<script>" not in r.text
     assert "&lt;script&gt;" in r.text
     assert "<mark>correa</mark>" in r.text   # el resaltado sí se aplica
+
+
+def test_subir_la_carpeta_del_multiproyecto(cliente):
+    import io
+    import zipfile
+
+    from tests.test_estacion import ENVREF, ver
+
+    planta = crear_planta(cliente, "C700", "Ribarroja")
+    memoria = io.BytesIO()
+    with zipfile.ZipFile(memoria, "w") as z:
+        z.writestr("C700_N/ApiLog/Step7Bas.ver",
+                   ver("STEP 7", "V5.6 + HF3", "WinCC Runtime", "V7.4 + SP1 + Upd4"))
+        z.writestr("C700_N/s7extref/s7envref.xml", ENVREF)
+
+    r = cliente.post(
+        "/importar/estacion",
+        data={"planta_id": str(planta)},
+        files={"fichero": ("C700_N.zip", memoria.getvalue(), "application/zip")},
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    destino = unquote(r.headers["location"])
+    assert "2 productos nuevos" in destino
+    assert "RIB-EST-ING-V9" in destino
+    assert "C700_AS, C700_OS" in destino
+    # Avisa de que el multiproyecto no trae el programa dentro.
+    assert "sin el programa" in destino
+
+    pagina = cliente.get(f"/plantas/{planta}").text
+    assert "V5.6 + HF3" in pagina and "V7.4 + SP1 + Upd4" in pagina
+
+
+def test_multiproyecto_que_no_es_zip_no_rompe(cliente):
+    planta = crear_planta(cliente)
+    r = cliente.post(
+        "/importar/estacion",
+        data={"planta_id": str(planta)},
+        files={"fichero": ("proyecto.7z", b"7z\xbc\xaf\x27\x1c", "application/x-7z-compressed")},
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    assert "No se ha podido abrir" in unquote(r.headers["location"])

@@ -43,6 +43,27 @@
     al subir una versión nueva del programa.</p>
 </form>
 
+<h2>Carpeta del multiproyecto (comprimida)</h2>
+<form class="caja" method="post" action="/importar/estacion" enctype="multipart/form-data">
+  <div class="rejilla">
+    {{ selector_planta(plantas, none) }}
+    <div>
+      <label for="f_estacion">Carpeta del multiproyecto en .zip</label>
+      <input id="f_estacion" type="file" name="fichero" required>
+    </div>
+    <div>
+      <label for="f_todo">Guardar los 90 y pico componentes</label>
+      <input id="f_todo" type="checkbox" name="todo" value="1">
+    </div>
+  </div>
+  <div class="acciones"><button type="submit">Leer la estación</button></div>
+  <p class="suave">Lee <span class="mono">ApiLog/Step7Bas.ver</span> y
+    <span class="mono">s7extref/s7envref.xml</span>: rellena el software de la ficha con
+    sus versiones y service packs, y te dice qué proyectos cuelgan del multiproyecto y
+    en qué estación de ingeniería viven. Sin marcar la casilla se guardan solo los
+    productos que se consultan en una guardia.</p>
+</form>
+
 <h2>Archivo de proyecto (.zap / .zip)</h2>
 <form class="caja" method="post" action="/importar/proyecto" enctype="multipart/form-data">
   <div class="rejilla">
