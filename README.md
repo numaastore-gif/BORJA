@@ -48,6 +48,31 @@ Quedan asociadas a un proyecto y buscables por símbolo, dirección o comentario
 que es lo que necesitas cuando te preguntan por una variable concreta a las 3 de
 la mañana. Subir una versión nueva reemplaza la tabla anterior del proyecto.
 
+**Archivados en un recurso de red.** Cuando los proyectos viven en una carpeta
+del cliente (`\\10.103.160.72\Proyectos\...`), este comando busca el archivado más
+reciente, lo registra y opcionalmente lo descomprime e importa sus tablas de
+símbolos:
+
+```bash
+# Solo mirar qué hay, sin tocar nada:
+python -m guardias.archivar "\\10.103.160.72\Proyectos\Maval\C700\Dosificado\PLC"
+
+# Registrar el más reciente y extraerlo:
+python -m guardias.archivar "\\10.103.160.72\Proyectos\Maval\C700\Dosificado\PLC" \
+    --planta C700 --extraer
+```
+
+Elige por la fecha del nombre del fichero (`..._20260918.zap`, `21-09-2026`,
+`210926`) y solo recurre a la fecha de modificación cuando el nombre no la
+lleva: el mtime se altera al copiar entre unidades de red y engaña. Opciones:
+`--nombre` para forzar un archivado concreto, `--copiar` para traerte una copia
+local, `--crear-planta` para darla de alta al vuelo, `--destino` para elegir
+dónde extraer.
+
+Se extraen `.zip` y `.zap`; los `.7z`, `.rar` y los autoextraíbles hay que
+abrirlos con su herramienta. Las rutas internas del archivo se validan antes de
+escribir, así que una entrada con `../` no puede salirse de la carpeta destino.
+
 **Archivos de proyecto** (`.zap`, `.zip`). Se guardan fuera del repositorio, en
 `datos/adjuntos/proyectos/`, y en la base solo quedan la huella sha256, el
 inventario de ficheros y la versión deducida. Subir dos veces la misma copia no
@@ -78,6 +103,7 @@ python -m pytest tests -q
 | `guardias/consultas.py` | Consultas del dominio (panel, fichas, búsqueda). |
 | `guardias/web.py` | Rutas de la interfaz. |
 | `guardias/importadores/` | Lectura de exportaciones de Siemens. |
+| `guardias/archivar.py` | Localiza y extrae archivados desde la red del cliente. |
 | `guardias/templates/` | Plantillas Jinja2. |
 
 Las marcas de tiempo se guardan en hora local (`datetime('now','localtime')`),
