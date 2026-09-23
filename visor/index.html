@@ -12,21 +12,20 @@
     --accent-soft: #d4ebe7;
     --stage: #e4e8e3;
     --grid: #c3cac3;
-    --model: #dfe4e1;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --ground: #141816; --panel: #1b201e; --ink: #e7ebe8; --muted: #95a19b;
       --line: #2d3531; --accent: #4fc0b5; --accent-soft: #1d3633;
-      --stage: #101412; --grid: #2c3531; --model: #c9d0cc;
+      --stage: #101412; --grid: #2c3531;
       color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
     --ground: #141816; --panel: #1b201e; --ink: #e7ebe8; --muted: #95a19b;
     --line: #2d3531; --accent: #4fc0b5; --accent-soft: #1d3633;
-    --stage: #101412; --grid: #2c3531; --model: #c9d0cc;
+    --stage: #101412; --grid: #2c3531;
     color-scheme: dark;
   }
   html, body { height: 100%; }
@@ -74,16 +73,38 @@
   .overlay { position: absolute; left: 12px; bottom: 10px; font-size: 12px; color: var(--muted); pointer-events: none; }
   .status { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 14px; pointer-events: none; }
   .tools { display: flex; flex-wrap: wrap; gap: 6px; }
-  .tools button, .tools select {
+  .tools button, .tools select, .tools-select {
     font: inherit; font-size: 13px; color: var(--ink); background: var(--panel);
     border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; cursor: pointer;
   }
   .tools button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
-  .tools button:focus-visible, .tools select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .tools button:focus-visible, .tools-select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   .specs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
   .spec { background: var(--panel); padding: 10px 12px; display: grid; gap: 2px; }
   .spec .v { font-size: 15px; font-weight: 600; }
   .warn { color: #b3541e; }
+
+  .filament { display: grid; gap: 10px; padding: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+  .filament-head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
+  .seg { display: flex; flex-wrap: wrap; gap: 4px; }
+  .seg button {
+    font: inherit; font-size: 13px; color: var(--ink); background: transparent; cursor: pointer;
+    border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px;
+  }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+  .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .picked { font-size: 13px; color: var(--muted); }
+  .picked b { color: var(--ink); font-weight: 650; }
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(30px, 1fr)); gap: 6px; }
+  .sw {
+    all: unset; box-sizing: border-box; cursor: pointer; aspect-ratio: 1; border-radius: 50%;
+    background: var(--c); box-shadow: inset 0 0 0 1px rgba(0,0,0,.18);
+  }
+  .sw.trans { background: linear-gradient(135deg, var(--c) 0 55%, color-mix(in srgb, var(--c) 45%, transparent) 55%); }
+  .sw[aria-checked="true"] { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .sw:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .field { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); min-width: 0; max-width: 100%; }
+  .tools-select { min-width: 0; max-width: 100%; }
 
   @media (max-width: 760px) {
     .app { grid-template-columns: 1fr; }
@@ -119,17 +140,21 @@
       <button type="button" id="wire" aria-pressed="false">Malla</button>
       <button type="button" id="cut" aria-pressed="false">Corte</button>
       <button type="button" id="reset">Vista inicial</button>
-      <select id="bed" aria-label="Tamaño de la impresora">
-        <option value="220x220x250">Cama 220 × 220 × 250 (Ender 3)</option>
-        <option value="250x210x220">Cama 250 × 210 × 220 (Prusa MK4)</option>
-        <option value="256x256x256" selected>Cama 256 × 256 × 256 (Bambu X1/P1)</option>
-        <option value="180x180x180">Cama 180 × 180 × 180 (Bambu A1 mini)</option>
-      </select>
     </div>
+    <section class="filament" aria-label="Impresora y filamento">
+      <div class="filament-head">
+        <label class="field" for="bed">Impresora
+          <select id="bed" class="tools-select"></select>
+        </label>
+        <div class="seg" id="mats" role="group" aria-label="Tipo de filamento"></div>
+      </div>
+      <div class="swatches" id="swatches" role="radiogroup" aria-label="Color del filamento"></div>
+      <div class="picked" id="picked"></div>
+    </section>
     <div class="specs">
       <div class="spec"><span class="label">Tamaño (mm)</span><span class="v mono" id="s-size">—</span></div>
       <div class="spec"><span class="label">Volumen plástico</span><span class="v mono" id="s-vol">—</span></div>
-      <div class="spec"><span class="label">Peso PLA / PETG</span><span class="v mono" id="s-w">—</span></div>
+      <div class="spec"><span class="label" id="s-w-label">Peso</span><span class="v mono" id="s-w">—</span></div>
       <div class="spec"><span class="label">¿Cabe en la cama?</span><span class="v" id="s-fit">—</span></div>
     </div>
   </main>
@@ -141,6 +166,49 @@
 <script>
 (function () {
   const $ = (id) => document.getElementById(id);
+
+  // Impresoras Bambu Lab a la venta (volumen útil en mm, un solo nozzle)
+  const IMPRESORAS = [
+    { id: "a1mini", nombre: "A1 mini", v: [180, 180, 180] },
+    { id: "a1", nombre: "A1", v: [256, 256, 256] },
+    { id: "a2l", nombre: "A2L", v: [330, 320, 325] },
+    { id: "p1s", nombre: "P1S", v: [256, 256, 256] },
+    { id: "p2s", nombre: "P2S", v: [256, 256, 256] },
+    { id: "x2d", nombre: "X2D", v: [256, 256, 260] },
+    { id: "h2s", nombre: "H2S", v: [340, 320, 340] },
+    { id: "h2d", nombre: "H2D", v: [325, 320, 325] },
+    { id: "h2c", nombre: "H2C", v: [325, 320, 325] },
+  ];
+
+  // Colores oficiales (tablas de códigos hex de Bambu Lab)
+  const FILAMENTOS = [
+    { id: "pla-basic", nombre: "PLA Basic", densidad: 1.26, rugosidad: 0.45, colores: {
+      "Jade White": "#FFFFFF", "Beige": "#F7E6DE", "Light Gray": "#D1D3D5", "Silver": "#A6A9AA", "Gray": "#8E9089",
+      "Dark Gray": "#545454", "Blue Grey": "#5B6579", "Black": "#000000", "Yellow": "#F4EE2A", "Sunflower Yellow": "#FEC600",
+      "Gold": "#E4BD68", "Pumpkin Orange": "#FF9016", "Orange": "#FF6A13", "Red": "#C12E1F", "Maroon Red": "#9D2235",
+      "Hot Pink": "#F5547C", "Pink": "#F55A74", "Magenta": "#EC008C", "Purple": "#5E43B7", "Indigo Purple": "#482960",
+      "Cobalt Blue": "#0056B8", "Blue": "#0A2989", "Cyan": "#0086D6", "Turquoise": "#00B1B7", "Bright Green": "#BECF00",
+      "Bambu Green": "#00AE42", "Mistletoe Green": "#3F8E43", "Bronze": "#847D48", "Brown": "#9D432C", "Cocoa Brown": "#6F5034" } },
+    { id: "pla-matte", nombre: "PLA Matte", densidad: 1.32, rugosidad: 0.95, colores: {
+      "Ivory White": "#FFFFFF", "Bone White": "#CBC6B8", "Desert Tan": "#E8DBB7", "Latte Brown": "#D3B7A7", "Caramel": "#AE835B",
+      "Terracotta": "#B15533", "Dark Brown": "#7D6556", "Dark Chocolate": "#4D3324", "Lemon Yellow": "#F7D959", "Mandarin Orange": "#F99963",
+      "Sakura Pink": "#E8AFCF", "Lilac Purple": "#AE96D4", "Plum": "#950051", "Scarlet Red": "#DE4343", "Dark Red": "#BB3D43",
+      "Apple Green": "#C2E189", "Grass Green": "#61C680", "Dark Green": "#68724D", "Ice Blue": "#A3D8E1", "Sky Blue": "#56B7E6",
+      "Marine Blue": "#0078BF", "Dark Blue": "#042F56", "Ash Gray": "#9B9EA0", "Nardo Gray": "#757575", "Charcoal": "#000000" } },
+    { id: "petg-hf", nombre: "PETG HF", densidad: 1.28, rugosidad: 0.22, colores: {
+      "White": "#FFFFFF", "Cream": "#F9DFB9", "Gray": "#ADB1B2", "Dark Gray": "#515151", "Black": "#000000",
+      "Yellow": "#FFD00B", "Orange": "#F75403", "Red": "#EB3A3A", "Peanut Brown": "#875718", "Lime Green": "#6EE53C",
+      "Green": "#00AE42", "Forest Green": "#39541A", "Lake Blue": "#1F79E5", "Blue": "#002E96" } },
+    { id: "petg-trans", nombre: "PETG Translucent", densidad: 1.27, rugosidad: 0.15, translucido: true, colores: {
+      "Translucent Gray": "#8E8E8E", "Translucent Light Blue": "#61B0FF", "Translucent Teal": "#77EDD7", "Translucent Olive": "#748C45",
+      "Translucent Brown": "#C9A381", "Translucent Orange": "#FF911A", "Translucent Pink": "#F9C1BD", "Translucent Purple": "#D6ABFF" } },
+  ];
+  const guardado = (k, d) => { try { return localStorage.getItem(k) || d; } catch (e) { return d; } };
+  const guardar = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+  let impresora = IMPRESORAS.find((p) => p.id === guardado("visor-impresora", "p2s")) || IMPRESORAS[4];
+  let filamento = FILAMENTOS.find((f) => f.id === guardado("visor-filamento", "petg-hf")) || FILAMENTOS[2];
+  let colorNombre = guardado("visor-color", "");
+  if (!filamento.colores[colorNombre]) colorNombre = Object.keys(filamento.colores)[0];
   const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   const stage = $("stage"), statusEl = $("status");
 
@@ -167,13 +235,12 @@
 
   function applyTheme() {
     scene.background = new THREE.Color(css("--stage"));
-    material.color = new THREE.Color(css("--model"));
     if (bedGroup) buildBed();
   }
 
   function buildBed() {
     if (bedGroup) scene.remove(bedGroup);
-    const [bx, by] = $("bed").value.split("x").map(Number);
+    const [bx, by] = impresora.v;
     bedGroup = new THREE.Group();
     const plate = new THREE.Mesh(new THREE.PlaneGeometry(bx, by),
       new THREE.MeshBasicMaterial({ color: new THREE.Color(css("--panel")), transparent: true, opacity: 0.85 }));
@@ -210,7 +277,7 @@
 
   function updateFit() {
     if (!info) return;
-    const [bx, by, bz] = $("bed").value.split("x").map(Number);
+    const [bx, by, bz] = impresora.v;
     const s = info.size;
     const flat = (s.x <= bx && s.y <= by) || (s.x <= by && s.y <= bx);
     const ok = flat && s.z <= bz;
@@ -218,6 +285,60 @@
     el.textContent = ok ? "Sí" : (s.z > bz ? `No: ${(s.z - bz).toFixed(0)} mm de más en altura` : "No: demasiado ancho");
     el.className = "v" + (ok ? "" : " warn");
   }
+
+  function updateWeight() {
+    $("s-w-label").textContent = "Peso en " + filamento.nombre;
+    if (info) $("s-w").textContent = `≈ ${(info.vol * filamento.densidad).toFixed(0)} g`;
+  }
+
+  function applyFilament() {
+    const hex = filamento.colores[colorNombre];
+    const c = new THREE.Color(hex);
+    // el negro puro se vería plano: se aclara un poco para leer la forma
+    const hsl = {}; c.getHSL(hsl); if (hsl.l < 0.08) c.setHSL(hsl.h, hsl.s, 0.08);
+    material.color = c;
+    material.roughness = filamento.rugosidad;
+    material.transparent = !!filamento.translucido;
+    material.opacity = filamento.translucido ? 0.62 : 1;
+    material.depthWrite = !filamento.translucido;
+    material.needsUpdate = true;
+    $("picked").innerHTML = "<b></b> · <span></span> <span class=\"mono\"></span>";
+    $("picked").children[0].textContent = filamento.nombre;
+    $("picked").children[1].textContent = colorNombre;
+    $("picked").children[2].textContent = hex;
+    updateWeight();
+  }
+
+  function renderFilaments() {
+    const mats = $("mats"); mats.textContent = "";
+    FILAMENTOS.forEach((f) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = f.nombre; b.setAttribute("aria-pressed", String(f === filamento));
+      b.addEventListener("click", () => {
+        filamento = f; guardar("visor-filamento", f.id);
+        if (!f.colores[colorNombre]) colorNombre = Object.keys(f.colores)[0];
+        renderFilaments();
+      });
+      mats.appendChild(b);
+    });
+    const sw = $("swatches"); sw.textContent = "";
+    Object.entries(filamento.colores).forEach(([nombre, hex]) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "sw" + (filamento.translucido ? " trans" : "");
+      b.style.setProperty("--c", hex); b.title = nombre; b.setAttribute("role", "radio");
+      b.setAttribute("aria-label", nombre); b.setAttribute("aria-checked", String(nombre === colorNombre));
+      b.addEventListener("click", () => { colorNombre = nombre; guardar("visor-color", nombre); renderFilaments(); });
+      sw.appendChild(b);
+    });
+    applyFilament();
+  }
+
+  IMPRESORAS.forEach((p) => {
+    const o = document.createElement("option");
+    o.value = p.id; o.textContent = `Bambu Lab ${p.nombre} · ${p.v.join(" × ")} mm`;
+    $("bed").appendChild(o);
+  });
+  $("bed").value = impresora.id;
 
   function show(buffer, meta) {
     const geo = new THREE.STLLoader().parse(buffer);
@@ -231,7 +352,7 @@
     const s = info.size;
     $("s-size").textContent = `${s.x.toFixed(0)} × ${s.y.toFixed(0)} × ${s.z.toFixed(0)}`;
     $("s-vol").textContent = `${info.vol.toFixed(0)} cm³`;
-    $("s-w").textContent = `${(info.vol * 1.24).toFixed(0)} g / ${(info.vol * 1.27).toFixed(0)} g`;
+    updateWeight();
     $("overlay").textContent = `${meta.nombre} · ${info.tris.toLocaleString("es-ES")} triángulos`;
     $("notes").textContent = meta.notas || "Sin notas.";
     statusEl.hidden = true;
@@ -295,7 +416,9 @@
   toggle("wire", (on) => { material.wireframe = on; });
   toggle("cut", (on) => { material.clippingPlanes = on ? [clip] : []; material.needsUpdate = true; });
   $("reset").addEventListener("click", frame);
-  $("bed").addEventListener("change", buildBed);
+  $("bed").addEventListener("change", (e) => {
+    impresora = IMPRESORAS.find((p) => p.id === e.target.value); guardar("visor-impresora", impresora.id); buildBed();
+  });
   controls.addEventListener("start", () => { controls.autoRotate = false; $("spin").setAttribute("aria-pressed", "false"); });
 
   function resize() {
@@ -307,7 +430,7 @@
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyTheme);
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) { controls.autoRotate = false; $("spin").setAttribute("aria-pressed", "false"); }
 
-  applyTheme(); buildBed(); resize();
+  applyTheme(); renderFilaments(); buildBed(); resize();
   (function loop() { requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); })();
 
   fetch("modelos.json").then((r) => r.json()).then((list) => {
