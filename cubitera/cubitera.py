@@ -1,11 +1,12 @@
 """Genera el STL de una cubitera para una botella de vino.
 
-Silueta ajustada con curvas suaves a la foto de la cubitera transparente de referencia y
-escalada a sus medidas (20 x 20,5 x 24 cm): se ensancha de forma continua
-desde un fondo pequeño y redondeado hasta la boca, que está cortada en curva
-(baja en un lado y alta en el del asa). El asa es una ranura triangular
-redondeada y simétrica, debajo va el texto en relieve siguiendo la pared, y en el fondo
-hay un tope para que la botella quede recostada contra la pared alta.
+Silueta ajustada con curvas suaves a la foto de la cubitera transparente de
+referencia y escalada a sus medidas (20 x 20,5 x 24 cm): se ensancha de forma
+continua desde un fondo pequeño y redondeado hasta la boca, que está cortada
+en curva (baja en un lado y alta en el del asa). El asa es una ranura
+triangular redondeada y simétrica; debajo van el nombre y la fecha en relieve
+siguiendo la pared, y en el fondo hay un tope para que la botella quede
+recostada contra la pared alta.
 Todas las medidas en mm.
 
     pip install numpy trimesh manifold3d matplotlib shapely fonttools
@@ -16,7 +17,7 @@ import pathlib
 import numpy as np
 import trimesh
 from fontTools.ttLib import TTFont
-from manifold3d import CrossSection, FillRule, JoinType, Manifold, Mesh
+from manifold3d import CrossSection, FillRule, JoinType, Manifold, Mesh, OpType
 from matplotlib.font_manager import FontProperties
 from matplotlib.textpath import TextPath
 from shapely.geometry import LineString, Polygon
@@ -33,17 +34,23 @@ PARED = 3.0
 FONDO = 4.0
 REDONDEO_FONDO = (8.0, 5.0)  # radio de la arista del fondo por fuera y por dentro
 # Asa: ranura triangular redondeada y simétrica (base abajo, vértice arriba).
-# (u, v, radio) de los círculos que la envuelven; u a lo largo de la pared
-# (0 = punta del lado alto), v hacia arriba.
-ASA = [(-44.0, 6.0, 6.0), (44.0, 6.0, 6.0), (0.0, 15.0, 13.0)]
+# (u, v, radio horizontal, radio vertical) de las elipses que la envuelven;
+# u a lo largo de la pared (0 = punta del lado alto), v hacia arriba. El
+# vértice es una elipse ancha para que el pico quede suave.
+ASA = [(-44.0, 6.0, 6.0, 6.0), (44.0, 6.0, 6.0, 6.0), (0.0, 16.0, 22.0, 12.0)]
 ASA_Z = 188.0          # altura del borde inferior de la ranura
-# Texto por tramos (texto, cursiva): la «y» en cursiva, como en numashome.com.
-TEXTO = [("Jose ", False), ("y", True), (" Valle", False)]
+# Texto en Playfair Display (la de numashome.com), centrado bajo el asa.
+# Cada línea: tramos (texto, cursiva), altura de mayúscula, espaciado entre
+# letras (fracción de la altura) y línea base.
+LINEAS = [
+    dict(tramos=[("Jose ", False), ("y", True), (" Valle", False)], letra=14.0, aire=0.0, z=166.0),
+    dict(tramos=[("10/09/1994", False)], letra=8.5, aire=0.12, z=151.0),
+]
 FUENTES = {False: "PlayfairDisplay-Medium.ttf", True: "PlayfairDisplay-MediumItalic.ttf"}  # OFL
-LETRA = 14.0           # altura de las mayúsculas
 ENGROSAR = 0.15        # mm que se engordan los trazos finos para que se impriman
-RELIEVE = 0.8          # lo que sobresale el texto de la pared
-TEXTO_Z = 166.0        # altura de la línea base del texto
+# Relieve en escalones que imitan un bisel: (ensanche del trazo, altura) en mm,
+# así las letras nacen de la pared en vez de parecer pegadas.
+RELIEVE = [(0.3, 0.4), (0.0, 0.8)]
 TOPE = dict(x=-34.0, ancho=30.0, alto=16.0)  # suplemento del fondo
 SEGMENTOS = 240
 PASO_Z = 1.5           # separación entre anillos de la pared
@@ -142,29 +149,44 @@ def envolver(solido, z_base):
 
 def asa():
     """Ranura triangular redondeada que atraviesa la pared alta."""
-    forma = CrossSection.batch_hull([CrossSection.circle(r, 64).translate((u, v))
-                                     for u, v, r in ASA])
+    forma = CrossSection.batch_hull([CrossSection.circle(1.0, 96).scale((ru, rv)).translate((u, v))
+                                     for u, v, ru, rv in ASA])
     return envolver(forma.extrude(16).translate((0, 0, -10)), ASA_Z)
 
 
-def texto():
-    """Letras en relieve bajo el asa, en Playfair Display."""
-    def fichero(cursiva):
-        return str(pathlib.Path(__file__).with_name(FUENTES[cursiva]))
+def fichero(cursiva):
+    return str(pathlib.Path(__file__).with_name(FUENTES[cursiva]))
 
+
+def linea(tramos, letra, aire):
+    """Contorno 2D de una línea de texto, centrado en u=0 y con base en v=0."""
     recta = FontProperties(fname=fichero(False))
-    escala = LETRA / TextPath((0, 0), "J", size=1.0, prop=recta).get_extents().height
+    escala = letra / TextPath((0, 0), "J", size=1.0, prop=recta).get_extents().height
     polis, cursor = [], 0.0
-    for tramo, cursiva in TEXTO:
-        ruta = TextPath((cursor, 0), tramo, size=1.0, prop=FontProperties(fname=fichero(cursiva)))
-        polis += [p * escala for p in ruta.to_polygons() if len(p) > 2]
+    for tramo, cursiva in tramos:
+        prop = FontProperties(fname=fichero(cursiva))
         fuente = TTFont(fichero(cursiva))
-        cmap, hmtx = fuente.getBestCmap(), fuente["hmtx"]
-        cursor += sum(hmtx[cmap[ord(ch)]][0] for ch in tramo) / fuente["head"].unitsPerEm
+        cmap, hmtx, em = fuente.getBestCmap(), fuente["hmtx"], fuente["head"].unitsPerEm
+        piezas = tramo if aire else [tramo]  # con espaciado, letra a letra
+        for pieza in piezas:
+            ruta = TextPath((cursor, 0), pieza, size=1.0, prop=prop)
+            polis += [p * escala for p in ruta.to_polygons() if len(p) > 2]
+            cursor += sum(hmtx[cmap[ord(ch)]][0] for ch in pieza) / em + aire * letra / escala
     letras = CrossSection(polis, FillRule.EvenOdd).offset(ENGROSAR, JoinType.Round)
     x0, _, x1, _ = letras.bounds()
-    letras = letras.translate((-(x0 + x1) / 2, 0))
-    return envolver(letras.extrude(RELIEVE + 2.0).translate((0, 0, -2.0)), TEXTO_Z)
+    return letras.translate((-(x0 + x1) / 2, 0))
+
+
+def texto():
+    """Líneas en relieve biselado, enrolladas sobre la pared bajo el asa."""
+    relieve = []
+    for l in LINEAS:
+        letras = linea(l["tramos"], l["letra"], l["aire"])
+        for ensanche, alto in RELIEVE:
+            capa = letras.offset(ensanche, JoinType.Round) if ensanche else letras
+            relieve.append(envolver(capa.extrude(alto + 2.0).translate((0, 0, -2.0)), l["z"]))
+    # sin detalles por debajo de 0,01 mm, que al guardar en STL se solaparían
+    return Manifold.batch_boolean(relieve, OpType.Add).set_tolerance(0.01)
 
 
 def tope():
@@ -174,7 +196,7 @@ def tope():
     x0, w, h = TOPE["x"], TOPE["ancho"], TOPE["alto"]
     esferas = []
     for y in (-w / 2 + 6, w / 2 - 6):
-        esferas.append(Manifold.sphere(6.0, 48).translate((x0 - 16, y, FONDO + 6)))    # dentro de la pared
+        esferas.append(Manifold.sphere(6.0, 48).translate((x0 - 16, y, FONDO + 6.5)))  # dentro de la pared
         esferas.append(Manifold.sphere(5.0, 48).translate((x0 - 6, y * 0.85, FONDO + h - 5)))  # lomo
         esferas.append(Manifold.sphere(2.5, 32).translate((x0 + 7, y, FONDO)))        # pie en el suelo
     esferas.append(Manifold.sphere(2.5, 32).translate((x0 + 5, 0, FONDO)))  # pie algo cóncavo
