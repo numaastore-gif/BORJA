@@ -1,6 +1,6 @@
 """Genera el STL de una cubitera para una botella de vino.
 
-Silueta calcada de la foto de la cubitera transparente de referencia y
+Silueta ajustada con curvas suaves a la foto de la cubitera transparente de referencia y
 escalada a sus medidas (20 x 20,5 x 24 cm): se ensancha de forma continua
 desde un fondo pequeño y redondeado hasta la boca, que está cortada en curva
 (baja en un lado y alta en el del asa). El asa es una ranura triangular
@@ -8,33 +8,29 @@ redondeada y simétrica, debajo va el texto en relieve siguiendo la pared, y en 
 hay un tope para que la botella quede recostada contra la pared alta.
 Todas las medidas en mm.
 
-    pip install numpy trimesh manifold3d matplotlib
+    pip install numpy trimesh manifold3d matplotlib shapely
     python cubitera.py
 """
 import pathlib
 
 import numpy as np
 import trimesh
+from shapely.geometry import LineString, Polygon
 from matplotlib.font_manager import FontProperties
 from matplotlib.textpath import TextPath
 from manifold3d import CrossSection, FillRule, Manifold, Mesh
 
 # --- Parámetros -------------------------------------------------------------
-# Semieje largo exterior según la altura, calcado de la foto de perfil.
-PERFIL = [(0.0, 42.0), (3.0, 46.0), (6.0, 49.0), (9.9, 51.4), (12.4, 54.0),
-          (17.4, 58.1), (22.4, 61.8), (27.3, 64.7), (37.3, 69.8), (47.2, 73.6),
-          (57.1, 77.0), (67.1, 79.7), (77.0, 82.1), (87.0, 84.0), (96.9, 85.6),
-          (106.8, 87.5), (116.8, 89.1), (126.7, 90.4), (136.6, 91.8), (146.6, 93.4),
-          (156.5, 94.4), (166.5, 95.8), (176.4, 96.8), (183.9, 97.6), (216.1, 99.8),
-          (226.1, 101.9), (236.0, 103.0), (240.0, 104.1), (260.0, 105.5)]
-# Borde de la boca (x, z), también calcado: sube en curva hacia el asa.
-BOCA = [(-98.2, 187.8), (-82.7, 191.8), (-66.6, 194.8), (-50.6, 197.8),
-        (-34.5, 201.2), (-18.5, 204.7), (-2.4, 208.2), (13.6, 212.7),
-        (29.7, 217.6), (45.7, 222.1), (61.8, 227.1), (77.8, 233.0),
-        (93.9, 238.5), (103.0, 240.0)]
+# Semieje largo exterior según la altura: curva suave ajustada a la silueta
+# calcada de la foto (error < 1 mm), a(z) = c0 + c1*z - c2*exp(-z/L).
+# Al ser una sola función sin tramos, la pared no tiene pliegues.
+PERFIL = dict(c0=76.456, c1=0.1166, c2=34.238, L=33.336)
+# Borde de la boca: parábola ajustada al borde de la foto, z(x) = p0*x² + p1*x + p2.
+BOCA = dict(p0=5.14e-4, p1=0.260454, p2=207.33)
 ANCHO_RELATIVO = 20.5 / 20.0  # semieje transversal / semieje largo
 PARED = 3.0
 FONDO = 4.0
+REDONDEO_FONDO = (8.0, 5.0)  # radio de la arista del fondo por fuera y por dentro
 # Asa: ranura triangular redondeada y simétrica (base abajo, vértice arriba).
 # (u, v, radio) de los círculos que la envuelven; u a lo largo de la pared
 # (0 = punta del lado alto), v hacia arriba.
@@ -45,13 +41,19 @@ FUENTE = pathlib.Path(__file__).with_name("Cinzel-Bold.ttf")  # OFL
 LETRA = 12.0           # altura de las mayúsculas
 RELIEVE = 0.8          # lo que sobresale el texto de la pared
 TEXTO_Z = 170.0        # altura de la línea base del texto
-TOPE = dict(x=-34.0, largo=16.0, ancho=30.0, alto=16.0)  # suplemento del fondo
-BOTELLA_D = 82.0       # diámetro de la botella que abraza el tope
-SEGMENTOS = 200
+TOPE = dict(x=-34.0, ancho=30.0, alto=16.0)  # suplemento del fondo
+SEGMENTOS = 240
+PASO_Z = 1.5           # separación entre anillos de la pared
+ALTO_CUERPO = 290.0    # el cuerpo se genera algo más alto y la boca lo recorta
+
+
+def perfil(z):
+    p = PERFIL
+    return p["c0"] + p["c1"] * z - p["c2"] * np.exp(-np.asarray(z) / p["L"])
 
 
 def semieje(z, offset=0.0):
-    a = np.interp(z, *zip(*PERFIL))
+    a = perfil(z)
     return a - offset, a * ANCHO_RELATIVO - offset
 
 
@@ -73,28 +75,46 @@ def solevado(pts, n_anillos):
     return Manifold(Mesh(vert_properties=verts, tri_verts=np.array(caras, dtype=np.uint32)))
 
 
+def contorno(interior=False):
+    """Media sección del cuerpo (radio a, altura z) de abajo arriba, con la
+    arista entre fondo y pared redondeada, muestreada cada PASO_Z mm."""
+    zs = np.arange(0.0, ALTO_CUERPO + 1e-6, 0.25)
+    a = perfil(zs)
+    if interior:
+        # desplaza la curva PARED mm en su normal
+        pend = np.gradient(a, zs)
+        n = np.hypot(1, pend)
+        z_in, a_in = zs + PARED * pend / n, a - PARED / n
+        zs = np.arange(FONDO, ALTO_CUERPO + 1e-6, 0.25)
+        a = np.interp(zs, z_in, a_in)
+    r = REDONDEO_FONDO[1 if interior else 0]
+    # sección completa (simétrica) para que el redondeo solo afecte al fondo
+    seccion = Polygon([*zip(-a[::-1], zs[::-1]), *zip(a, zs)])
+    seccion = seccion.buffer(-r, quad_segs=32).buffer(r, quad_segs=32)
+    x, z = np.array(seccion.exterior.coords).T
+    x0 = x[(np.abs(z - zs[0]) < 1e-6)].max()
+    lado = (x > 0) & (z > zs[0] + 1e-6) & (z < zs[-1] - 3 * r)
+    orden = np.argsort(z[lado])
+    linea = LineString(np.c_[x[lado][orden], z[lado][orden]])
+    borde = [linea.interpolate(d) for d in np.arange(PASO_Z, linea.length, PASO_Z)]
+    return [(x0, zs[0])] + [(p.x, p.y) for p in borde]
+
+
 def cuerpo(interior=False):
     """Sólido exterior, o el hueco interior (pared de grosor constante)."""
-    z0 = FONDO if interior else 0.0
-    zs = np.unique(np.concatenate([[z0], [z for z, _ in PERFIL if z > z0],
-                                   np.arange(z0, PERFIL[-1][0], 4.0)]))
     t = np.linspace(0, 2 * np.pi, SEGMENTOS, endpoint=False)
-    pts = []
-    for z in zs:
-        off = 0.0
-        if interior:  # desplazamiento horizontal que da PARED medida en normal
-            pend = (semieje(z + 1)[0] - semieje(z - 1)[0]) / 2
-            off = PARED * np.hypot(1, pend)
-        a, b = semieje(z, off)
-        pts += [(a * np.cos(k), b * np.sin(k), z) for k in t]
-    return solevado(np.array(pts), len(zs))
+    anillos = contorno(interior)
+    pts = [(ai * np.cos(k), ai * ANCHO_RELATIVO * np.sin(k), z)
+           for ai, z in anillos for k in t]
+    return solevado(np.array(pts), len(anillos))
 
 
 def bajo_la_boca():
     """Todo lo que queda por debajo del borde curvo de la boca."""
-    zs = [z for _, z in BOCA]
-    perfil = [(-300.0, -50.0), (300.0, -50.0), (300.0, zs[-1]), *BOCA[::-1], (-300.0, zs[0])]
-    return (CrossSection([np.array(perfil)]).extrude(600)
+    x = np.linspace(-150, 150, 301)
+    z = BOCA["p0"] * x ** 2 + BOCA["p1"] * x + BOCA["p2"]
+    contorno = [(-150.0, -50.0), (150.0, -50.0), *zip(x[::-1], z[::-1])]
+    return (CrossSection([np.array(contorno)]).extrude(600)
             .rotate((90, 0, 0)).translate((0, 300, 0)))
 
 
@@ -137,17 +157,17 @@ def texto():
 
 
 def tope():
-    """Calzo redondeado en el fondo; su cara hacia el lado alto es cóncava
-    para que el culo de la botella encaje y la botella quede recostada."""
-    x0, l, w, h = TOPE["x"], TOPE["largo"], TOPE["ancho"], TOPE["alto"]
-    r = 4.0
-    esferas = [Manifold.sphere(r, 32).translate((x0 + dx, dy, FONDO - r))
-               for dx in (-l / 2 + r, l / 2 - r) for dy in (-w / 2 + r, w / 2 - r)]
-    esferas += [Manifold.sphere(r, 32).translate((x0 - l / 4, dy, FONDO + h - r))
-                for dy in (-w / 2 + 2 * r, w / 2 - 2 * r)]
-    botella = Manifold.cylinder(200, BOTELLA_D / 2, BOTELLA_D / 2, 128) \
-        .translate((x0 + l / 2 - 4 + BOTELLA_D / 2, 0, FONDO + 1.5))
-    return Manifold.batch_hull(esferas) - botella
+    """Calzo en el fondo, pegado a la pared del lado bajo: una rampa
+    redondeada que nace de la pared y muere en el suelo sin aristas, donde
+    apoya el culo de la botella para que quede recostada contra la pared alta."""
+    x0, w, h = TOPE["x"], TOPE["ancho"], TOPE["alto"]
+    esferas = []
+    for y in (-w / 2 + 6, w / 2 - 6):
+        esferas.append(Manifold.sphere(6.0, 48).translate((x0 - 16, y, FONDO + 6)))    # dentro de la pared
+        esferas.append(Manifold.sphere(5.0, 48).translate((x0 - 6, y * 0.85, FONDO + h - 5)))  # lomo
+        esferas.append(Manifold.sphere(2.5, 32).translate((x0 + 7, y, FONDO)))        # pie en el suelo
+    esferas.append(Manifold.sphere(2.5, 32).translate((x0 + 5, 0, FONDO)))  # pie algo cóncavo
+    return Manifold.batch_hull(esferas)
 
 
 def construir():
