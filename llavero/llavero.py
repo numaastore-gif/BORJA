@@ -1,14 +1,16 @@
-"""Llavero de pala de pádel calcado de la foto (referencia.jpg).
+"""Llavero de pala de pádel a partir de la foto (referencia.jpg).
 
 Tres piezas para imprimir a la vez en PLA Matte de Bambu Lab, una por color:
   - azul   (Marine Blue): cabeza y cuello
-  - negro  (Charcoal):    dibujos de la cara (X, franja, puente, logo) incrustados
-  - blanco (Ivory White): mango completo y argolla
-Los dibujos van incrustados 0,6 mm en las dos caras; el reverso lleva el
-dibujo en espejo para que se lea bien al dar la vuelta al llavero. Los
-agujeros de la cabeza y del cuello atraviesan la pieza. Medidas en mm.
+  - negro  (Charcoal):    dibujos incrustados en las dos caras y franja del mango
+  - blanco (Ivory White): mango y argolla
+Los dibujos se construyen con geometría limpia (rectas, arcos y contornos
+suavizados y simétricos) a partir de medidas tomadas sobre la foto, para que
+las líneas salgan rectas y nítidas al imprimir. Van incrustados 0,6 mm en las
+dos caras; el reverso lleva el dibujo en espejo para que se lea igual al dar
+la vuelta al llavero. Los agujeros atraviesan la pieza. Medidas en mm.
 
-    pip install numpy opencv-python-headless manifold3d trimesh
+    pip install numpy opencv-python-headless manifold3d trimesh lxml
     python llavero.py
 """
 import pathlib
@@ -16,7 +18,7 @@ import pathlib
 import cv2
 import numpy as np
 import trimesh
-from manifold3d import CrossSection, FillRule, JoinType, Manifold
+from manifold3d import CrossSection, FillRule, JoinType
 
 AQUI = pathlib.Path(__file__).parent
 FOTO = AQUI / "referencia.jpg"
@@ -24,20 +26,82 @@ FOTO = AQUI / "referencia.jpg"
 LARGO = 70.0          # largo de la pala sin la argolla
 GROSOR = 4.5
 INCRUSTADO = 0.6      # profundidad de los dibujos negros en cada cara
-TRAZO_MIN = 0.35      # se eliminan detalles más finos (no se pueden imprimir)
+BORDE = 0.5           # franja azul del marco que queda libre de dibujo
 MOTA_MIN = 0.8        # mm²: manchas negras más pequeñas se descartan
 ARGOLLA = dict(radio=3.8, agujero=1.7, separacion=3.0)
-
-# Zonas de la foto (en píxeles)
-Y_MANGO = 480         # donde empieza el mango (se hace entero blanco)
-Y_FIN = 647           # final del mango; debajo está el colgante que se quita
-SUBMUESTREO = 4       # contornos a 1/4 de píxel para que salgan suaves
-HALO = 2.0            # px de brillo alrededor de los agujeros en la foto
-LOGO = (295, 32, 405, 62)  # recuadro del logo «nox» de arriba (x0, y0, x1, y1)
 LOGO_ALTO = 3.2       # mm; en la foto mide 2 mm, se agranda para que se imprima
-BORDE = 0.5           # franja azul del marco que queda libre de dibujo
+SEPARACION = 5.0      # px: ancho de las líneas azules que dividen la X (0,55 mm)
+SUAVIZADO = 2.5       # px: suavizado de los contornos calcados
 
 COLORES = {"azul": "#0078BF", "negro": "#000000", "blanco": "#FFFFFF"}  # PLA Matte
+
+# --- Medidas tomadas sobre la foto (píxeles) --------------------------------
+EJE_X = 350.0         # eje de simetría de la pala
+Y_TOP = 15.0          # punta superior de la cabeza
+Y_MANGO = 480         # donde empieza el mango
+Y_FRANJA = 498        # fin de la franja negra entre cabeza y mango
+Y_FIN = 647           # final del mango (debajo estaba el colgante)
+MANGO = [(480, 27.5), (500, 24.5), (636, 24.5), (647, 28.0)]  # (y, semiancho)
+# X: puntas, vértice izquierdo, círculo de la muesca y líneas de separación
+X_ARRIBA, X_ABAJO, X_IZQ, X_DER = 94.5, 283.5, 207.5, 492.0
+X_VERTICE = 302.0
+MUESCA = (406.5, 189.0, 32.0)
+LINEA_1 = ((315.0, 124.5), (355.0, 150.0))  # separa la pieza izquierda
+LINEA_2 = ((384.0, 124.0), (355.0, 149.0))  # separa el brazo derecho
+ETIQUETA = (501.5, 166.0, 506.5, 212.0)     # etiqueta vertical del lateral
+LOGO_CENTRO = (350.0, 47.0)
+FRANJA_ZONA = (300, Y_MANGO)                # franja negra y puente del cuello
+
+ESCALA = LARGO / (Y_FIN - Y_TOP)
+
+
+def a_mm(puntos):
+    p = np.asarray(puntos, float).reshape(-1, 2)
+    return np.c_[(p[:, 0] - EJE_X) * ESCALA, (Y_TOP - p[:, 1]) * ESCALA]
+
+
+def poligono(puntos):
+    return CrossSection([a_mm(puntos)], FillRule.EvenOdd)
+
+
+def circulo(cx, cy, r, n=96):
+    return CrossSection.circle(r * ESCALA, n).translate(tuple(a_mm([(cx, cy)])[0]))
+
+
+def redondeado(x0, y0, x1, y1, r):
+    """Rectángulo con esquinas redondeadas (coordenadas ya en su unidad)."""
+    r = min(r, (x1 - x0) / 2 - 1e-3, (y1 - y0) / 2 - 1e-3)
+    return CrossSection.batch_hull([CrossSection.circle(r, 32).translate((x, y))
+                                    for x in (x0 + r, x1 - r) for y in (y0 + r, y1 - r)])
+
+
+# --- Contornos calcados, simétricos y suavizados ---------------------------
+def simetrica(m):
+    f = m.astype(np.float32)
+    M = np.float32([[-1, 0, 2 * EJE_X], [0, 1, 0]])
+    return (f + cv2.warpAffine(f, M, (f.shape[1], f.shape[0]))) / 2
+
+
+def contorno_suave(campo, sub=4):
+    """Campo 0-1 -> CrossSection con contornos suavizados (sin dientes)."""
+    f = cv2.GaussianBlur(np.asarray(campo, np.float32), (0, 0), 1.0)
+    f = cv2.resize(f, None, fx=sub, fy=sub, interpolation=cv2.INTER_CUBIC)
+    cs, _ = cv2.findContours((f > 0.5).astype(np.uint8), cv2.RETR_CCOMP, cv2.CHAIN_APPROX_NONE)
+    sigma = SUAVIZADO * sub
+    k = int(3 * sigma)
+    w = np.exp(-0.5 * (np.arange(-k, k + 1) / sigma) ** 2)
+    w /= w.sum()
+    polis = []
+    for c in cs:
+        c = c[:, 0, :].astype(float)
+        if len(c) < 2 * k + 3:
+            continue
+        ext = np.r_[c[-k:], c, c[:k]]  # suavizado circular a lo largo del contorno
+        c = np.c_[np.convolve(ext[:, 0], w, "valid"), np.convolve(ext[:, 1], w, "valid")]
+        c = cv2.approxPolyDP(c.astype(np.float32).reshape(-1, 1, 2), 0.3 * sub, True)[:, 0, :]
+        if len(c) >= 3:
+            polis.append(a_mm((c + 0.5) / sub - 0.5))
+    return CrossSection(polis, FillRule.EvenOdd)
 
 
 def mascaras():
@@ -45,64 +109,78 @@ def mascaras():
     hsv = cv2.cvtColor(im, cv2.COLOR_BGR2HSV).astype(int)
     s, v = hsv[..., 1], hsv[..., 2]
     fondo = im.min(2) > 215
-    # fondo conectado al borde = exterior; el resto del fondo son agujeros
-    n, etiquetas = cv2.connectedComponents(fondo.astype(np.uint8))
-    borde = set(np.unique(np.r_[etiquetas[0], etiquetas[-1], etiquetas[:, 0], etiquetas[:, -1]]))
-    exterior = np.isin(etiquetas, list(borde)) & fondo
+    n, et = cv2.connectedComponents(fondo.astype(np.uint8))
+    borde = np.unique(np.r_[et[0], et[-1], et[:, 0], et[:, -1]])
+    exterior = np.isin(et, borde) & fondo
     filas = np.arange(im.shape[0])[:, None]
-    pala = ~exterior & (filas < Y_FIN)
+    pala = ~exterior & (filas < Y_MANGO + 4)
     agujeros = fondo & ~exterior & (filas < Y_MANGO)
-    # negro y azul marino muy oscuro (franja, logo) y todo lo gris del carbono
-    # de la X (cuadros claros y oscuros y su contorno) cuentan como negro
-    oscuro = ((v < 100) | (s < 70)) & pala & ~agujeros & (filas < Y_MANGO)
-    # rellena motas claras (letras diminutas) dentro de las zonas negras
-    n, et, st, _ = cv2.connectedComponentsWithStats((~oscuro).astype(np.uint8))
-    for i in range(n):
-        if st[i, cv2.CC_STAT_AREA] < 250:
-            oscuro[et == i] = True
-    oscuro &= pala & ~agujeros & (filas < Y_MANGO)
-    # quita motas oscuras sueltas (letras de menos de 1 mm una vez a escala)
-    n, et, st, _ = cv2.connectedComponentsWithStats(oscuro.astype(np.uint8))
-    for i in range(1, n):
-        if st[i, cv2.CC_STAT_AREA] < 80:
-            oscuro[et == i] = False
+    oscuro = ((v < 100) | (s < 70)) & pala & ~agujeros
     return pala, agujeros, oscuro
 
 
-def eje(pala):
-    ys, xs = np.nonzero(pala[:Y_MANGO])
-    return (xs.min() + xs.max()) / 2, ys.min()
+# --- La X --------------------------------------------------------------------
+def semiplano_bajo(p, q, abajo=True):
+    """Semiplano por debajo (más y en la foto) o por encima de la recta p-q."""
+    (x1, y1), (x2, y2) = p, q
+    m = (y2 - y1) / (x2 - x1)
+    y_a, y_b = y1 + m * (-1000 - x1), y1 + m * (2000 - x1)
+    lejos = 3000 if abajo else -3000
+    return poligono([(-1000, y_a), (2000, y_b), (2000, lejos), (-1000, lejos)])
 
 
-def simetrica(m, x_eje):
-    """Promedia una máscara con su reflejo respecto al eje de la pala."""
-    f = m.astype(np.float32)
-    ancho = f.shape[1]
-    M = np.float32([[-1, 0, 2 * x_eje], [0, 1, 0]])
-    espejo = cv2.warpAffine(f, M, (ancho, f.shape[0]))
-    return (f + espejo) / 2
+def banda(p, q, ancho, largo=500):
+    p, q = np.array(p, float), np.array(q, float)
+    d = (q - p) / np.linalg.norm(q - p)
+    n = np.array([-d[1], d[0]]) * ancho / 2
+    a, b = p - d * largo, p + d * largo
+    return poligono([a + n, b + n, b - n, a - n])
 
 
-def a_seccion(m, x_eje, y_top, escala, suavizado=0.8):
-    """Máscara (0-1) -> CrossSection en mm con contornos suaves."""
-    f = cv2.GaussianBlur(np.asarray(m, np.float32), (0, 0), suavizado)
-    f = cv2.resize(f, None, fx=SUBMUESTREO, fy=SUBMUESTREO, interpolation=cv2.INTER_CUBIC)
-    b = (f > 0.5).astype(np.uint8)
-    contornos, _ = cv2.findContours(b, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_NONE)
-    polis = []
-    for c in contornos:
-        c = cv2.approxPolyDP(c, 0.6, True)[:, 0, :].astype(float)
-        if len(c) < 3:
-            continue
-        x = ((c[:, 0] + 0.5) / SUBMUESTREO - 0.5 - x_eje) * escala
-        y = (y_top - ((c[:, 1] + 0.5) / SUBMUESTREO - 0.5)) * escala
-        polis.append(np.c_[x, y])
-    return CrossSection(polis, FillRule.EvenOdd)
+def la_x():
+    """Silueta de rectas a 45°, muesca circular a la derecha y líneas de
+    separación entre sus cinco piezas; simétrica respecto a su horizontal."""
+    yc = (X_ARRIBA + X_ABAJO) / 2
+    v_der = X_DER - (yc - X_ARRIBA)
+    x = poligono([(X_IZQ, X_ARRIBA), (X_DER, X_ARRIBA), (v_der, yc),
+                  (X_DER, X_ABAJO), (X_IZQ, X_ABAJO), (X_VERTICE, yc)]) - circulo(*MUESCA)
+    espejo = lambda l: tuple((px, 2 * yc - py) for px, py in l)
+    mitad_sup = semiplano_bajo((0, yc), (1, yc), abajo=False)
+    mitad_inf = semiplano_bajo((0, yc), (1, yc), abajo=True)
+    for l1, l2, mitad, fuera_l1 in ((LINEA_1, LINEA_2, mitad_sup, False),
+                                    (espejo(LINEA_1), espejo(LINEA_2), mitad_inf, True)):
+        # la línea 1 llega hasta la muesca; la 2 termina al cruzarse con la 1
+        x = x - (banda(*l1, SEPARACION) ^ mitad)
+        x = x - (banda(*l2, SEPARACION) ^ mitad ^ semiplano_bajo(*l1, abajo=fuera_l1))
+    return x
 
 
-def agujeros_redondos(agujeros, x_eje, y_top, escala):
-    """Los agujeros pequeños se sustituyen por círculos iguales y simétricos;
-    los grandes (cuello) se calcan."""
+# --- Logo ----------------------------------------------------------------------
+def logo_nox(alto):
+    """Logo «nox» con las proporciones medidas en la foto: «n» y «o» cuadradas
+    de esquinas redondeadas y «x» como la X de la pala (chevron a la izquierda
+    y dos cuñas a la derecha)."""
+    t_v, t_h = 0.34, 0.27             # grosor de trazos verticales y horizontales
+    n_w, o_w, x_w = 1.53, 1.47, 1.39  # anchos (en alturas)
+    g1, g2 = 0.22, 0.19               # separación n-o y o-x
+    n = redondeado(0, 0, n_w, 1, 0.34) - redondeado(t_v, -1, n_w - t_v, 1 - t_h, 0.1)
+    x0 = n_w + g1
+    o = redondeado(x0, 0, x0 + o_w, 1, 0.3) - redondeado(x0 + t_v, t_h, x0 + o_w - t_v, 1 - t_h, 0.08)
+    x0 += o_w + g2
+    a, c, h = 0.44, 0.62, 0.12        # ancho de brazo, centro del chevron, hueco
+    chevron = CrossSection([np.array([(x0, 1), (x0 + a, 1), (x0 + c, 0.5), (x0 + a, 0), (x0, 0),
+                                      (x0 + c - a, 0.5)])], FillRule.EvenOdd)
+    punta = x0 + c + h
+    cuna_1 = CrossSection([np.array([(x0 + x_w - a, 1), (x0 + x_w, 1), (punta, 0.56)])], FillRule.EvenOdd)
+    cuna_2 = CrossSection([np.array([(x0 + x_w - a, 0), (punta, 0.44), (x0 + x_w, 0)])], FillRule.EvenOdd)
+    total = n + o + chevron + cuna_1 + cuna_2
+    return total.translate((-(x0 + x_w) / 2, -0.5)).scale((alto, alto))
+
+
+# --- Agujeros -----------------------------------------------------------------
+def agujeros_limpios(agujeros):
+    """Agujeros de bola: círculos iguales, en filas y simétricos. Aberturas del
+    cuello: contorno calcado, simétrico y suavizado."""
     n, et, st, cen = cv2.connectedComponentsWithStats(agujeros.astype(np.uint8))
     bolas, grandes = [], np.zeros_like(agujeros)
     for i in range(1, n):
@@ -110,113 +188,81 @@ def agujeros_redondos(agujeros, x_eje, y_top, escala):
         if area < 20:
             continue
         if area < 400:
-            bolas.append((cen[i][0] - x_eje, cen[i][1], np.sqrt(area / np.pi)))
+            bolas.append((cen[i][0] - EJE_X, cen[i][1], np.sqrt(area / np.pi)))
         else:
             grandes |= et == i
     bolas = np.array(bolas)
-    # radio medido + el halo claro que deja la foto alrededor de cada agujero
-    r = np.median(bolas[:, 2]) + HALO
-    # empareja cada agujero con su simétrico y promedia posiciones
+    r = np.median(bolas[:, 2]) + 2.0  # + el halo claro de la foto
     circulos = []
     for x, y, _ in bolas:
-        d = np.hypot(bolas[:, 0] + x, bolas[:, 1] - y)
-        j = np.argmin(d)
-        xs, ys = (x - bolas[j, 0]) / 2, (y + bolas[j, 1]) / 2
-        circulos.append(CrossSection.circle(r * escala, 48).translate((xs * escala, (y_top - ys) * escala)))
-    return (CrossSection.compose(circulos),
-            a_seccion(simetrica(grandes, x_eje), x_eje, y_top, escala), r * escala)
+        j = np.argmin(np.hypot(bolas[:, 0] + x, bolas[:, 1] - y))
+        xs = (x - bolas[j, 0]) / 2
+        fila = bolas[np.abs(bolas[:, 1] - y) < 5, 1].mean()
+        circulos.append(circulo(EJE_X + xs, fila, r, 48))
+    return CrossSection.compose(circulos), contorno_suave(simetrica(grandes)), r * ESCALA
 
 
-def rectangulo_redondeado(x0, y0, x1, y1, r):
-    if r <= 0:
-        return CrossSection.square((x1 - x0, y1 - y0)).translate((x0, y0))
-    return CrossSection.batch_hull([CrossSection.circle(r, 32).translate((x, y))
-                                    for x in (x0 + r, x1 - r) for y in (y0 + r, y1 - r)])
-
-
-def logo_nox(alto):
-    """Logo «nox» redibujado con las proporciones de la foto (letras de
-    esquinas redondeadas, «o» rectangular y «x» de trazos cruzados)."""
-    t, r, hueco = 0.28, 0.3, 0.3  # trazo, radio y separación (en alturas)
-    n_ancho, o_ancho, x_ancho = 1.4, 1.45, 1.45
-    n = rectangulo_redondeado(0, 0, n_ancho, 1, r) - \
-        rectangulo_redondeado(t, -1, n_ancho - t, 1 - t, max(r - t, 0.02)) - \
-        CrossSection.square((n_ancho, 1)).translate((0, -1))
-    x0 = n_ancho + hueco
-    o = rectangulo_redondeado(x0, 0, x0 + o_ancho, 1, r) - \
-        rectangulo_redondeado(x0 + t, t, x0 + o_ancho - t, 1 - t, max(r - t, 0.02))
-    x0 += o_ancho + hueco
-    trazo = lambda a, b: CrossSection.batch_hull([CrossSection.circle(t / 2, 16).translate(p) for p in (a, b)])
-    x = (trazo((x0 + t / 2, 1 - t / 2), (x0 + x_ancho - t / 2, t / 2)) +
-         trazo((x0 + t / 2, t / 2), (x0 + x_ancho - t / 2, 1 - t / 2))) ^ \
-        CrossSection.square((x_ancho, 1)).translate((x0, 0))
-    total = n + o + x
-    ancho = x0 + x_ancho
-    return total.translate((-ancho / 2, -0.5)).scale((alto, alto))
-
-
-def limpia(sec):
-    """Quita trazos más finos que TRAZO_MIN (apertura morfológica)."""
-    return sec.offset(-TRAZO_MIN / 2, JoinType.Round).offset(TRAZO_MIN / 2, JoinType.Round)
-
-
+# --- Montaje --------------------------------------------------------------------
 def construir():
     pala, agujeros, oscuro = mascaras()
-    x_eje, y_top = eje(pala)
-    escala = LARGO / (Y_FIN - y_top)
-
-    silueta = a_seccion(simetrica(pala, x_eje), x_eje, y_top, escala)
-    bolas, cuello, r_bola = agujeros_redondos(agujeros, x_eje, y_top, escala)
+    silueta = contorno_suave(simetrica(pala))
+    bolas, cuello, r_bola = agujeros_limpios(agujeros)
     huecos = bolas + cuello
 
-    y_corte = -(Y_MANGO - y_top) * escala
-    arriba = CrossSection.square((200, 200)).translate((-100, y_corte))
-    abajo = CrossSection.square((200, 200)).translate((-100, y_corte - 200))
+    corte = a_mm([(0, Y_MANGO)])[0][1]
+    arriba = CrossSection.square((200, 200)).translate((-100, corte))
     cabeza = (silueta ^ arriba) - huecos
-    mango = silueta ^ abajo
 
-    # argolla bajo el mango
-    y_fin = -LARGO
+    # mango geométrico con la franja negra arriba y la argolla abajo
+    lado = [(EJE_X + w, y) for y, w in MANGO]
+    mango = poligono(lado + [(2 * EJE_X - x, y) for x, y in reversed(lado)])
+    y_franja = a_mm([(0, Y_FRANJA)])[0][1]
+    franja = mango ^ CrossSection.square((200, 200)).translate((-100, y_franja))
+    mango = mango - franja
+    y_fin = a_mm([(0, Y_FIN)])[0][1]
     a = ARGOLLA
     centro = (0.0, y_fin - a["separacion"])
     x0, _, x1, _ = mango.bounds()
-    base = CrossSection.square((x1 - x0 - 1.0, 2.0)).translate((x0 + 0.5, y_fin))  # entra en el mango
+    base = CrossSection.square((x1 - x0 - 1.0, 2.0)).translate((x0 + 0.5, y_fin))
     lengueta = CrossSection.batch_hull([CrossSection.circle(a["radio"], 64).translate(centro), base]) \
         - CrossSection.circle(a["agujero"], 48).translate(centro)
     mango = mango + lengueta
 
-    x0, y0, x1, y1 = LOGO
-    logo = np.zeros_like(oscuro)
-    logo[y0:y1, x0:x1] = oscuro[y0:y1, x0:x1]
-    oscuro[y0:y1, x0:x1] = 0
-    ys, xs = np.nonzero(logo)
-    cx = ((xs.min() + xs.max()) / 2 - x_eje) * escala
-    cy = (y_top - (ys.min() + ys.max()) / 2) * escala
-    logo = logo_nox(LOGO_ALTO).translate((cx, cy))
-    # margen azul solo en el contorno exterior, no alrededor de los agujeros
-    marco = (silueta ^ arriba).offset(-BORDE, JoinType.Round) - huecos
-    dibujo = (limpia(a_seccion(oscuro, x_eje, y_top, escala, suavizado=0.5)) + logo) ^ marco
-    dibujo = CrossSection.compose([p for p in dibujo.decompose() if p.area() >= MOTA_MIN])
-    dibujo_reverso = dibujo.mirror((1, 0)) ^ cabeza
+    # franja negra de abajo de la cabeza y puente del cuello (calcados)
+    y0, y1 = FRANJA_ZONA
+    zona = np.zeros_like(oscuro)
+    zona[y0:y1] = oscuro[y0:y1]
+    n, et, st, _ = cv2.connectedComponentsWithStats(zona.astype(np.uint8))
+    zona = et == 1 + np.argmax(st[1:, cv2.CC_STAT_AREA])
+    n, et, st, _ = cv2.connectedComponentsWithStats((~zona).astype(np.uint8))
+    for i in range(n):  # rellena las letras diminutas de dentro
+        if st[i, cv2.CC_STAT_AREA] < 400:
+            zona[et == i] = True
+    franja_cuello = contorno_suave(simetrica(zona))
 
-    # Dibujo negro de cada cara sin cuellos de anchura cero (al guardar en STL
-    # darían aristas compartidas por más de dos caras); el azul es el resto.
+    (ex0, ey1), (ex1, ey0) = a_mm([ETIQUETA[:2], ETIQUETA[2:]])
+    etiqueta = redondeado(ex0, ey0, ex1, ey1, 0.3)
+    logo = logo_nox(LOGO_ALTO).translate(tuple(a_mm([LOGO_CENTRO])[0]))
+    marco = (silueta ^ arriba).offset(-BORDE, JoinType.Round) - huecos
+    dibujo = (la_x() + franja_cuello + etiqueta + logo) ^ marco
+    dibujo = CrossSection.compose([p for p in dibujo.decompose() if p.area() >= MOTA_MIN])
+    dibujo_reverso = dibujo.mirror((1, 0)) ^ marco
+
+    # Cada cara sin cuellos de anchura cero (al guardar en STL darían aristas
+    # compartidas por más de dos caras); el azul es el resto de la cabeza.
     abre = lambda c: c.offset(-0.03, JoinType.Round).offset(0.03, JoinType.Round).simplify(0.01)
-    cabeza, mango = cabeza.simplify(0.01), abre(mango)
+    cabeza, mango, franja = cabeza.simplify(0.01), abre(mango), abre(franja)
 
     def reparto(d):
         # 0,08 mm de separación con los agujeros para que lo negro no los roce
-        negro_cara = abre(cabeza - abre(cabeza - abre(d)) - huecos.offset(0.08, JoinType.Round))
-        return negro_cara
+        return abre(cabeza - abre(cabeza - abre(d)) - huecos.offset(0.08, JoinType.Round))
 
-    negro_del, negro_tra = reparto(dibujo), reparto(dibujo_reverso)
     capa = lambda c, z0, z1: c.extrude(z1 - z0).translate((0, 0, z0))
-    arriba_z = GROSOR - INCRUSTADO
-    negro = capa(negro_del, arriba_z, GROSOR) + capa(negro_tra, 0, INCRUSTADO)
+    negro = capa(reparto(dibujo), GROSOR - INCRUSTADO, GROSOR) + \
+        capa(reparto(dibujo_reverso), 0, INCRUSTADO) + franja.extrude(GROSOR)
     azul = cabeza.extrude(GROSOR) - negro
     blanco = mango.extrude(GROSOR)
-    info = dict(escala=escala, agujero_bola=2 * r_bola)
-    return dict(azul=azul, negro=negro, blanco=blanco), info
+    return dict(azul=azul, negro=negro, blanco=blanco), dict(agujero_bola=2 * r_bola)
 
 
 def a_trimesh(m):
@@ -235,5 +281,5 @@ if __name__ == "__main__":
         print(f"{nombre:6s} estanca={t.is_watertight} volumen={t.volume / 1000:.2f} cm3")
     escena.export(AQUI / "llavero.3mf")
     todo = trimesh.util.concatenate(list(escena.geometry.values()))
-    print("tamaño mm:", np.round(todo.extents, 1), "| escala mm/px:", round(info["escala"], 4),
-          "| agujeros de la cabeza Ø", round(info["agujero_bola"], 2), "mm")
+    print("tamaño mm:", np.round(todo.extents, 1), "| agujeros de la cabeza Ø",
+          round(info["agujero_bola"], 2), "mm")
