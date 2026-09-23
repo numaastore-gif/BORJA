@@ -4,7 +4,7 @@ Silueta calcada de la foto de la cubitera transparente de referencia y
 escalada a sus medidas (20 x 20,5 x 24 cm): se ensancha de forma continua
 desde un fondo pequeño y redondeado hasta la boca, que está cortada en curva
 (baja en un lado y alta en el del asa). El asa es una ranura triangular
-redondeada, debajo va el texto en relieve siguiendo la pared, y en el fondo
+redondeada y simétrica, debajo va el texto en relieve siguiendo la pared, y en el fondo
 hay un tope para que la botella quede recostada contra la pared alta.
 Todas las medidas en mm.
 
@@ -35,9 +35,10 @@ BOCA = [(-98.2, 187.8), (-82.7, 191.8), (-66.6, 194.8), (-50.6, 197.8),
 ANCHO_RELATIVO = 20.5 / 20.0  # semieje transversal / semieje largo
 PARED = 3.0
 FONDO = 4.0
-# Asa: ranura triangular redondeada, (u, v, radio) de los círculos que la
-# envuelven; u a lo largo de la pared (0 = punta del lado alto), v hacia arriba.
-ASA = [(-44.0, 6.0, 6.0), (26.0, 13.5, 13.0), (38.0, 12.0, 12.0)]
+# Asa: ranura triangular redondeada y simétrica (base abajo, vértice arriba).
+# (u, v, radio) de los círculos que la envuelven; u a lo largo de la pared
+# (0 = punta del lado alto), v hacia arriba.
+ASA = [(-44.0, 6.0, 6.0), (44.0, 6.0, 6.0), (0.0, 15.0, 13.0)]
 ASA_Z = 188.0          # altura del borde inferior de la ranura
 TEXTO = "Jose y Valle"
 FUENTE = pathlib.Path(__file__).with_name("Cinzel-Bold.ttf")  # OFL
