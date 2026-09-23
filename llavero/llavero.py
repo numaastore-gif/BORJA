@@ -180,7 +180,7 @@ def construir():
     a = ARGOLLA
     centro = (0.0, y_fin - a["separacion"])
     x0, _, x1, _ = mango.bounds()
-    base = CrossSection.square((x1 - x0, 0.01)).translate((x0, y_fin))
+    base = CrossSection.square((x1 - x0 - 1.0, 2.0)).translate((x0 + 0.5, y_fin))  # entra en el mango
     lengueta = CrossSection.batch_hull([CrossSection.circle(a["radio"], 64).translate(centro), base]) \
         - CrossSection.circle(a["agujero"], 48).translate(centro)
     mango = mango + lengueta
@@ -199,8 +199,20 @@ def construir():
     dibujo = CrossSection.compose([p for p in dibujo.decompose() if p.area() >= MOTA_MIN])
     dibujo_reverso = dibujo.mirror((1, 0)) ^ cabeza
 
-    negro = dibujo.extrude(INCRUSTADO).translate((0, 0, GROSOR - INCRUSTADO)) + \
-        dibujo_reverso.extrude(INCRUSTADO)
+    # Dibujo negro de cada cara sin cuellos de anchura cero (al guardar en STL
+    # darían aristas compartidas por más de dos caras); el azul es el resto.
+    abre = lambda c: c.offset(-0.03, JoinType.Round).offset(0.03, JoinType.Round).simplify(0.01)
+    cabeza, mango = cabeza.simplify(0.01), abre(mango)
+
+    def reparto(d):
+        # 0,08 mm de separación con los agujeros para que lo negro no los roce
+        negro_cara = abre(cabeza - abre(cabeza - abre(d)) - huecos.offset(0.08, JoinType.Round))
+        return negro_cara
+
+    negro_del, negro_tra = reparto(dibujo), reparto(dibujo_reverso)
+    capa = lambda c, z0, z1: c.extrude(z1 - z0).translate((0, 0, z0))
+    arriba_z = GROSOR - INCRUSTADO
+    negro = capa(negro_del, arriba_z, GROSOR) + capa(negro_tra, 0, INCRUSTADO)
     azul = cabeza.extrude(GROSOR) - negro
     blanco = mango.extrude(GROSOR)
     info = dict(escala=escala, agujero_bola=2 * r_bola)
