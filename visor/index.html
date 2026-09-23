@@ -1,0 +1,320 @@
+<title>Taller de impresión</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,400..800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --ground: #eef0ec;
+    --panel: #f8f9f6;
+    --ink: #1c211f;
+    --muted: #5d6762;
+    --line: #d3d8d2;
+    --accent: #1f7f78;
+    --accent-soft: #d4ebe7;
+    --stage: #e4e8e3;
+    --grid: #c3cac3;
+    --model: #dfe4e1;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #141816; --panel: #1b201e; --ink: #e7ebe8; --muted: #95a19b;
+      --line: #2d3531; --accent: #4fc0b5; --accent-soft: #1d3633;
+      --stage: #101412; --grid: #2c3531; --model: #c9d0cc;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #141816; --panel: #1b201e; --ink: #e7ebe8; --muted: #95a19b;
+    --line: #2d3531; --accent: #4fc0b5; --accent-soft: #1d3633;
+    --stage: #101412; --grid: #2c3531; --model: #c9d0cc;
+    color-scheme: dark;
+  }
+  html, body { height: 100%; }
+  body {
+    background: var(--ground); color: var(--ink);
+    font: 15px/1.5 "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding-inline: 16px; box-sizing: border-box;
+  }
+  .app {
+    max-width: 1280px; margin: 0 auto; padding-block: 20px;
+    display: grid; grid-template-columns: 280px 1fr; gap: 20px;
+    min-height: 100%; box-sizing: border-box;
+  }
+  header { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  h1 { margin: 0; font-size: 26px; font-stretch: 78%; font-weight: 800; letter-spacing: -0.01em; text-wrap: balance; }
+  h1 span { color: var(--accent); }
+  .hint { color: var(--muted); font-size: 13px; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
+
+  aside { display: flex; flex-direction: column; gap: 12px; }
+  .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; }
+  .list { display: flex; flex-direction: column; gap: 6px; }
+  .item {
+    all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: 2px;
+    padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel);
+  }
+  .item:hover { border-color: var(--accent); }
+  .item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .item[aria-current="true"] { background: var(--accent-soft); border-color: var(--accent); }
+  .item b { font-weight: 650; }
+  .item small { color: var(--muted); font-size: 12px; }
+  .drop {
+    border: 1.5px dashed var(--line); border-radius: 8px; padding: 12px; text-align: center;
+    color: var(--muted); font-size: 13px; cursor: pointer;
+  }
+  .drop:hover, .drop.over { border-color: var(--accent); color: var(--ink); }
+  .notes { font-size: 13.5px; color: var(--muted); max-width: 65ch; margin: 0; }
+
+  main { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .stage {
+    position: relative; background: var(--stage); border: 1px solid var(--line); border-radius: 10px;
+    overflow: hidden; aspect-ratio: 4 / 3; max-width: 100%; min-height: 320px;
+  }
+  .stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+  .overlay { position: absolute; left: 12px; bottom: 10px; font-size: 12px; color: var(--muted); pointer-events: none; }
+  .status { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 14px; pointer-events: none; }
+  .tools { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tools button, .tools select {
+    font: inherit; font-size: 13px; color: var(--ink); background: var(--panel);
+    border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; cursor: pointer;
+  }
+  .tools button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+  .tools button:focus-visible, .tools select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .specs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .spec { background: var(--panel); padding: 10px 12px; display: grid; gap: 2px; }
+  .spec .v { font-size: 15px; font-weight: 600; }
+  .warn { color: #b3541e; }
+
+  @media (max-width: 760px) {
+    .app { grid-template-columns: 1fr; }
+    aside { order: 2; }
+    .specs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .stage { aspect-ratio: 1 / 1; }
+  }
+</style>
+
+<div class="app">
+  <header>
+    <h1>Taller de <span>impresión</span></h1>
+    <div class="hint">Arrastra para girar · rueda o pellizco para acercar · clic derecho para desplazar</div>
+  </header>
+
+  <aside>
+    <div class="label">Modelos creados</div>
+    <div class="list" id="list"></div>
+    <label class="drop" id="drop" for="file">Suelta aquí un .stl de tu equipo para verlo
+      <input type="file" id="file" accept=".stl" hidden>
+    </label>
+    <div class="label">Notas</div>
+    <p class="notes" id="notes">—</p>
+  </aside>
+
+  <main>
+    <div class="stage" id="stage">
+      <div class="status" id="status">Cargando…</div>
+      <div class="overlay mono" id="overlay"></div>
+    </div>
+    <div class="tools">
+      <button type="button" id="spin" aria-pressed="true">Girar solo</button>
+      <button type="button" id="wire" aria-pressed="false">Malla</button>
+      <button type="button" id="cut" aria-pressed="false">Corte</button>
+      <button type="button" id="reset">Vista inicial</button>
+      <select id="bed" aria-label="Tamaño de la impresora">
+        <option value="220x220x250">Cama 220 × 220 × 250 (Ender 3)</option>
+        <option value="250x210x220">Cama 250 × 210 × 220 (Prusa MK4)</option>
+        <option value="256x256x256" selected>Cama 256 × 256 × 256 (Bambu X1/P1)</option>
+        <option value="180x180x180">Cama 180 × 180 × 180 (Bambu A1 mini)</option>
+      </select>
+    </div>
+    <div class="specs">
+      <div class="spec"><span class="label">Tamaño (mm)</span><span class="v mono" id="s-size">—</span></div>
+      <div class="spec"><span class="label">Volumen plástico</span><span class="v mono" id="s-vol">—</span></div>
+      <div class="spec"><span class="label">Peso PLA / PETG</span><span class="v mono" id="s-w">—</span></div>
+      <div class="spec"><span class="label">¿Cabe en la cama?</span><span class="v" id="s-fit">—</span></div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const stage = $("stage"), statusEl = $("status");
+
+  if (!window.THREE || !THREE.STLLoader) { statusEl.textContent = "No se pudo cargar el motor 3D. Recarga la página."; return; }
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  stage.prepend(renderer.domElement);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(35, 1, 1, 5000);
+  camera.up.set(0, 0, 1);
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.autoRotate = true; controls.autoRotateSpeed = 1.2;
+
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x445048, 0.75));
+  const key = new THREE.DirectionalLight(0xffffff, 0.75); key.position.set(-300, -400, 600); scene.add(key);
+  const rim = new THREE.DirectionalLight(0xffffff, 0.3); rim.position.set(400, 300, 200); scene.add(rim);
+
+  const material = new THREE.MeshStandardMaterial({ metalness: 0.05, roughness: 0.55, side: THREE.DoubleSide });
+  const clip = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
+  renderer.localClippingEnabled = true;
+  let mesh = null, bedGroup = null, info = null;
+
+  function applyTheme() {
+    scene.background = new THREE.Color(css("--stage"));
+    material.color = new THREE.Color(css("--model"));
+    if (bedGroup) buildBed();
+  }
+
+  function buildBed() {
+    if (bedGroup) scene.remove(bedGroup);
+    const [bx, by] = $("bed").value.split("x").map(Number);
+    bedGroup = new THREE.Group();
+    const plate = new THREE.Mesh(new THREE.PlaneGeometry(bx, by),
+      new THREE.MeshBasicMaterial({ color: new THREE.Color(css("--panel")), transparent: true, opacity: 0.85 }));
+    plate.position.z = -0.3; bedGroup.add(plate);
+    const pts = [];
+    for (let x = -bx / 2; x <= bx / 2 + 0.01; x += 10) pts.push(x, -by / 2, 0, x, by / 2, 0);
+    for (let y = -by / 2; y <= by / 2 + 0.01; y += 10) pts.push(-bx / 2, y, 0, bx / 2, y, 0);
+    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
+    bedGroup.add(new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: new THREE.Color(css("--grid")) })));
+    scene.add(bedGroup);
+    updateFit();
+  }
+
+  function frame() {
+    if (!info) return;
+    const r = Math.max(info.size.x, info.size.y, info.size.z);
+    controls.target.set(0, 0, info.size.z * 0.45);
+    camera.position.set(r * 1.6, -r * 2.1, r * 1.35);
+    camera.near = r / 100; camera.far = r * 50; camera.updateProjectionMatrix();
+    controls.update();
+  }
+
+  function stats(geo) {
+    const p = geo.attributes.position.array; let vol = 0;
+    for (let i = 0; i < p.length; i += 9) {
+      vol += (p[i] * (p[i + 4] * p[i + 8] - p[i + 5] * p[i + 7])
+            - p[i + 1] * (p[i + 3] * p[i + 8] - p[i + 5] * p[i + 6])
+            + p[i + 2] * (p[i + 3] * p[i + 7] - p[i + 4] * p[i + 6])) / 6;
+    }
+    geo.computeBoundingBox();
+    const size = new THREE.Vector3(); geo.boundingBox.getSize(size);
+    return { vol: Math.abs(vol) / 1000, size, tris: p.length / 9 };
+  }
+
+  function updateFit() {
+    if (!info) return;
+    const [bx, by, bz] = $("bed").value.split("x").map(Number);
+    const s = info.size;
+    const flat = (s.x <= bx && s.y <= by) || (s.x <= by && s.y <= bx);
+    const ok = flat && s.z <= bz;
+    const el = $("s-fit");
+    el.textContent = ok ? "Sí" : (s.z > bz ? `No: ${(s.z - bz).toFixed(0)} mm de más en altura` : "No: demasiado ancho");
+    el.className = "v" + (ok ? "" : " warn");
+  }
+
+  function show(buffer, meta) {
+    const geo = new THREE.STLLoader().parse(buffer);
+    geo.computeBoundingBox();
+    const bb = geo.boundingBox;
+    geo.translate(-(bb.min.x + bb.max.x) / 2, -(bb.min.y + bb.max.y) / 2, -bb.min.z);
+    geo.computeVertexNormals();
+    if (mesh) { scene.remove(mesh); mesh.geometry.dispose(); }
+    mesh = new THREE.Mesh(geo, material); scene.add(mesh);
+    info = stats(geo);
+    const s = info.size;
+    $("s-size").textContent = `${s.x.toFixed(0)} × ${s.y.toFixed(0)} × ${s.z.toFixed(0)}`;
+    $("s-vol").textContent = `${info.vol.toFixed(0)} cm³`;
+    $("s-w").textContent = `${(info.vol * 1.24).toFixed(0)} g / ${(info.vol * 1.27).toFixed(0)} g`;
+    $("overlay").textContent = `${meta.nombre} · ${info.tris.toLocaleString("es-ES")} triángulos`;
+    $("notes").textContent = meta.notas || "Sin notas.";
+    statusEl.hidden = true;
+    updateFit(); frame();
+  }
+
+  let modelos = [];
+  function renderList(activeId) {
+    const list = $("list"); list.textContent = "";
+    modelos.forEach((m) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "item";
+      b.setAttribute("aria-current", String(m.id === activeId));
+      b.innerHTML = "<b></b><small></small>";
+      b.querySelector("b").textContent = m.nombre;
+      b.querySelector("small").textContent = m.fecha || (m.local ? "De tu equipo" : "");
+      b.addEventListener("click", () => select(m.id));
+      list.appendChild(b);
+    });
+  }
+
+  async function select(id) {
+    const m = modelos.find((x) => x.id === id); if (!m) return;
+    renderList(id);
+    try { localStorage.setItem("visor-modelo", id); } catch (e) {}
+    statusEl.hidden = false; statusEl.textContent = "Cargando " + m.nombre + "…";
+    try {
+      let buf = m.buffer;
+      if (!buf) {
+        const res = await fetch(m.archivo);
+        if (/\.txt$/i.test(m.archivo)) {  // STL en base64: el servidor no sirve .stl
+          const bin = atob((await res.text()).trim());
+          const bytes = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          buf = m.buffer = bytes.buffer;
+        } else buf = await res.arrayBuffer();
+      }
+      show(buf, m);
+    } catch (e) { statusEl.textContent = "No se pudo abrir " + m.nombre + "."; }
+  }
+
+  function addLocal(file) {
+    if (!file || !/\.stl$/i.test(file.name)) { statusEl.hidden = false; statusEl.textContent = "Ese archivo no es un .stl"; return; }
+    file.arrayBuffer().then((buf) => {
+      const id = "local-" + file.name + "-" + Date.now();
+      modelos.push({ id, nombre: file.name.replace(/\.stl$/i, ""), buffer: buf, local: true, notas: "Archivo abierto desde tu equipo; solo lo ves tú." });
+      select(id);
+    });
+  }
+  $("file").addEventListener("change", (e) => addLocal(e.target.files[0]));
+  const drop = $("drop");
+  ["dragenter", "dragover"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave", "drop"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
+  drop.addEventListener("drop", (e) => addLocal(e.dataTransfer.files[0]));
+
+  const toggle = (id, fn) => $(id).addEventListener("click", (e) => {
+    const on = e.currentTarget.getAttribute("aria-pressed") !== "true";
+    e.currentTarget.setAttribute("aria-pressed", String(on)); fn(on);
+  });
+  toggle("spin", (on) => { controls.autoRotate = on; });
+  toggle("wire", (on) => { material.wireframe = on; });
+  toggle("cut", (on) => { material.clippingPlanes = on ? [clip] : []; material.needsUpdate = true; });
+  $("reset").addEventListener("click", frame);
+  $("bed").addEventListener("change", buildBed);
+  controls.addEventListener("start", () => { controls.autoRotate = false; $("spin").setAttribute("aria-pressed", "false"); });
+
+  function resize() {
+    const w = stage.clientWidth, h = stage.clientHeight;
+    renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe(stage);
+  new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyTheme);
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) { controls.autoRotate = false; $("spin").setAttribute("aria-pressed", "false"); }
+
+  applyTheme(); buildBed(); resize();
+  (function loop() { requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); })();
+
+  fetch("modelos.json").then((r) => r.json()).then((list) => {
+    modelos = list;
+    let saved = null; try { saved = localStorage.getItem("visor-modelo"); } catch (e) {}
+    const first = modelos.find((m) => m.id === saved) || modelos[modelos.length - 1];
+    if (first) select(first.id); else { renderList(); statusEl.textContent = "Todavía no hay modelos."; }
+  }).catch(() => { statusEl.textContent = "No se pudo leer la lista de modelos."; });
+})();
+</script>
