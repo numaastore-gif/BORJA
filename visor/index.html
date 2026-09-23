@@ -231,7 +231,9 @@
   const material = new THREE.MeshStandardMaterial({ metalness: 0.05, roughness: 0.55, side: THREE.DoubleSide });
   const clip = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
   renderer.localClippingEnabled = true;
-  let mesh = null, bedGroup = null, info = null;
+  let grupo = null, bedGroup = null, info = null, piezas = null;
+  // materiales en uso: el del filamento elegido o uno por pieza de color
+  const materiales = () => piezas ? piezas.map((p) => p.material) : [material];
 
   function applyTheme() {
     scene.background = new THREE.Color(css("--stage"));
@@ -263,16 +265,21 @@
     controls.update();
   }
 
-  function stats(geo) {
-    const p = geo.attributes.position.array; let vol = 0;
-    for (let i = 0; i < p.length; i += 9) {
-      vol += (p[i] * (p[i + 4] * p[i + 8] - p[i + 5] * p[i + 7])
+  function stats(geos) {
+    let vol = 0, tris = 0;
+    const caja = new THREE.Box3();
+    geos.forEach((geo) => {
+      const p = geo.attributes.position.array; let v = 0;
+      for (let i = 0; i < p.length; i += 9) {
+        v += (p[i] * (p[i + 4] * p[i + 8] - p[i + 5] * p[i + 7])
             - p[i + 1] * (p[i + 3] * p[i + 8] - p[i + 5] * p[i + 6])
             + p[i + 2] * (p[i + 3] * p[i + 7] - p[i + 4] * p[i + 6])) / 6;
-    }
-    geo.computeBoundingBox();
-    const size = new THREE.Vector3(); geo.boundingBox.getSize(size);
-    return { vol: Math.abs(vol) / 1000, size, tris: p.length / 9 };
+      }
+      vol += Math.abs(v); tris += p.length / 9;
+      geo.computeBoundingBox(); caja.union(geo.boundingBox);
+    });
+    const size = new THREE.Vector3(); caja.getSize(size);
+    return { vol: vol / 1000, size, tris };
   }
 
   function updateFit() {
@@ -302,10 +309,15 @@
     material.opacity = filamento.translucido ? 0.62 : 1;
     material.depthWrite = !filamento.translucido;
     material.needsUpdate = true;
-    $("picked").innerHTML = "<b></b> · <span></span> <span class=\"mono\"></span>";
-    $("picked").children[0].textContent = filamento.nombre;
-    $("picked").children[1].textContent = colorNombre;
-    $("picked").children[2].textContent = hex;
+    $("swatches").hidden = !!piezas;
+    if (piezas) {  // modelo de varios colores: cada pieza lleva el suyo
+      $("picked").textContent = "Varios colores: " + piezas.map((p) => p.nombre).join(" · ");
+    } else {
+      $("picked").innerHTML = "<b></b> · <span></span> <span class=\"mono\"></span>";
+      $("picked").children[0].textContent = filamento.nombre;
+      $("picked").children[1].textContent = colorNombre;
+      $("picked").children[2].textContent = hex;
+    }
     updateWeight();
   }
 
@@ -340,15 +352,27 @@
   });
   $("bed").value = impresora.id;
 
-  function show(buffer, meta) {
-    const geo = new THREE.STLLoader().parse(buffer);
-    geo.computeBoundingBox();
-    const bb = geo.boundingBox;
-    geo.translate(-(bb.min.x + bb.max.x) / 2, -(bb.min.y + bb.max.y) / 2, -bb.min.z);
-    geo.computeVertexNormals();
-    if (mesh) { scene.remove(mesh); mesh.geometry.dispose(); }
-    mesh = new THREE.Mesh(geo, material); scene.add(mesh);
-    info = stats(geo);
+  // partes: [{ buffer, color?, nombre? }]; sin color usa el filamento elegido
+  function show(partes, meta) {
+    const geos = partes.map((p) => new THREE.STLLoader().parse(p.buffer));
+    const caja = new THREE.Box3();
+    geos.forEach((g) => { g.computeBoundingBox(); caja.union(g.boundingBox); });
+    geos.forEach((g) => {
+      g.translate(-(caja.min.x + caja.max.x) / 2, -(caja.min.y + caja.max.y) / 2, -caja.min.z);
+      g.computeVertexNormals();
+    });
+    if (grupo) { scene.remove(grupo); grupo.traverse((o) => o.geometry && o.geometry.dispose()); }
+    piezas = partes.length > 1 || partes[0].color ? partes.map((p) => {
+      const c = new THREE.Color(p.color); const hsl = {}; c.getHSL(hsl);
+      if (hsl.l < 0.08) c.setHSL(hsl.h, hsl.s, 0.08);
+      return { nombre: p.nombre || p.color, material: new THREE.MeshStandardMaterial({
+        color: c, metalness: 0.02, roughness: 0.9, side: THREE.DoubleSide }) };
+    }) : null;
+    grupo = new THREE.Group();
+    geos.forEach((g, i) => grupo.add(new THREE.Mesh(g, piezas ? piezas[i].material : material)));
+    scene.add(grupo);
+    syncToggles(); applyFilament();
+    info = stats(geos);
     const s = info.size;
     $("s-size").textContent = `${s.x.toFixed(0)} × ${s.y.toFixed(0)} × ${s.z.toFixed(0)}`;
     $("s-vol").textContent = `${info.vol.toFixed(0)} cm³`;
@@ -380,17 +404,22 @@
     try { localStorage.setItem("visor-modelo", id); } catch (e) {}
     statusEl.hidden = false; statusEl.textContent = "Cargando " + m.nombre + "…";
     try {
-      let buf = m.buffer;
-      if (!buf) {
-        const res = await fetch(m.archivo);
-        if (/\.txt$/i.test(m.archivo)) {  // STL en base64: el servidor no sirve .stl
-          const bin = atob((await res.text()).trim());
-          const bytes = new Uint8Array(bin.length);
-          for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-          buf = m.buffer = bytes.buffer;
-        } else buf = await res.arrayBuffer();
+      if (!m.cargadas) {
+        const lista = m.buffer ? [{ buffer: m.buffer }] : (m.partes || [{ archivo: m.archivo }]);
+        m.cargadas = await Promise.all(lista.map(async (p) => {
+          if (p.buffer) return p;
+          const res = await fetch(p.archivo);
+          let buffer;
+          if (/\.txt$/i.test(p.archivo)) {  // STL en base64: el servidor no sirve .stl
+            const bin = atob((await res.text()).trim());
+            const bytes = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+            buffer = bytes.buffer;
+          } else buffer = await res.arrayBuffer();
+          return { buffer, color: p.color, nombre: p.nombre };
+        }));
       }
-      show(buf, m);
+      show(m.cargadas, m);
     } catch (e) { statusEl.textContent = "No se pudo abrir " + m.nombre + "."; }
   }
 
@@ -413,8 +442,13 @@
     e.currentTarget.setAttribute("aria-pressed", String(on)); fn(on);
   });
   toggle("spin", (on) => { controls.autoRotate = on; });
-  toggle("wire", (on) => { material.wireframe = on; });
-  toggle("cut", (on) => { material.clippingPlanes = on ? [clip] : []; material.needsUpdate = true; });
+  function syncToggles() {
+    const malla = $("wire").getAttribute("aria-pressed") === "true";
+    const corte = $("cut").getAttribute("aria-pressed") === "true";
+    materiales().forEach((m) => { m.wireframe = malla; m.clippingPlanes = corte ? [clip] : []; m.needsUpdate = true; });
+  }
+  toggle("wire", syncToggles);
+  toggle("cut", syncToggles);
   $("reset").addEventListener("click", frame);
   $("bed").addEventListener("change", (e) => {
     impresora = IMPRESORAS.find((p) => p.id === e.target.value); guardar("visor-impresora", impresora.id); buildBed();

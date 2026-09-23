@@ -6,5 +6,31 @@
     "fecha": "2026-09-23",
     "notas": "Silueta ajustada a la foto: 20 × 20,5 × 24 cm, pared lisa de 3 mm, boca curva y asa triangular simétrica con el vértice redondeado. Debajo, «Jose y Valle» y «10/09/1994» en Playfair Display (la de numashome.com), en relieve biselado siguiendo la pared. Tope en el fondo para recostar la botella contra la pared alta. Imprimir de pie, sin soportes; PETG con 3–4 perímetros para que no gotee.",
     "origen": "cubitera/cubitera.stl"
+  },
+  {
+    "id": "llavero",
+    "nombre": "Llavero pala NOX",
+    "fecha": "2026-09-23",
+    "partes": [
+      {
+        "archivo": "modelos/llavero_azul.txt",
+        "origen": "llavero/llavero_azul.stl",
+        "color": "#0078BF",
+        "nombre": "PLA Matte Marine Blue"
+      },
+      {
+        "archivo": "modelos/llavero_negro.txt",
+        "origen": "llavero/llavero_negro.stl",
+        "color": "#000000",
+        "nombre": "PLA Matte Charcoal"
+      },
+      {
+        "archivo": "modelos/llavero_blanco.txt",
+        "origen": "llavero/llavero_blanco.stl",
+        "color": "#FFFFFF",
+        "nombre": "PLA Matte Ivory White"
+      }
+    ],
+    "notas": "Pala calcada de la foto a 42 × 77 × 4,5 mm (70 mm la pala + argolla). Tres piezas, una por color de PLA Matte: cabeza azul, dibujos negros incrustados 0,6 mm en las dos caras (el reverso en espejo para que se lea bien) y mango blanco con argolla de Ø 3,4 mm. Importar los tres STL a la vez en Bambu Studio como un solo objeto de varias piezas, o abrir llavero.3mf."
   }
 ]
