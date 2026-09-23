@@ -4,7 +4,7 @@
     "nombre": "Cubitera Jose y Valle",
     "archivo": "modelos/cubitera.txt",
     "fecha": "2026-09-23",
-    "notas": "Silueta calcada de la foto: 20 × 20,5 × 24 cm, se estrecha hacia un fondo pequeño, boca curva, asa triangular redondeada y simétrica y «Jose y Valle» en relieve (tipografía Cinzel) debajo. Tope en el fondo para recostar la botella contra la pared alta. Imprimir de pie, sin soportes; PETG con 3–4 perímetros para que no gotee.",
+    "notas": "Silueta calcada de la foto: 20 × 20,5 × 24 cm, se estrecha hacia un fondo pequeño, boca curva, asa triangular redondeada y simétrica y «Jose y Valle» en relieve (Playfair Display, la «y» en cursiva como en numashome.com) debajo. Tope en el fondo para recostar la botella contra la pared alta. Imprimir de pie, sin soportes; PETG con 3–4 perímetros para que no gotee.",
     "origen": "cubitera/cubitera.stl"
   }
 ]

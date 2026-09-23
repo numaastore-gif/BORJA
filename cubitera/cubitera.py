@@ -8,17 +8,18 @@ redondeada y simétrica, debajo va el texto en relieve siguiendo la pared, y en 
 hay un tope para que la botella quede recostada contra la pared alta.
 Todas las medidas en mm.
 
-    pip install numpy trimesh manifold3d matplotlib shapely
+    pip install numpy trimesh manifold3d matplotlib shapely fonttools
     python cubitera.py
 """
 import pathlib
 
 import numpy as np
 import trimesh
-from shapely.geometry import LineString, Polygon
+from fontTools.ttLib import TTFont
+from manifold3d import CrossSection, FillRule, JoinType, Manifold, Mesh
 from matplotlib.font_manager import FontProperties
 from matplotlib.textpath import TextPath
-from manifold3d import CrossSection, FillRule, Manifold, Mesh
+from shapely.geometry import LineString, Polygon
 
 # --- Parámetros -------------------------------------------------------------
 # Semieje largo exterior según la altura: curva suave ajustada a la silueta
@@ -36,11 +37,13 @@ REDONDEO_FONDO = (8.0, 5.0)  # radio de la arista del fondo por fuera y por dent
 # (0 = punta del lado alto), v hacia arriba.
 ASA = [(-44.0, 6.0, 6.0), (44.0, 6.0, 6.0), (0.0, 15.0, 13.0)]
 ASA_Z = 188.0          # altura del borde inferior de la ranura
-TEXTO = "Jose y Valle"
-FUENTE = pathlib.Path(__file__).with_name("Cinzel-Bold.ttf")  # OFL
-LETRA = 12.0           # altura de las mayúsculas
+# Texto por tramos (texto, cursiva): la «y» en cursiva, como en numashome.com.
+TEXTO = [("Jose ", False), ("y", True), (" Valle", False)]
+FUENTES = {False: "PlayfairDisplay-Medium.ttf", True: "PlayfairDisplay-MediumItalic.ttf"}  # OFL
+LETRA = 14.0           # altura de las mayúsculas
+ENGROSAR = 0.15        # mm que se engordan los trazos finos para que se impriman
 RELIEVE = 0.8          # lo que sobresale el texto de la pared
-TEXTO_Z = 170.0        # altura de la línea base del texto
+TEXTO_Z = 166.0        # altura de la línea base del texto
 TOPE = dict(x=-34.0, ancho=30.0, alto=16.0)  # suplemento del fondo
 SEGMENTOS = 240
 PASO_Z = 1.5           # separación entre anillos de la pared
@@ -145,14 +148,22 @@ def asa():
 
 
 def texto():
-    """Letras en relieve bajo el asa."""
-    fuente = FontProperties(fname=str(FUENTE))
-    ruta = TextPath((0, 0), TEXTO, size=1.0, prop=fuente)
-    escala = LETRA / TextPath((0, 0), "J", size=1.0, prop=fuente).get_extents().height
-    ext = ruta.get_extents()
-    polis = [p * escala for p in ruta.to_polygons() if len(p) > 2]
-    letras = CrossSection(polis, FillRule.EvenOdd).translate(
-        (-(ext.x0 + ext.width / 2) * escala, 0))
+    """Letras en relieve bajo el asa, en Playfair Display."""
+    def fichero(cursiva):
+        return str(pathlib.Path(__file__).with_name(FUENTES[cursiva]))
+
+    recta = FontProperties(fname=fichero(False))
+    escala = LETRA / TextPath((0, 0), "J", size=1.0, prop=recta).get_extents().height
+    polis, cursor = [], 0.0
+    for tramo, cursiva in TEXTO:
+        ruta = TextPath((cursor, 0), tramo, size=1.0, prop=FontProperties(fname=fichero(cursiva)))
+        polis += [p * escala for p in ruta.to_polygons() if len(p) > 2]
+        fuente = TTFont(fichero(cursiva))
+        cmap, hmtx = fuente.getBestCmap(), fuente["hmtx"]
+        cursor += sum(hmtx[cmap[ord(ch)]][0] for ch in tramo) / fuente["head"].unitsPerEm
+    letras = CrossSection(polis, FillRule.EvenOdd).offset(ENGROSAR, JoinType.Round)
+    x0, _, x1, _ = letras.bounds()
+    letras = letras.translate((-(x0 + x1) / 2, 0))
     return envolver(letras.extrude(RELIEVE + 2.0).translate((0, 0, -2.0)), TEXTO_Z)
 
 
