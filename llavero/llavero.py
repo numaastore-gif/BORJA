@@ -157,24 +157,25 @@ def la_x():
 
 # --- Logo ----------------------------------------------------------------------
 def logo_nox(alto):
-    """Logo «nox» con las proporciones medidas en la foto: «n» y «o» cuadradas
-    de esquinas redondeadas y «x» como la X de la pala (chevron a la izquierda
-    y dos cuñas a la derecha)."""
-    t_v, t_h = 0.34, 0.27             # grosor de trazos verticales y horizontales
-    n_w, o_w, x_w = 1.53, 1.47, 1.39  # anchos (en alturas)
-    g1, g2 = 0.22, 0.19               # separación n-o y o-x
-    n = redondeado(0, 0, n_w, 1, 0.34) - redondeado(t_v, -1, n_w - t_v, 1 - t_h, 0.1)
+    """Logo «nox» medido sobre el recorte del logo de la pala (unidades: la
+    altura de las letras). «n» y «o» casi cuadradas con esquinas poco
+    redondeadas; «x» formada por un chevron «>» con muesca en V a la
+    izquierda y dos cuñas en diagonal a la derecha."""
+    poli = lambda pts: CrossSection([np.array(pts, float)], FillRule.EvenOdd)
+    n_w, o_w = 1.52, 1.54
+    g1, g2 = 0.21, 0.18
+    # «n»: solo las esquinas de arriba redondeadas; las patas acaban rectas
+    n = (redondeado(0, -0.5, n_w, 1, 0.12) ^ CrossSection.square((n_w, 1))) - \
+        redondeado(0.30, -1, n_w - 0.30, 1 - 0.25, 0.05)
     x0 = n_w + g1
-    o = redondeado(x0, 0, x0 + o_w, 1, 0.3) - redondeado(x0 + t_v, t_h, x0 + o_w - t_v, 1 - t_h, 0.08)
+    o = redondeado(x0, 0, x0 + o_w, 1, 0.18) - redondeado(x0 + 0.31, 0.24, x0 + o_w - 0.31, 1 - 0.25, 0.05)
     x0 += o_w + g2
-    a, c, h = 0.44, 0.62, 0.12        # ancho de brazo, centro del chevron, hueco
-    chevron = CrossSection([np.array([(x0, 1), (x0 + a, 1), (x0 + c, 0.5), (x0 + a, 0), (x0, 0),
-                                      (x0 + c - a, 0.5)])], FillRule.EvenOdd)
-    punta = x0 + c + h
-    cuna_1 = CrossSection([np.array([(x0 + x_w - a, 1), (x0 + x_w, 1), (punta, 0.56)])], FillRule.EvenOdd)
-    cuna_2 = CrossSection([np.array([(x0 + x_w - a, 0), (punta, 0.44), (x0 + x_w, 0)])], FillRule.EvenOdd)
-    total = n + o + chevron + cuna_1 + cuna_2
-    return total.translate((-(x0 + x_w) / 2, -0.5)).scale((alto, alto))
+    chevron = poli([(x0 + 0.03, 1), (x0 + 0.46, 1), (x0 + 0.93, 0.5), (x0 + 0.45, 0),
+                    (x0 + 0.01, 0), (x0 + 0.46, 0.5)])
+    cuna_arriba = poli([(x0 + 0.98, 0.68), (x0 + 1.22, 1), (x0 + 1.50, 1), (x0 + 1.10, 0.57)])
+    cuna_abajo = poli([(x0 + 0.98, 0.32), (x0 + 1.10, 0.43), (x0 + 1.50, 0), (x0 + 1.22, 0)])
+    total = n + o + chevron + cuna_arriba + cuna_abajo
+    return total.translate((-(x0 + 1.50) / 2, -0.5)).scale((alto, alto))
 
 
 # --- Agujeros -----------------------------------------------------------------
@@ -244,8 +245,9 @@ def construir():
     etiqueta = redondeado(ex0, ey0, ex1, ey1, 0.3)
     logo = logo_nox(LOGO_ALTO).translate(tuple(a_mm([LOGO_CENTRO])[0]))
     marco = (silueta ^ arriba).offset(-BORDE, JoinType.Round) - huecos
-    dibujo = (la_x() + franja_cuello + etiqueta + logo) ^ marco
+    dibujo = (la_x() + franja_cuello + etiqueta) ^ marco
     dibujo = CrossSection.compose([p for p in dibujo.decompose() if p.area() >= MOTA_MIN])
+    dibujo = dibujo + (logo ^ marco)  # el logo va entero, con sus cuñas pequeñas
     dibujo_reverso = dibujo.mirror((1, 0)) ^ marco
 
     # Cada cara sin cuellos de anchura cero (al guardar en STL darían aristas
