@@ -35,10 +35,10 @@
   },
   {
     "id": "soporte",
-    "nombre": "Soporte papelera (v1)",
+    "nombre": "Soporte papelera (v2)",
     "fecha": "2026-09-24",
     "archivo": "modelos/soporte.txt",
     "origen": "soporte/soporte.stl",
-    "notas": "Primer modelo según el croquis, sin ruedas: bandeja de 380 × 300 mm con hueco de 340 × 260 mm para la papelera (marco de 20 mm), fondo de 4 mm y borde de 25 mm (29 mm de alto en total), esquinas redondeadas y cantos achaflanados. Entera no cabe en ninguna Bambu Lab: para imprimirla se partirá en piezas que encajan."
+    "notas": "Bandeja de 380 × 300 mm con hueco de 340 × 260 mm para la papelera (marco de 20 mm), fondo de 4 mm y borde de 25 mm (29 mm de alto). Por debajo, cuatro roscas M5 × 0,8 de 15 mm de fondo, una por esquina bajo el marco, con chaflán de entrada, para roscar las bolas de apoyo. Entera no cabe en ninguna Bambu Lab: se partirá en piezas que encajan."
   }
 ]
