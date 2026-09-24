@@ -47,16 +47,19 @@ SEMILLA = 11
 PERFIL = [(0, 84.0), (8, 78.0), (22, 74.0), (45, 71.5), (100, 70.0), (180, 69.0),
           (260, 68.0), (360, 67.0)]
 EJE = [(0, 0.0, 0.0), (360, 6.0, -3.0)]  # el tronco se inclina un poco
-LOBULOS = [(2, 0.05), (3, 0.03), (4, 0.014), (6, 0.007), (9, 0.004)]  # (número, amplitud relativa)
+LOBULOS = [(2, 0.05), (3, 0.035), (4, 0.02), (5, 0.015), (7, 0.01)]  # (número, amplitud relativa)
 RAICES = dict(cantidad=5, fuerza=11.0, ancho=(22.0, 32.0), alto=55.0)   # contrafuertes del pie
 PLIEGUES = dict(cantidad=5, hondo=7.0, ancho=(8.0, 13.0), alto=80.0)    # surcos entre raíces
-# Nudos: (ángulo en grados, altura, tamaño): abultamiento con la cicatriz de la rama
-NUDOS = [(35.0, 62.0, 17.0), (215.0, 172.0, 13.0), (300.0, 285.0, 19.0)]
+# Entrantes: surcos verticales en V afilada, de paredes desiguales, que recorren
+# el tronco serpenteando (como en las piezas de referencia): (ángulo, hondo,
+# ancho de la boca, asimetría, altura de inicio, altura de fin)
+ENTRANTES = [(20.0, 11.0, 26.0, 1.5, 0, 400), (78.0, 8.0, 20.0, 0.7, 0, 230),
+             (140.0, 12.0, 28.0, 1.3, 60, 400), (205.0, 9.0, 22.0, 0.6, 0, 400),
+             (262.0, 7.0, 18.0, 1.7, 120, 400), (318.0, 10.0, 24.0, 0.8, 0, 300)]
+# festoneado del borde: ondulaciones medianas como las del contorno de referencia
+FESTONES = [(8, 0.018), (11, 0.016), (14, 0.012), (17, 0.01), (23, 0.007)]
+SERPENTEO = dict(amplitud=9.0, periodo=140.0)  # cuánto se desvían los entrantes al subir
 DESORDEN = dict(giro=1.5, desplazamiento=0.6)  # cada rodaja, apenas descolocada
-# Deformidades de tronco
-RAJA = dict(angulo=110.0, z=(25.0, 240.0), hondo=6.0, ancho=4.5, ondulacion=5.0)  # grieta de secado
-HERIDA = dict(angulo=250.0, z=165.0, ancho=34.0, alto=78.0, hondo=2.2, reborde=2.0)  # zona sin corteza
-VERRUGA = dict(angulo=160.0, z=48.0, tamano=24.0, alto=8.0)                          # abultamiento nudoso
 
 # --- Alturas -----------------------------------------------------------------------------
 ALTO_BASE = 100.0
@@ -107,7 +110,10 @@ rng = np.random.default_rng(SEMILLA)
 
 
 # --- Contorno orgánico ---------------------------------------------------------------------
-LOBULO_FASE = [(n, a, rng.uniform(0, 2 * np.pi), rng.uniform(-0.004, 0.004)) for n, a in LOBULOS]
+# las fases giran con la altura: el contorno cambia bastante de una pieza a otra
+LOBULO_FASE = [(n, a, rng.uniform(0, 2 * np.pi), rng.uniform(-0.012, 0.012)) for n, a in LOBULOS]
+SERPENTEO_FASE = [rng.uniform(0, 2 * np.pi) for _ in ENTRANTES]
+FESTON_FASE = [(n, a, rng.uniform(0, 2 * np.pi), rng.uniform(-0.02, 0.02)) for n, a in FESTONES]
 _paso = 2 * np.pi / RAICES["cantidad"]
 RAIZ = [(k * _paso + rng.uniform(-0.25, 0.25), rng.uniform(*RAICES["ancho"]), rng.uniform(0.6, 1.0))
         for k in range(RAICES["cantidad"])]
@@ -125,8 +131,8 @@ def eje(z):
 
 
 def radio(theta, z, detalle=True):
-    """Radio del tronco en (ángulo, altura). Sin «detalle» no lleva nudos (se
-    usa para dibujar los anillos del corte)."""
+    """Radio del tronco en (ángulo, altura). Sin «detalle» no lleva los
+    entrantes (se usa para dibujar los anillos del corte)."""
     r0 = np.interp(z, *zip(*PERFIL))
     r = np.full_like(theta, r0)
     for n, a, fase, giro in LOBULO_FASE:
@@ -138,12 +144,20 @@ def radio(theta, z, detalle=True):
         for ang, ancho, k in lista:
             d = (theta - ang + np.pi) % (2 * np.pi) - np.pi
             r += signo * magnitud * k * fuerza * np.exp(-0.5 * (d * r0 / (ancho / 2)) ** 2)
-    if detalle:  # nudos: abultamiento suave con la cicatriz hundida de la rama
-        for ang, zn, t in NUDOS:
-            da = ((theta - np.radians(ang) + np.pi) % (2 * np.pi) - np.pi) * r0
-            dz = (z - zn) / 1.3  # algo alargados en vertical
-            d2 = da ** 2 + dz ** 2
-            r += 4.0 * np.exp(-d2 / (2 * t ** 2)) - 3.5 * np.exp(-d2 / (2 * (0.3 * t) ** 2))
+    # entrantes en V afilada
+    if detalle:
+        for (ang, hondo, ancho, asim, z0, z1), fase in zip(ENTRANTES, SERPENTEO_FASE):
+            if not (z0 - 20 <= z <= z1 + 20):
+                continue
+            entrada = np.clip((z - z0) / 20 + 1, 0, 1) if z0 > 0 else 1.0
+            salida = np.clip((z1 - z) / 20 + 1, 0, 1)
+            desvio = SERPENTEO["amplitud"] * np.sin(2 * np.pi * z / SERPENTEO["periodo"] + fase)
+            da = ((theta - np.radians(ang) + np.pi) % (2 * np.pi) - np.pi) * r0 - desvio
+            mitad = np.where(da < 0, ancho * asim / (1 + asim), ancho / (1 + asim))
+            x = np.clip(np.abs(da) / mitad, 0, 1)
+            r -= hondo * entrada * salida * 0.5 * (1 + np.cos(np.pi * x)) ** 1.2 / 2 ** 0.2
+        for n, a, fase, giro in FESTON_FASE:
+            r *= 1 + a * np.cos(n * theta + fase + giro * z)
     return r
 
 
@@ -219,31 +233,10 @@ def grietas(u, v, lista):
 
 # --- Sólidos con textura -------------------------------------------------------------------------
 def deformidades(theta, z):
-    """Raja de secado, herida sin corteza y verruga. Devuelve el peso de la
-    textura de corteza (0 donde no hay corteza) y el relieve añadido."""
-    peso = np.ones_like(theta)
-    extra = np.zeros_like(theta)
-    arco = lambda ang: ((theta - np.radians(ang) + np.pi) % (2 * np.pi) - np.pi) * R_MEDIO
-    # raja: surco en V que serpentea y se afina en los extremos
-    j = RAJA
-    if j["z"][0] <= z <= j["z"][1]:
-        t = (z - j["z"][0]) / (j["z"][1] - j["z"][0])
-        centro = j["ondulacion"] * np.sin(t * 7.0) + 2.0 * np.sin(t * 19.0)
-        ancho = j["ancho"] * np.sin(np.pi * t) ** 0.5
-        perfil = np.clip(1 - np.abs(arco(j["angulo"]) - centro) / max(ancho, 1e-3), 0, 1)
-        extra -= j["hondo"] * np.sin(np.pi * t) ** 0.4 * perfil
-    # herida: elipse sin corteza (madera lisa y algo hundida) con reborde de cicatrización
-    h = HERIDA
-    e = np.sqrt((arco(h["angulo"]) / (h["ancho"] / 2)) ** 2 + ((z - h["z"]) / (h["alto"] / 2)) ** 2)
-    dentro = np.clip((1.0 - e) / 0.08, 0, 1)
-    peso *= 1 - dentro
-    extra += -h["hondo"] * dentro + h["reborde"] * np.exp(-((e - 1.05) / 0.09) ** 2)
-    # verruga: bulto grande con bultitos encima
-    v = VERRUGA
-    d2 = (arco(v["angulo"]) ** 2 + (z - v["z"]) ** 2) / v["tamano"] ** 2
-    bulto = np.exp(-d2 * 2.2)
-    extra += v["alto"] * bulto * (1 + 0.18 * np.sin(arco(v["angulo"]) * 0.9) * np.sin(z * 0.8))
-    return peso, extra
+    """Dentro de los entrantes la textura de corteza se suaviza (en el fondo de
+    una V estrecha, el relieve completo haría que las paredes se cruzaran)."""
+    hueco = radio(theta, z, detalle=False) - radio(theta, z)
+    return 1 - 0.75 * np.clip(hueco / 6.0, 0, 1), np.zeros_like(theta)
 
 
 def bloque(z0, z1, semilla, giro_extra=0.0, desplazamiento=(0.0, 0.0)):
