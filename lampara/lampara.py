@@ -1,8 +1,9 @@
-"""Lámpara de madera en rodajas para numashome, con la forma de la lámpara
-clara de la referencia: un tronco con la base alta y ensanchada como el pie de
-un árbol (con pliegues verticales hondos), una zona central de rodajas finas
-algo más estrecha que se curva en S, y un remate alto y más ancho cortado en
-un bisel suave, un poco inclinado hacia un lado:
+"""Lámpara «tronco» para numashome: un tronco realista, con presencia de pieza
+de tienda de decoración (Ø ~150 × 330 mm), cortado en rodajas con rendijas de
+luz. Pie con raíces en contrafuerte y pliegues entre ellas, ligera
+inclinación, nudos con su abultamiento y la cicatriz de la rama, y en el corte
+de arriba anillos de crecimiento, médula, grietas de secado y la línea de la
+corteza:
 
   base      bloque macizo con el asiento del difusor, paso para el tubo
             roscado M10 del portalámparas, alojamiento de la tuerca por debajo,
@@ -40,25 +41,30 @@ VISTA = "--vista" in sys.argv
 RESOLUCION = 0.8 if VISTA else 0.4  # separación de puntos en las caras con textura
 SEMILLA = 11
 
-# --- Forma (proporciones de la lámpara clara de la foto) ------------------------------
-# Radio medio del tronco según la altura (z, radio): pie ensanchado, cintura en
-# las rodajas y remate algo más ancho.
-PERFIL = [(0, 63.0), (12, 59.0), (35, 56.5), (70, 55.5), (95, 54.5), (110, 51.5),
-          (150, 50.0), (185, 51.5), (205, 55.0), (215, 57.5), (250, 58.0), (300, 57.0)]
-# Desplazamiento del eje (z, x, y): las rodajas se curvan en S y el remate se
-# inclina hacia un lado.
-EJE = [(0, 0.0, 0.0), (95, 0.0, 0.0), (140, 5.0, 1.0), (185, 2.0, -1.0), (215, -2.0, 0.0), (300, -5.0, 0.0)]
-LOBULOS = [(2, 0.045), (3, 0.03), (5, 0.012), (7, 0.006)]  # (número, amplitud relativa)
-PLIEGUES = dict(cantidad=8, hondo=7.0, ancho=(7.0, 12.0), alto=95.0)  # pliegues del pie
-DESORDEN = dict(giro=2.0, desplazamiento=0.8)  # cada rodaja, apenas descolocada
+# --- Forma del tronco -------------------------------------------------------------------------
+# Radio medio según la altura (z, radio): pie que se abre en raíces y tronco
+# que se estrecha muy poco hacia arriba.
+PERFIL = [(0, 84.0), (8, 78.0), (22, 74.0), (45, 71.5), (100, 70.0), (180, 69.0),
+          (260, 68.0), (360, 67.0)]
+EJE = [(0, 0.0, 0.0), (360, 6.0, -3.0)]  # el tronco se inclina un poco
+LOBULOS = [(2, 0.05), (3, 0.03), (4, 0.014), (6, 0.007), (9, 0.004)]  # (número, amplitud relativa)
+RAICES = dict(cantidad=5, fuerza=11.0, ancho=(22.0, 32.0), alto=55.0)   # contrafuertes del pie
+PLIEGUES = dict(cantidad=5, hondo=7.0, ancho=(8.0, 13.0), alto=80.0)    # surcos entre raíces
+# Nudos: (ángulo en grados, altura, tamaño): abultamiento con la cicatriz de la rama
+NUDOS = [(35.0, 62.0, 17.0), (215.0, 172.0, 13.0), (300.0, 285.0, 19.0)]
+DESORDEN = dict(giro=1.5, desplazamiento=0.6)  # cada rodaja, apenas descolocada
 
 # --- Alturas -----------------------------------------------------------------------------
-ALTO_BASE = 90.0
-RODAJAS = 12
+ALTO_BASE = 100.0
+RODAJAS = 14
 GROSOR_RODAJA = 6.3     # como las rodajas de la referencia
 RENDIJA = 3.0
-ALTO_REMATE = 60.0
-BISEL = 8.0
+ALTO_REMATE = 80.0
+BISEL = 9.0
+
+# --- Corte de arriba -------------------------------------------------------------------------
+CORTE = dict(anillo_hondo=0.5, anillo_ancho=0.6, separacion=(2.5, 6.0), corteza=7.0,
+             grietas=4, grieta_hondo=2.0, grieta_ancho=1.8, medula=2.0)
 
 # --- Textura -------------------------------------------------------------------------
 TEXTURA = AQUI / "textura_corteza.npy"
@@ -67,7 +73,7 @@ GRIETAS_POR_CM2 = 0.07  # densidad de grietas
 GRIETA = dict(largo=(14.0, 38.0), ancho=(1.2, 2.4), hondo=(1.2, 2.2), inclinacion=0.18)
 
 # --- Difusor -------------------------------------------------------------------------
-R_DIFUSOR = 38.0
+R_DIFUSOR = 46.0
 ESCALON = 1.0
 PARED_DIFUSOR = 1.6
 GUIAS = (0.0, 150.0)
@@ -81,22 +87,25 @@ TUBO_M10 = 10.5
 TUERCA = dict(diametro=26.0, alto=8.0)
 CABLE = dict(ancho=7.0, alto=5.0, angulo=180.0)
 TEXTO = "numa home"
-TEXTO_ALTO = 7.0
+TEXTO_ALTO = 8.0
 TEXTO_HONDO = 0.6
 
 Z_RODAJA = [ALTO_BASE + RENDIJA + i * (GROSOR_RODAJA + RENDIJA) for i in range(RODAJAS)]
 Z_REMATE = Z_RODAJA[-1] + GROSOR_RODAJA + RENDIJA
 ALTO_TOTAL = Z_REMATE + ALTO_REMATE
-Z_TOPE = ALTO_TOTAL + np.tan(np.radians(BISEL)) * 75
+Z_TOPE = ALTO_TOTAL + np.tan(np.radians(BISEL)) * 95
 
 rng = np.random.default_rng(SEMILLA)
 
 
 # --- Contorno orgánico ---------------------------------------------------------------------
 LOBULO_FASE = [(n, a, rng.uniform(0, 2 * np.pi), rng.uniform(-0.004, 0.004)) for n, a in LOBULOS]
-PLIEGUE = [(rng.uniform(0, 2 * np.pi), rng.uniform(*PLIEGUES["ancho"]), rng.uniform(0.6, 1.0))
-           for _ in range(PLIEGUES["cantidad"])]
-R_MEDIO = 55.0
+_paso = 2 * np.pi / RAICES["cantidad"]
+RAIZ = [(k * _paso + rng.uniform(-0.25, 0.25), rng.uniform(*RAICES["ancho"]), rng.uniform(0.6, 1.0))
+        for k in range(RAICES["cantidad"])]
+PLIEGUE = [(a + _paso / 2 + rng.uniform(-0.15, 0.15), rng.uniform(*PLIEGUES["ancho"]), rng.uniform(0.6, 1.0))
+           for a, _, _ in RAIZ]
+R_MEDIO = 70.0
 PERIMETRO = 2 * np.pi * R_MEDIO
 ANGULOS = np.linspace(0, 2 * np.pi, int(PERIMETRO / RESOLUCION), endpoint=False)
 ARCO = ANGULOS * R_MEDIO  # coordenada horizontal de la textura (mm)
@@ -107,15 +116,26 @@ def eje(z):
     return np.interp(z, zs, xs), np.interp(z, zs, ys)
 
 
-def radio(theta, z):
-    r = np.full_like(theta, np.interp(z, *zip(*PERFIL)))
+def radio(theta, z, detalle=True):
+    """Radio del tronco en (ángulo, altura). Sin «detalle» no lleva nudos (se
+    usa para dibujar los anillos del corte)."""
+    r0 = np.interp(z, *zip(*PERFIL))
+    r = np.full_like(theta, r0)
     for n, a, fase, giro in LOBULO_FASE:
         r *= 1 + a * np.cos(n * theta + fase + giro * z)
-    # pliegues verticales del pie: surcos anchos que se desvanecen hacia arriba
-    fuerza = np.clip(1 - z / PLIEGUES["alto"], 0, 1) ** 1.5
-    for ang, ancho, k in PLIEGUE:
-        d = (theta - ang + np.pi) % (2 * np.pi) - np.pi
-        r -= PLIEGUES["hondo"] * k * fuerza * np.exp(-0.5 * (d * np.interp(z, *zip(*PERFIL)) / (ancho / 2)) ** 2)
+    # raíces en contrafuerte y surcos entre ellas, que se pierden hacia arriba
+    for lista, conf, signo in ((RAIZ, RAICES, 1), (PLIEGUE, PLIEGUES, -1)):
+        fuerza = np.clip(1 - z / conf["alto"], 0, 1) ** 2
+        magnitud = conf.get("fuerza", conf.get("hondo"))
+        for ang, ancho, k in lista:
+            d = (theta - ang + np.pi) % (2 * np.pi) - np.pi
+            r += signo * magnitud * k * fuerza * np.exp(-0.5 * (d * r0 / (ancho / 2)) ** 2)
+    if detalle:  # nudos: abultamiento suave con la cicatriz hundida de la rama
+        for ang, zn, t in NUDOS:
+            da = ((theta - np.radians(ang) + np.pi) % (2 * np.pi) - np.pi) * r0
+            dz = (z - zn) / 1.3  # algo alargados en vertical
+            d2 = da ** 2 + dz ** 2
+            r += 4.0 * np.exp(-d2 / (2 * t ** 2)) - 3.5 * np.exp(-d2 / (2 * (0.3 * t) ** 2))
     return r
 
 
@@ -304,8 +324,56 @@ def texto_inferior():
     escala = TEXTO_ALTO / TextPath((0, 0), "h", size=1.0, prop=prop).get_extents().height
     letras = CrossSection([p * escala for p in ruta.to_polygons() if len(p) > 2], FillRule.EvenOdd)
     x0, y0, x1, y1 = letras.bounds()
-    letras = letras.translate((-(x0 + x1) / 2, -(y0 + y1) / 2)).mirror((1, 0)).translate((0, -32.0))
+    letras = letras.translate((-(x0 + x1) / 2, -(y0 + y1) / 2)).mirror((1, 0)).translate((0, -42.0))
     return letras.extrude(TEXTO_HONDO + 1).translate((0, 0, -1))
+
+
+# --- Corte de arriba: anillos, médula, grietas y corteza ----------------------------------------
+def dibujo_corte():
+    """Surcos del corte superior en planta: (finos, hondos)."""
+    r = np.random.default_rng(SEMILLA + 7)
+    t = np.linspace(0, 2 * np.pi, 720, endpoint=False)
+    cx, cy = eje(ALTO_TOTAL)
+    borde = radio(t, ALTO_TOTAL, detalle=False)
+    c = CORTE
+
+    def banda(rr, ancho):
+        fuera = np.c_[cx + rr * np.cos(t), cy + rr * np.sin(t)]
+        dentro = np.c_[cx + (rr - ancho) * np.cos(t), cy + (rr - ancho) * np.sin(t)]
+        return CrossSection([fuera]) - CrossSection([dentro])
+
+    finos = [banda(borde - c["corteza"], 1.0)]  # línea entre corteza y madera
+    k = c["corteza"] + r.uniform(*c["separacion"]) * 0.6
+    while (borde - k).min() > 6:
+        # los anillos se aprietan hacia fuera, como en la madera real
+        onda = 0.5 * np.sin(r.integers(2, 6) * t + r.uniform(0, 6.3))
+        finos.append(banda(borde - k + onda, c["anillo_ancho"]))
+        k += r.uniform(*c["separacion"]) * (0.6 + 0.8 * k / borde.mean())
+    hondos = [CrossSection.circle(c["medula"], 32).translate((cx, cy))]
+    for _ in range(c["grietas"]):
+        a = r.uniform(0, 2 * np.pi)
+        r1, r2 = r.uniform(6, 14), borde.mean() * r.uniform(0.55, 0.9)
+        curva = r.uniform(-0.08, 0.08)
+        s = np.linspace(0, 1, 12)
+        eje_r = r1 + (r2 - r1) * s
+        eje_a = a + curva * s ** 2
+        medio = c["grieta_ancho"] / 2 * np.sin(np.pi * s) ** 0.6 + 0.05
+        izq = np.c_[eje_r * np.cos(eje_a) - medio * np.sin(eje_a), eje_r * np.sin(eje_a) + medio * np.cos(eje_a)]
+        der = np.c_[eje_r * np.cos(eje_a) + medio * np.sin(eje_a), eje_r * np.sin(eje_a) - medio * np.cos(eje_a)]
+        hondos.append(CrossSection([np.vstack([der, izq[::-1]]) + (cx, cy)], FillRule.EvenOdd))
+    return (CrossSection.batch_boolean(finos, OpType.Add), CrossSection.batch_boolean(hondos, OpType.Add))
+
+
+def grabar_corte(pieza):
+    plano = corte_superior()
+    coseno = np.cos(np.radians(BISEL))
+    finos, hondos = dibujo_corte()
+    for dibujo, hondo in ((finos, CORTE["anillo_hondo"]), (hondos, CORTE["grieta_hondo"])):
+        prisma = dibujo.extrude(400).translate((0, 0, Z_REMATE))
+        # la capa sobresale 1 mm por encima del corte: sin planos coincidentes
+        capa = plano.translate((0, 0, 1.0)) - plano.translate((0, 0, -hondo / coseno))
+        pieza = pieza - (prisma ^ capa)
+    return pieza
 
 
 # --- Piezas ------------------------------------------------------------------------------------------
@@ -334,6 +402,7 @@ def construir():
 
     remate = bloque(Z_REMATE, Z_TOPE, SEMILLA + 99) ^ corte_superior()
     remate = remate - hueco_para(RODAJAS, Z_REMATE, Z_REMATE + ENTRA_EN_REMATE + 0.5)
+    remate = grabar_corte(remate)
     return dict(base=base, rodajas=rodajas, remate=remate, difusor=difusor())
 
 

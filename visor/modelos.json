@@ -107,7 +107,7 @@
   },
   {
     "id": "lampara",
-    "nombre": "Lámpara numa home",
+    "nombre": "Lámpara tronco numa home",
     "fecha": "2026-09-24",
     "partes": [
       {
@@ -135,6 +135,6 @@
         "nombre": "Difusor"
       }
     ],
-    "notas": "Forma de la lámpara clara de la referencia: tronco de ~Ø 120 × 272 mm con base alta (90 mm) ensanchada como el pie de un árbol y con pliegues verticales, 12 rodajas de 6,3 mm con rendijas de 3 mm en una cintura más estrecha que se curva en S, y remate de 60 mm más ancho con bisel de 8°. Textura de la corteza copiada de la lámpara de referencia; cortes lisos. Difusor escalonado con dos guías (0° y 150°); base con paso M10, tuerca, canal de cable y «numa home» debajo. El visor muestra una versión ligera; las piezas de impresión llevan la textura a 0,4 mm."
+    "notas": "Tronco realista de ~Ø 150 × 330 mm (pie de 188 mm con raíces): base de 100 mm con raíces en contrafuerte y surcos, 14 rodajas de 6,3 mm con rendijas de 3 mm y remate de 80 mm con bisel de 9°. Ligera inclinación, tres nudos (abultamiento y cicatriz de la rama) y, en el corte de arriba, anillos de crecimiento, médula, grietas de secado y la línea de la corteza. Corteza con la textura escaneada de la referencia. Difusor escalonado Ø 92 mm con dos guías (0° y 150°); base con paso M10, tuerca, canal de cable y «numa home» debajo. El visor muestra una versión ligera; las piezas de impresión llevan la textura a 0,4 mm."
   }
 ]
