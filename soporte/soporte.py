@@ -3,8 +3,8 @@
 Bandeja rectangular: exterior 380 x 300 mm, hueco interior 340 x 260 mm donde
 encaja la papelera (marco de 20 mm por lado), fondo macizo y borde alrededor.
 Primer modelo: las alturas no vienen en el croquis y son una propuesta.
-Por debajo lleva una rosca M5 en cada esquina (bajo el marco macizo) para
-roscar las bolas de apoyo al suelo.
+Por debajo lleva una rosca M5 cerca de cada esquina, metida bajo el hueco
+(por eso el fondo es grueso), para roscar las bolas de apoyo al suelo.
 
     pip install numpy trimesh manifold3d
     python soporte.py
@@ -17,16 +17,16 @@ from manifold3d import CrossSection, FillRule, Manifold
 
 EXTERIOR = (380.0, 300.0)
 INTERIOR = (340.0, 260.0)
-FONDO = 4.0           # grosor del fondo
-BORDE = 25.0          # altura del borde por encima del fondo
+FONDO = 14.0          # grosor del fondo: aloja las roscas, que van bajo el hueco
+BORDE = 60.0          # altura de los laterales por encima del fondo
 RADIO_EXT = 15.0      # esquinas redondeadas por fuera
 RADIO_INT = 8.0       # y por dentro (la papelera suele tener esquinas curvas)
 CHAFLAN = 2.0         # chaflán en los cantos de arriba y de abajo
 # Roscas M5 x 0,8 a derechas, abiertas por abajo, una por esquina
-ROSCA = dict(diametro=5.0, paso=0.8, profundidad=15.0,
+ROSCA = dict(diametro=5.0, paso=0.8, profundidad=12.0,
              holgura=0.3,       # mm de más en diámetro: el plástico impreso encoge
              avellanado=0.8)    # chaflán de entrada para que el tornillo entre recto
-ROSCA_DESDE_BORDE = 10.0  # centro de la rosca, a mitad del marco de 20 mm
+ROSCA_DESDE_BORDE = 40.0  # centro de la rosca: 20 mm hacia dentro del hueco
 
 
 def rectangulo(ancho, largo, r):
