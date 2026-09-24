@@ -55,20 +55,20 @@ def bloque(ancho, largo, r, alto, chaflan):
     return Manifold.batch_hull(capas)
 
 
-def helice(r_min, r_max, altura, fondo=0.125, cresta=0.875):
+def helice(r_min, r_max, altura, fondo=0.125, cresta=0.875, puntos=48, por_vuelta=16):
     """Sólido roscado a derechas, M5 x 0,8 de paso, entre z = 0 y z = altura.
     Su sección es una leva cuyo radio sigue el perfil métrico del filete (60°,
     con fondos y crestas planos); al extruirla girando 360° por paso sale la
     hélice. «fondo» y «cresta» son las fracciones del perfil que quedan planas."""
     p = ROSCA["paso"]
-    t = np.linspace(0, 1, 49)[:-1]  # 7,5° por punto: de sobra para imprimir
+    t = np.linspace(0, 1, puntos + 1)[:-1]  # 48 puntos = 7,5°: de sobra para imprimir
     tri = 1 - np.abs(2 * t - 1)     # 0 en el fondo del filete, 1 en la cresta
     perfil = np.clip((tri - fondo) / (cresta - fondo), 0, 1)
     ang = -2 * np.pi * t
     radio = r_min + (r_max - r_min) * perfil
     seccion = CrossSection([np.c_[radio * np.cos(ang), radio * np.sin(ang)]], FillRule.EvenOdd)
     vueltas = (altura + 2 * p) / p
-    return seccion.extrude(altura + 2 * p, n_divisions=int(vueltas * 16),
+    return seccion.extrude(altura + 2 * p, n_divisions=int(vueltas * por_vuelta),
                            twist_degrees=360 * vueltas).translate((0, 0, -p)) \
         ^ Manifold.cylinder(altura, r_max + 1, r_max + 1, 32)
 
@@ -86,13 +86,13 @@ def rosca_hembra(profundidad=None, surco_extra=0.0):
     return macho + entrada
 
 
-def rosca_macho(largo):
+def rosca_macho(largo, **resolucion):
     """Varilla con rosca exterior M5 a medida nominal (diámetro mayor 5 mm,
     menor 4,02 mm según ISO), con fondo de filete plano de p/4 y cresta de p/8."""
     p = ROSCA["paso"]
     r_may = ROSCA["diametro"] / 2
     r_men = r_may - 0.6134 * p
-    return helice(r_men, r_may, largo, fondo=0.25, cresta=0.875)
+    return helice(r_men, r_may, largo, fondo=0.25, cresta=0.875, **resolucion)
 
 
 def construir():

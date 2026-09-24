@@ -23,9 +23,9 @@ SEPARACION = 12.0
 CANTIDAD = 4
 
 
-def esparrago():
+def esparrago(**resolucion):
     r = ROSCA["diametro"] / 2
-    varilla = rosca_macho(LARGO)
+    varilla = rosca_macho(LARGO, **resolucion)
     # chaflán en las dos puntas: doble cono que recorta las crestas
     c = CHAFLAN
     punta = Manifold.cylinder(LARGO, r, r, 64).translate((0, 0, 0))

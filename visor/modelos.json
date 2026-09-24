@@ -68,5 +68,37 @@
     "archivo": "modelos/esparrago.txt",
     "origen": "soporte/esparrago_vista.stl",
     "notas": "Cuatro espárragos con rosca exterior M5 × 0,8 a derechas a medida nominal (Ø 5,00 / 4,02 mm, sin holgura), de 23 mm: 11,5 mm entran en la caja y 11,5 mm en la bola, sin hacer tope en los agujeros de 12 mm, así la bola asienta contra la caja. Chaflán en las dos puntas y ranura para destornillador arriba. Se imprimen de pie, con relleno al 100 %. El visor muestra uno; esparragos.stl trae los cuatro listos para imprimir."
+  },
+  {
+    "id": "conjunto",
+    "nombre": "Soporte papelera · conjunto montado",
+    "fecha": "2026-09-24",
+    "partes": [
+      {
+        "archivo": "modelos/conjunto_pieza_1.txt",
+        "origen": "soporte/conjunto_pieza_1.stl",
+        "color": "#D1D3D5",
+        "nombre": "Pieza 1"
+      },
+      {
+        "archivo": "modelos/conjunto_pieza_2.txt",
+        "origen": "soporte/conjunto_pieza_2.stl",
+        "color": "#7FA7C9",
+        "nombre": "Pieza 2"
+      },
+      {
+        "archivo": "modelos/conjunto_bolas.txt",
+        "origen": "soporte/conjunto_bolas.stl",
+        "color": "#545454",
+        "nombre": "Bolas"
+      },
+      {
+        "archivo": "modelos/conjunto_esparragos.txt",
+        "origen": "soporte/conjunto_esparragos.stl",
+        "color": "#E4BD68",
+        "nombre": "Espárragos"
+      }
+    ],
+    "notas": "Todo montado: las dos piezas del soporte encajadas por sus colas de milano, apoyadas sobre las cuatro bolas, con los espárragos M5 metidos 11,5 mm en la caja y 11,5 mm en cada bola. Mide 380 × 300 × 99 mm (74 de caja + 25 de bolas). Con «Corte» se ven los espárragos dentro de las roscas. Es solo para ver el conjunto: para imprimir se usan las piezas sueltas."
   }
 ]
