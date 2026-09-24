@@ -15,9 +15,9 @@ from manifold3d import Manifold
 
 from soporte import ROSCA, rosca_hembra
 
-DIAMETRO = 30.0
-CORTE_ABAJO = 2.0     # lo que se quita por abajo (apoyo plano de ~15 mm)
-CORTE_ARRIBA = 3.0    # lo que se quita por arriba (asiento plano de ~18 mm)
+DIAMETRO = 45.0
+CORTE_ABAJO = 2.0     # lo que se quita por abajo (apoyo plano de ~18 mm)
+CORTE_ARRIBA = 3.0    # lo que se quita por arriba (asiento plano de ~22 mm)
 PROFUNDIDAD_ROSCA = 12.0
 SURCO_EXTRA = 0.25    # mm más de hondo en el surco del filete (radial), para los
                       # tornillos que se fabricarán; el agujero sigue a medida M5

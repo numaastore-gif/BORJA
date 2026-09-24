@@ -59,7 +59,7 @@
     "fecha": "2026-09-24",
     "archivo": "modelos/bolas.txt",
     "origen": "soporte/bolas.stl",
-    "notas": "Cuatro bolas de Ø 30 mm, poco recortadas: 2 mm por abajo (apoyo plano de ~15 mm) y 3 mm por arriba (asiento de ~18 mm), 25 mm de alto. Arriba, rosca hembra M5 × 0,8 de 12 mm: agujero a medida nominal (Ø 4,13 mm, sin holgura) y surco del filete 0,25 mm más hondo (Ø 5,5 mm). Se unen a la caja con los espárragos y se desenroscan para limpiarlas. Se imprimen de pie, sin soportes."
+    "notas": "Cuatro bolas de Ø 45 mm, poco recortadas: 2 mm por abajo (apoyo plano de Ø 18,5 mm) y 3 mm por arriba (asiento de Ø 22,4 mm), 40 mm de alto. Arriba, rosca hembra M5 × 0,8 de 12 mm: agujero a medida nominal (Ø 4,13 mm, sin holgura) y surco del filete 0,25 mm más hondo (Ø 5,5 mm). Se unen a la caja con los espárragos y se desenroscan para limpiarlas. Se imprimen de pie, sin soportes."
   },
   {
     "id": "esparragos",
@@ -99,6 +99,6 @@
         "nombre": "Espárragos"
       }
     ],
-    "notas": "Todo montado: las dos piezas del soporte encajadas por sus colas de milano, apoyadas sobre las cuatro bolas, con los espárragos M5 metidos 11,5 mm en la caja y 11,5 mm en cada bola. Mide 380 × 300 × 99 mm (74 de caja + 25 de bolas). Con «Corte» se ven los espárragos dentro de las roscas. Es solo para ver el conjunto: para imprimir se usan las piezas sueltas."
+    "notas": "Todo montado: las dos piezas del soporte encajadas por sus colas de milano, apoyadas sobre las cuatro bolas, con los espárragos M5 metidos 11,5 mm en la caja y 11,5 mm en cada bola. Mide 380 × 300 × 114 mm (74 de caja + 40 de bolas de Ø 45). Con «Corte» se ven los espárragos dentro de las roscas. Es solo para ver el conjunto: para imprimir se usan las piezas sueltas."
   }
 ]
