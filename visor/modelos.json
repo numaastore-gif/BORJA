@@ -35,10 +35,30 @@
   },
   {
     "id": "soporte",
-    "nombre": "Soporte papelera (v3)",
+    "nombre": "Soporte papelera (v4, 2 piezas)",
     "fecha": "2026-09-24",
-    "archivo": "modelos/soporte.txt",
-    "origen": "soporte/soporte.stl",
-    "notas": "Bandeja de 380 × 300 mm con hueco de 340 × 260 mm (marco de 20 mm) y laterales de 60 mm por encima del fondo (74 mm de alto). Fondo de 14 mm para alojar cuatro roscas M5 × 0,8 de 12 mm, a 40 mm de cada borde exterior (20 mm dentro del hueco), con chaflán de entrada. Entera no cabe en ninguna Bambu Lab: se partirá en piezas que encajan."
+    "partes": [
+      {
+        "archivo": "modelos/soporte_pieza_1.txt",
+        "origen": "soporte/soporte_pieza_1.stl",
+        "color": "#D1D3D5",
+        "nombre": "Pieza 1 (con colas)"
+      },
+      {
+        "archivo": "modelos/soporte_pieza_2.txt",
+        "origen": "soporte/soporte_pieza_2.stl",
+        "color": "#7FA7C9",
+        "nombre": "Pieza 2"
+      }
+    ],
+    "notas": "Medidas del cliente: 380 × 300 mm, hueco de 340 × 260 mm, laterales de 60 mm sobre un fondo de 14 mm (74 mm de alto). Partido en dos piezas (206 × 300 y 190 × 300 mm, caben en la H2D) unidas con colas de milano verticales: tres en el fondo y una dentro de cada lateral, con 0,15 mm de holgura por lado; se encajan deslizando de arriba abajo y se pegan. Cuatro roscas M5 × 0,8 de 12 mm por debajo, a 40 mm de los bordes. El visor lo muestra montado; el aviso de «cabe en la cama» se refiere al conjunto, no a cada pieza."
+  },
+  {
+    "id": "bolas",
+    "nombre": "Bolas de apoyo (×4)",
+    "fecha": "2026-09-24",
+    "archivo": "modelos/bolas.txt",
+    "origen": "soporte/bolas.stl",
+    "notas": "Cuatro bolas de Ø 30 mm cortadas en plano por abajo (apoyo de ~20 mm) y por arriba (asiento de ~22 mm), de 21 mm de alto. Arriba, rosca hembra M5 × 0,8 de 12 mm, igual que las de la caja: se unen con un espárrago M5 y se desenroscan para limpiarlas. Se imprimen de pie, sin soportes."
   }
 ]
