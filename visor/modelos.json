@@ -107,34 +107,34 @@
   },
   {
     "id": "lampara",
-    "nombre": "Lámpara tronco numa home",
+    "nombre": "Lámpara numa home (abstracta)",
     "fecha": "2026-09-24",
     "partes": [
       {
         "archivo": "modelos/lampara_base.txt",
-        "origen": "lampara/base.stl",
-        "color": "#7A5230",
+        "origen": "lampara/vista/base.stl",
+        "color": "#8A6440",
         "nombre": "Base"
       },
       {
         "archivo": "modelos/lampara_rodajas.txt",
-        "origen": "lampara/vista_rodajas.stl",
-        "color": "#7A5230",
+        "origen": "lampara/vista/rodajas.stl",
+        "color": "#8A6440",
         "nombre": "12 rodajas"
       },
       {
         "archivo": "modelos/lampara_remate.txt",
-        "origen": "lampara/remate.stl",
-        "color": "#7A5230",
+        "origen": "lampara/vista/remate.stl",
+        "color": "#8A6440",
         "nombre": "Remate"
       },
       {
         "archivo": "modelos/lampara_difusor.txt",
-        "origen": "lampara/difusor.stl",
+        "origen": "lampara/vista/difusor.stl",
         "color": "#F4ECD8",
         "nombre": "Difusor"
       }
     ],
-    "notas": "Tronco de Ø 124 × 264 mm con corteza en relieve, cortado en base, 12 rodajas de 7 mm con rendijas de luz de 5 mm y remate en bisel de 14°. Las piezas se ensartan en un difusor escalonado (un escalón cónico por rodaja) y dos guías a 0° y 150° fijan la única posición en que casa la corteza. Base con asiento del difusor, paso para tubo M10, alojamiento de tuerca, canal de cable y «numa home» grabado debajo. Anillos de crecimiento grabados en las caras de corte. Madera: PLA con efecto madera; difusor: PLA/PETG translúcido."
+    "notas": "Bloque de madera abstracto: contorno facetado de 9 gajos con entrantes en V que gira 75° en espiral y se ensancha en el centro; cada rodaja va además algo girada y desplazada (escalonado). Ø ~128 × 265 mm: base, 12 rodajas de 7 mm con rendijas de 5 mm y remate en bisel. Textura copiada de la lámpara de referencia (veta escaneada de su STL + grietas); cortes lisos como en la referencia. Difusor escalonado con dos guías (0° y 150°); base con paso M10, tuerca, canal de cable y «numa home» debajo. El visor muestra una versión ligera; las piezas de impresión llevan la textura a 0,4 mm."
   }
 ]

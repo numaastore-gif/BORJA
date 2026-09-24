@@ -1,248 +1,315 @@
-"""Lámpara «tronco en rodajas» para numashome.
+"""Lámpara abstracta de madera en rodajas para numashome.
 
-Un tronco con corteza cortado en rodajas separadas por rendijas de luz:
+Un bloque de madera de contorno facetado (gajos planos con entrantes hondos)
+que gira en espiral de abajo arriba y se ensancha en el centro, cortado en
+rodajas separadas por rendijas de luz:
 
   base      bloque macizo con el asiento del difusor, paso para el tubo
             roscado M10 del portalámparas, alojamiento de la tuerca por debajo,
             canal para el cable y «numa home» grabado en la cara inferior.
-  rodajas   12 anillos de tronco. Cada uno baja por el difusor y se asienta
-            solo en su escalón, así que las rendijas salen siempre iguales. Dos
-            muescas a 0° y 150° encajan en las guías del difusor: solo entran
-            en una posición y la corteza casa de una rodaja a la siguiente.
-  remate    tapa superior cortada en bisel, con los anillos de crecimiento
-            grabados en el corte; se encaja sobre el extremo del difusor.
-  difusor   tubo escalonado translúcido (un escalón cónico a 45° por rodaja,
-            que centra cada pieza), con las dos guías y una pestaña que se
-            encaja en la base.
+  rodajas   12 piezas. Cada una baja por el difusor y se asienta sola en su
+            escalón, así que las rendijas salen iguales. Dos muescas a 0° y
+            150° encajan en las guías del difusor: solo entran en una posición.
+  remate    tapa superior cortada en bisel que cubre el extremo del difusor.
+  difusor   tubo escalonado translúcido con un escalón cónico a 45° por pieza,
+            las dos guías y una pestaña que se encaja en la base.
 
-Todas las piezas salen del mismo tronco, así que la corteza continúa de una
-pieza a la siguiente. Corteza con vetas verticales y grietas, y anillos de
-crecimiento grabados en las caras de corte que se ven por las rendijas.
-Medidas en mm.
+Textura: la de la lámpara de referencia. textura_corteza.npy es el relieve
+de la corteza escaneado de su STL (60 × 42 mm a 0,3 mm/px, sin la forma
+general); con sus zonas limpias se compone una baldosa que se repite sin
+costuras y se aplica como relieve real en todas las caras laterales, más
+grietas estrechas y profundas como las de la referencia. Las caras de corte
+son lisas, como en la referencia. Medidas en mm.
 
-    pip install numpy trimesh manifold3d matplotlib fonttools
-    python lampara.py
+    pip install numpy trimesh manifold3d matplotlib fonttools opencv-python-headless
+    python lampara.py            # piezas para imprimir (resolución 0,4 mm)
+    python lampara.py --vista    # versión ligera para el visor
 """
 import pathlib
+import sys
 
+import cv2
 import numpy as np
 import trimesh
-from fontTools.ttLib import TTFont
-from manifold3d import CrossSection, FillRule, Manifold, Mesh
+from manifold3d import CrossSection, FillRule, Manifold, Mesh, OpType, triangulate
 from matplotlib.font_manager import FontProperties
 from matplotlib.textpath import TextPath
 
 AQUI = pathlib.Path(__file__).parent
+VISTA = "--vista" in sys.argv
+RESOLUCION = 0.8 if VISTA else 0.4  # separación de puntos en las caras con textura
+SEMILLA = 11
 
-# --- Tronco --------------------------------------------------------------------
-RADIO = 62.0            # radio medio del tronco (Ø 124 mm)
-SEGMENTOS = 360         # puntos por vuelta (1 por grado)
-PASO_Z = 1.0            # separación entre anillos de la malla
-SEMILLA = 7             # cambia la corteza y los anillos
+# --- Forma ------------------------------------------------------------------------
+GAJOS = 9               # gajos del contorno
+R_GAJO = (57.0, 65.0)   # radio de las caras planas de los gajos (mín, máx)
+R_ENTRANTE = (46.0, 51.0)  # radio del fondo de los entrantes
+GIRO_TOTAL = 75.0       # grados que gira el contorno de abajo arriba
+PANZA = 0.07            # cuánto se ensancha en el centro
+DESORDEN = dict(giro=7.0, desplazamiento=2.0)  # cada rodaja se gira y se desplaza algo: escalonado
 
-# --- Alturas -----------------------------------------------------------------------
+# --- Alturas ------------------------------------------------------------------------
 ALTO_BASE = 50.0
 RODAJAS = 12
 GROSOR_RODAJA = 7.0
-RENDIJA = 5.0           # hueco de luz entre piezas
-ALTO_REMATE = 50.0      # altura media del remate por encima de su base
-BISEL = 14.0            # grados de inclinación del corte superior
+RENDIJA = 5.0
+ALTO_REMATE = 50.0
+BISEL = 14.0
 
-# --- Difusor ----------------------------------------------------------------------
-R_DIFUSOR = 38.0        # radio exterior en la base (Ø 76 mm)
-ESCALON = 1.0           # lo que se estrecha en cada nivel
+# --- Textura -------------------------------------------------------------------------
+TEXTURA = AQUI / "textura_corteza.npy"
+PIXEL = 0.3             # mm por píxel de la textura escaneada
+GRIETAS_POR_CM2 = 0.07  # densidad de grietas
+GRIETA = dict(largo=(14.0, 38.0), ancho=(1.2, 2.4), hondo=(1.2, 2.2), inclinacion=0.18)
+
+# --- Difusor -------------------------------------------------------------------------
+R_DIFUSOR = 38.0
+ESCALON = 1.0
 PARED_DIFUSOR = 1.6
-GUIAS = (0.0, 150.0)    # ángulos de las guías (asimétricas: una sola posición)
+GUIAS = (0.0, 150.0)
 GUIA = dict(ancho=4.0, alto=2.0)
-PESTANA = dict(radio=R_DIFUSOR + 4.0, grosor=3.0, lengueta=4.0)  # encaje en la base
-HOLGURA = 0.2           # holgura de deslizamiento de rodajas y remate
-ENTRA_EN_REMATE = 18.0  # lo que el difusor entra en el remate
+PESTANA = dict(radio=R_DIFUSOR + 4.0, grosor=3.0, lengueta=4.0)
+HOLGURA = 0.2
+ENTRA_EN_REMATE = 18.0
 
-# --- Electricidad ------------------------------------------------------------------
-TUBO_M10 = 10.5         # paso del tubo roscado M10x1 del portalámparas
-TUERCA = dict(diametro=26.0, alto=8.0)   # alojamiento de tuerca y arandela
-CABLE = dict(ancho=7.0, alto=5.0, angulo=180.0)  # canal del cable (sale por detrás)
-
-# --- Acabados -----------------------------------------------------------------------
-ANILLOS = dict(profundidad=0.4, ancho=0.6, separacion=5.5)
+# --- Electricidad y rótulo -------------------------------------------------------------
+TUBO_M10 = 10.5
+TUERCA = dict(diametro=26.0, alto=8.0)
+CABLE = dict(ancho=7.0, alto=5.0, angulo=180.0)
 TEXTO = "numa home"
 TEXTO_ALTO = 7.0
 TEXTO_HONDO = 0.6
 
 Z_RODAJA = [ALTO_BASE + RENDIJA + i * (GROSOR_RODAJA + RENDIJA) for i in range(RODAJAS)]
 Z_REMATE = Z_RODAJA[-1] + GROSOR_RODAJA + RENDIJA
-Z_TOPE = Z_REMATE + ALTO_REMATE + np.tan(np.radians(BISEL)) * RADIO * 1.3
+ALTO_TOTAL = Z_REMATE + ALTO_REMATE
+Z_TOPE = ALTO_TOTAL + np.tan(np.radians(BISEL)) * R_GAJO[1] * 1.25
 
-
-# --- Forma del tronco -----------------------------------------------------------------
 rng = np.random.default_rng(SEMILLA)
-LOBULOS = [(n, a, rng.uniform(0, 2 * np.pi), rng.uniform(-0.006, 0.006))
-           for n, a in ((2, 0.055), (3, 0.035), (4, 0.018), (5, 0.012), (7, 0.006))]
-VETAS = [(int(rng.integers(18, 70)), rng.uniform(0.12, 0.28), rng.uniform(0, 2 * np.pi),
-          rng.uniform(-0.05, 0.05)) for _ in range(10)]
-GRIETAS = [(int(rng.integers(9, 20)), rng.uniform(0.9, 1.6), rng.uniform(0, 2 * np.pi),
-            rng.uniform(-0.02, 0.02)) for _ in range(4)]
 
 
-def centro(z):
-    """El tronco no es recto: su eje se desvía unos milímetros."""
-    return 3.0 * np.sin(z / 95.0), 2.0 * np.cos(z / 130.0) - 2.0
-
-
-def radio_liso(theta, z):
-    r = np.ones_like(theta)
-    for n, a, fase, giro in LOBULOS:
-        r += a * np.cos(n * theta + fase + giro * z)
-    return RADIO * r * (1 - 0.0003 * z)
-
-
-def corteza(theta, z):
-    """Relieve de la corteza: vetas verticales onduladas y grietas estrechas."""
-    d = np.zeros_like(theta)
-    for n, a, fase, b in VETAS:
-        d += a * np.sin(n * theta + b * z + fase)
-    for n, a, fase, b in GRIETAS:
-        d -= a * (0.5 + 0.5 * np.sin(n * theta + b * z + fase)) ** 14
-    return d
-
-
-def tronco():
-    zs = np.arange(0.0, Z_TOPE + PASO_Z, PASO_Z)
-    t = np.linspace(0, 2 * np.pi, SEGMENTOS, endpoint=False)
+# --- Contorno abstracto ------------------------------------------------------------------
+def poligono_base():
+    """Gajos de cara plana separados por entrantes en V."""
     pts = []
+    paso = 2 * np.pi / GAJOS
+    for k in range(GAJOS):
+        a = k * paso + rng.uniform(-0.12, 0.12)
+        r = rng.uniform(*R_GAJO)
+        ancho = paso * rng.uniform(0.28, 0.42)
+        pts += [(r / np.cos(ancho / 2) * np.cos(a - ancho / 2), r / np.cos(ancho / 2) * np.sin(a - ancho / 2)),
+                (r / np.cos(ancho / 2) * np.cos(a + ancho / 2), r / np.cos(ancho / 2) * np.sin(a + ancho / 2))]
+        b = a + paso / 2 + rng.uniform(-0.08, 0.08)
+        re = rng.uniform(*R_ENTRANTE)
+        pts.append((re * np.cos(b), re * np.sin(b)))
+    return np.array(pts)
+
+
+BASE = poligono_base()
+
+
+def remuestrear(poli, paso):
+    """Puntos equiespaciados sobre el perímetro (conservando los vértices) y
+    su posición en longitud de arco."""
+    cerr = np.vstack([poli, poli[:1]])
+    lados = np.diff(cerr, axis=0)
+    largos = np.hypot(*lados.T)
+    pts, s, acum = [], [], 0.0
+    for p, d, l in zip(cerr[:-1], lados, largos):
+        n = max(int(np.ceil(l / paso)), 1)
+        for t in np.arange(n) / n:
+            pts.append(p + d * t)
+            s.append(acum + l * t)
+        acum += l
+    return np.array(pts), np.array(s), acum
+
+
+CONTORNO, ARCO, PERIMETRO = remuestrear(BASE, RESOLUCION)
+
+
+def normales(pts):
+    """Normal hacia fuera de un contorno antihorario (media en los vértices)."""
+    t = np.roll(pts, -1, axis=0) - np.roll(pts, 1, axis=0)
+    n = np.c_[t[:, 1], -t[:, 0]]
+    return n / np.linalg.norm(n, axis=1)[:, None]
+
+
+NORMALES = normales(CONTORNO)
+
+
+def transformacion(z):
+    """Giro y escala del contorno a la altura z."""
+    giro = np.radians(GIRO_TOTAL) * z / ALTO_TOTAL
+    escala = 1 + PANZA * np.sin(np.pi * np.clip(z / ALTO_TOTAL, 0, 1))
+    c, s = np.cos(giro), np.sin(giro)
+    return np.array([[c, -s], [s, c]]) * escala
+
+
+# --- Textura -----------------------------------------------------------------------------------
+def baldosa():
+    """Baldosa periódica hecha con las zonas limpias del escaneo (sin la
+    grieta y sus halos), empalmadas con fundidos."""
+    d = np.load(TEXTURA)
+    a, b = d[:, 5:70], d[:, 145:198]
+    f = 10
+    w = np.linspace(0, 1, f)[None, :]
+    t = np.hstack([a[:, :-f], a[:, -f:] * (1 - w) + b[:, :f] * w, b[:, f:]])
+    # periódica en horizontal y en vertical
+    f = 14
+    w = np.linspace(0, 1, f)[None, :]
+    t = np.hstack([t[:, f:-f], t[:, -f:] * (1 - w) + t[:, :f] * w])
+    w = np.linspace(0, 1, f)[:, None]
+    t = np.vstack([t[f:-f], t[-f:] * (1 - w) + t[:f] * w])
+    return (t - t.mean()).astype(np.float32)
+
+
+BALDOSA = baldosa()
+
+
+def veta(u, v):
+    """Relieve de la veta en (u, v) mm, con interpolación bilineal periódica."""
+    alto, ancho = BALDOSA.shape
+    x, y = u / PIXEL, v / PIXEL
+    x0, y0 = np.floor(x).astype(int), np.floor(y).astype(int)
+    fx, fy = x - x0, y - y0
+    x0 %= ancho
+    y0 %= alto
+    x1, y1 = (x0 + 1) % ancho, (y0 + 1) % alto
+    b = BALDOSA
+    return (b[y0, x0] * (1 - fx) * (1 - fy) + b[y0, x1] * fx * (1 - fy)
+            + b[y1, x0] * (1 - fx) * fy + b[y1, x1] * fx * fy)
+
+
+def lista_grietas(v0, v1, semilla):
+    r = np.random.default_rng(semilla)
+    area = PERIMETRO * (v1 - v0) / 100.0
+    g = []
+    for _ in range(r.poisson(max(area * GRIETAS_POR_CM2, 0.3))):
+        largo = r.uniform(*GRIETA["largo"])
+        g.append(dict(u=r.uniform(0, PERIMETRO), v=r.uniform(v0 - largo * 0.6, v1 + largo * 0.2),
+                      largo=largo, ancho=r.uniform(*GRIETA["ancho"]), hondo=r.uniform(*GRIETA["hondo"]),
+                      incl=r.uniform(-1, 1) * GRIETA["inclinacion"], hacia_arriba=r.random() < 0.5))
+    return g
+
+
+def grietas(u, v, lista):
+    """Hendiduras en V que se afinan hacia un extremo, como las de la referencia."""
+    total = np.zeros_like(u)
+    for g in lista:
+        du = (u - g["u"] + PERIMETRO / 2) % PERIMETRO - PERIMETRO / 2
+        t = (v - g["v"]) / g["largo"]
+        if not g["hacia_arriba"]:
+            t = 1 - t
+        dentro = (t >= 0) & (t <= 1)
+        eje = g["incl"] * (v - g["v"])
+        ancho = g["ancho"] * np.sqrt(np.clip(1 - t, 0, 1)) * np.clip(t * 6, 0, 1)
+        perfil = np.clip(1 - np.abs(du - eje) / np.maximum(ancho, 1e-3), 0, 1)
+        total -= np.where(dentro, g["hondo"] * perfil * np.sqrt(np.clip(1 - t, 0, 1)), 0)
+    return total
+
+
+# --- Sólidos con textura -------------------------------------------------------------------------
+def bloque(z0, z1, semilla, giro_extra=0.0, desplazamiento=(0.0, 0.0)):
+    """Tramo del bloque entre z0 y z1 con la textura aplicada en el lateral.
+    giro_extra (grados) y desplazamiento (mm) descolocan la pieza respecto a la
+    espiral para el efecto escalonado."""
+    ge = np.radians(giro_extra)
+    extra = np.array([[np.cos(ge), -np.sin(ge)], [np.sin(ge), np.cos(ge)]])
+    filas = max(int(np.ceil((z1 - z0) / RESOLUCION)), 1)
+    zs = np.linspace(z0, z1, filas + 1)
+    lista = lista_grietas(z0, z1, semilla)
+    anillos = []
     for z in zs:
-        cx, cy = centro(z)
-        r = radio_liso(t, z) + corteza(t, z)
-        pts.append(np.c_[cx + r * np.cos(t), cy + r * np.sin(t), np.full_like(t, z)])
-    pts = np.vstack(pts)
-    n, filas = SEGMENTOS, len(zs)
+        m = transformacion(z) @ extra
+        p = CONTORNO @ m.T + np.array(desplazamiento)
+        n = NORMALES @ m.T
+        n /= np.linalg.norm(n, axis=1)[:, None]
+        d = veta(ARCO, z) + grietas(ARCO, np.full_like(ARCO, z), lista)
+        anillos.append(p + n * d[:, None])
+    k = len(CONTORNO)
+    pts = np.vstack([np.c_[a, np.full(k, z)] for a, z in zip(anillos, zs)])
     caras = []
-    for f in range(filas - 1):
-        a = f * n + np.arange(n)
-        b = f * n + (np.arange(n) + 1) % n
-        caras += list(np.c_[a, b, b + n]) + list(np.c_[a, b + n, a + n])
-    abajo, arriba = len(pts), len(pts) + 1
-    tapas = np.array([[*centro(0.0), 0.0], [*centro(zs[-1]), zs[-1]]])
-    top = (filas - 1) * n
-    for i in range(n):
-        caras.append((abajo, (i + 1) % n, i))
-        caras.append((arriba, top + i, top + (i + 1) % n))
-    verts = np.vstack([pts, tapas]).astype(np.float32)
-    return Manifold(Mesh(vert_properties=verts, tri_verts=np.array(caras, dtype=np.uint32)))
+    for f in range(len(zs) - 1):
+        a = f * k + np.arange(k)
+        b = f * k + (np.arange(k) + 1) % k
+        caras.append(np.c_[a, b, b + k])
+        caras.append(np.c_[a, b + k, a + k])
+    abajo = triangulate([anillos[0]])[:, ::-1]
+    arriba = triangulate([anillos[-1]]) + (len(zs) - 1) * k
+    caras = np.vstack(caras + [abajo, arriba])
+    return Manifold(Mesh(vert_properties=pts.astype(np.float32), tri_verts=caras.astype(np.uint32)))
 
 
 def corte_superior():
-    """Semiespacio por debajo del plano inclinado del corte de arriba."""
-    z_medio = Z_REMATE + ALTO_REMATE
     caja = Manifold.cube((1000, 1000, 1000), center=True).translate((0, 0, -500))
-    return caja.rotate((0, BISEL, 0)).translate((*centro(z_medio), z_medio))
+    return caja.rotate((0, BISEL, 0)).translate((0, 0, ALTO_TOTAL))
 
 
-def franja(z0, z1):
-    return Manifold.cube((400, 400, z1 - z0)).translate((-200, -200, z0))
-
-
-# --- Anillos de crecimiento --------------------------------------------------------------
-def anillos(z, r_min):
-    """Surcos concéntricos que siguen la forma del tronco a la altura z, desde
-    el borde (dejando la corteza) hasta r_min."""
-    t = np.linspace(0, 2 * np.pi, SEGMENTOS, endpoint=False)
-    cx, cy = centro(z)
-    base = radio_liso(t, z)
-    rr = np.random.default_rng(int(z * 10) + SEMILLA)
-    surcos = []
-    k = 3.5  # primer anillo, dentro de la corteza
-    while True:
-        r = base - k + 0.35 * np.sin(rr.integers(3, 9) * t + rr.uniform(0, 6.3))
-        if r.min() < r_min:
-            break
-        fuera = np.c_[cx + r * np.cos(t), cy + r * np.sin(t)]
-        r2 = r - ANILLOS["ancho"]
-        dentro = np.c_[cx + r2 * np.cos(t), cy + r2 * np.sin(t)]
-        surcos.append(CrossSection([fuera]) - CrossSection([dentro]))
-        k += ANILLOS["separacion"] * rr.uniform(0.7, 1.3)
-    return CrossSection.compose(surcos) if surcos else CrossSection()
-
-
-def grabar_anillos_arriba(pieza, z, r_min):
-    h = ANILLOS["profundidad"]
-    return pieza - anillos(z, r_min).extrude(h + 1).translate((0, 0, z - h))
-
-
-# --- Difusor --------------------------------------------------------------------------------
+# --- Difusor ---------------------------------------------------------------------------------------
 def radio_nivel(i):
-    """Radio exterior del difusor en el nivel i (-1 = por debajo de la primera rodaja)."""
     return R_DIFUSOR - (i + 1) * ESCALON
 
 
-def perfil_difusor(extra=0.0):
-    """(z, radio) del escalonado: cada pieza se asienta en un cono a 45° que
-    termina justo a su altura (restando la holgura)."""
-    z_ini = ALTO_BASE - PESTANA["grosor"]
-    pts = [(z_ini, radio_nivel(-1) + extra)]
+def perfil_difusor():
+    pts = [(ALTO_BASE - PESTANA["grosor"], radio_nivel(-1))]
     for i, z in enumerate(Z_RODAJA + [Z_REMATE]):
-        pts += [(z - ESCALON + HOLGURA, radio_nivel(i - 1) + extra), (z + HOLGURA, radio_nivel(i) + extra)]
-    pts.append((Z_REMATE + ENTRA_EN_REMATE, radio_nivel(RODAJAS) + extra))
+        pts += [(z - ESCALON + HOLGURA, radio_nivel(i - 1)), (z + HOLGURA, radio_nivel(i))]
+    pts.append((Z_REMATE + ENTRA_EN_REMATE, radio_nivel(RODAJAS)))
     return pts
 
 
-def solido_revolucion(perfil, segmentos=180):
-    zs, rs = zip(*perfil)
-    t = np.linspace(0, 2 * np.pi, segmentos, endpoint=False)
-    pts = np.vstack([np.c_[r * np.cos(t), r * np.sin(t), np.full_like(t, z)] for z, r in perfil])
-    n, filas = segmentos, len(perfil)
+def revolucion(perfil, segmentos=180, resalte=None):
+    """Sólido de revolución del perfil (z, radio). «resalte» = lista de
+    (ángulo en grados, ancho en mm, alto en mm): salientes verticales que forman
+    parte del mismo contorno (las guías), sin uniones booleanas."""
+    # columnas (ángulo, saliente): en cada borde de guía hay dos columnas al
+    # mismo ángulo (pie y cara), en el orden en que se recorre el contorno
+    columnas = []
+    tramos = sorted(resalte or [])
+    r0 = perfil[0][1]
+    for a in np.linspace(0, 360, segmentos, endpoint=False):
+        if not any(abs((a - g + 180) % 360 - 180) <= np.degrees(np.arcsin(w / 2 / r0)) + 0.5
+                   for g, w, _ in tramos):
+            columnas.append((a, 0.0))
+    for g, w, alto in tramos:
+        m = np.degrees(np.arcsin(w / 2 / r0))
+        columnas += [(g - m, 0.0, 0), (g - m, alto, 1), (g, alto, 2), (g + m, alto, 3), (g + m, 0.0, 4)]
+    columnas = [c if len(c) == 3 else (c[0], c[1], 0) for c in columnas]
+    columnas.sort(key=lambda c: (c[0] % 360, c[2]))
+    t = np.radians([c[0] for c in columnas])
+    extra = np.array([c[1] for c in columnas])
+    pts = np.vstack([np.c_[(r + extra) * np.cos(t), (r + extra) * np.sin(t), np.full_like(t, z)] for z, r in perfil])
+    n, filas = len(columnas), len(perfil)
     caras = []
     for f in range(filas - 1):
         a = f * n + np.arange(n)
         b = f * n + (np.arange(n) + 1) % n
-        caras += list(np.c_[a, b, b + n]) + list(np.c_[a, b + n, a + n])
+        caras += [np.c_[a, b, b + n], np.c_[a, b + n, a + n]]
     abajo, arriba = len(pts), len(pts) + 1
-    tapas = np.array([[0, 0, zs[0]], [0, 0, zs[-1]]])
+    tapas = np.array([[0, 0, perfil[0][0]], [0, 0, perfil[-1][0]]])
     top = (filas - 1) * n
-    for i in range(n):
-        caras.append((abajo, (i + 1) % n, i))
-        caras.append((arriba, top + i, top + (i + 1) % n))
+    i = np.arange(n)
+    caras += [np.c_[np.full(n, abajo), (i + 1) % n, i], np.c_[np.full(n, arriba), top + i, top + (i + 1) % n]]
     verts = np.vstack([pts, tapas]).astype(np.float32)
-    return Manifold(Mesh(vert_properties=verts, tri_verts=np.array(caras, dtype=np.uint32)))
-
-
-def guias(extra_radio=0.0, extra_ancho=0.0):
-    """Las dos guías verticales, siguiendo el escalonado del difusor."""
-    alto = GUIA["alto"] + extra_radio
-    ancho = GUIA["ancho"] + extra_ancho
-    perfil = perfil_difusor()
-    zs = [z for z, _ in perfil]
-    piezas = []
-    for ang in GUIAS:
-        tramos = []
-        for (z0, r0), (z1, r1) in zip(perfil, perfil[1:]):
-            if z1 - z0 < 1e-6:
-                continue
-            caja = lambda r, z: [(r - 1.0, -ancho / 2, z), (r + alto, -ancho / 2, z),
-                                 (r + alto, ancho / 2, z), (r - 1.0, ancho / 2, z)]
-            tramos.append(Manifold.hull_points(np.array(caja(r0, z0) + caja(r1, z1))))
-        piezas.append(Manifold.compose(tramos).rotate((0, 0, ang)))
-    return Manifold.compose(piezas)
+    return Manifold(Mesh(vert_properties=verts, tri_verts=np.vstack(caras).astype(np.uint32)))
 
 
 def difusor():
-    fuera = solido_revolucion(perfil_difusor())
-    dentro = solido_revolucion([(z, r - PARED_DIFUSOR) for z, r in perfil_difusor()])
-    dentro = dentro + Manifold.cylinder(1, R_DIFUSOR - PARED_DIFUSOR, R_DIFUSOR - PARED_DIFUSOR, 180) \
-        .translate((0, 0, ALTO_BASE - PESTANA["grosor"] - 0.5))
+    fuera = revolucion(perfil_difusor(), resalte=[(a, GUIA["ancho"], GUIA["alto"]) for a in GUIAS])
+    # el hueco sobresale 1 mm por abajo y por arriba: tubo abierto en los dos
+    # extremos y sin tapas coincidentes (darían aristas defectuosas)
+    interior = [(z, r - PARED_DIFUSOR) for z, r in perfil_difusor()]
+    interior = [(interior[0][0] - 1, interior[0][1])] + interior + [(interior[-1][0] + 1, interior[-1][1])]
+    dentro = revolucion(interior)
     z0 = ALTO_BASE - PESTANA["grosor"]
-    pestana = Manifold.cylinder(PESTANA["grosor"], PESTANA["radio"], PESTANA["radio"], 180) \
-        .translate((0, 0, z0))
-    for ang in GUIAS:  # lengüetas que fijan la orientación del difusor en la base
+    pestana = Manifold.cylinder(PESTANA["grosor"], PESTANA["radio"], PESTANA["radio"], 180).translate((0, 0, z0))
+    for ang in GUIAS:
         pestana = pestana + Manifold.cube((PESTANA["lengueta"] + 1, 6.0, PESTANA["grosor"])) \
             .translate((PESTANA["radio"] - 1, -3.0, z0)).rotate((0, 0, ang))
-    guia = guias()
-    return (fuera + pestana + guia) - dentro
+    return (fuera + pestana) - dentro
 
 
 def hueco_para(nivel, z0, z1):
-    """Agujero de una pieza para el nivel dado del difusor, con las muescas
-    de las guías (holgura de deslizamiento incluida)."""
     r = radio_nivel(nivel) + HOLGURA
     h = z1 - z0 + 2
     agujero = Manifold.cylinder(h, r, r, 180)
@@ -252,26 +319,19 @@ def hueco_para(nivel, z0, z1):
     return agujero.translate((0, 0, z0 - 1))
 
 
-# --- Texto de la base ------------------------------------------------------------------------
 def texto_inferior():
-    fichero = str(AQUI / "PlayfairDisplay-Medium.ttf")
-    prop = FontProperties(fname=fichero)
+    prop = FontProperties(fname=str(AQUI / "PlayfairDisplay-Medium.ttf"))
     ruta = TextPath((0, 0), TEXTO, size=1.0, prop=prop)
     escala = TEXTO_ALTO / TextPath((0, 0), "h", size=1.0, prop=prop).get_extents().height
-    polis = [p * escala for p in ruta.to_polygons() if len(p) > 2]
-    letras = CrossSection(polis, FillRule.EvenOdd)
+    letras = CrossSection([p * escala for p in ruta.to_polygons() if len(p) > 2], FillRule.EvenOdd)
     x0, y0, x1, y1 = letras.bounds()
-    # se lee desde abajo: se refleja y se coloca delante (lejos del canal del cable)
-    letras = letras.translate((-(x0 + x1) / 2, -(y0 + y1) / 2)).mirror((1, 0)).translate((0, -38.0))
+    letras = letras.translate((-(x0 + x1) / 2, -(y0 + y1) / 2)).mirror((1, 0)).translate((0, -32.0))
     return letras.extrude(TEXTO_HONDO + 1).translate((0, 0, -1))
 
 
-# --- Piezas ------------------------------------------------------------------------------------
+# --- Piezas ------------------------------------------------------------------------------------------
 def construir():
-    log = tronco() ^ corte_superior()
-
-    # base
-    base = log ^ franja(0, ALTO_BASE)
+    base = bloque(0, ALTO_BASE, SEMILLA)
     asiento = Manifold.cylinder(PESTANA["grosor"] + 1, PESTANA["radio"] + HOLGURA, PESTANA["radio"] + HOLGURA, 180)
     for ang in GUIAS:
         asiento = asiento + Manifold.cube((PESTANA["lengueta"] + 1 + HOLGURA, 6.0 + 2 * HOLGURA, PESTANA["grosor"] + 1)) \
@@ -280,27 +340,21 @@ def construir():
     base = base - Manifold.cylinder(ALTO_BASE + 2, TUBO_M10 / 2, TUBO_M10 / 2, 48).translate((0, 0, -1))
     base = base - Manifold.cylinder(TUERCA["alto"] + 1, TUERCA["diametro"] / 2, TUERCA["diametro"] / 2, 96) \
         .translate((0, 0, -1))
-    canal = Manifold.cube((RADIO * 1.5, CABLE["ancho"], CABLE["alto"] + 1)) \
-        .translate((0, -CABLE["ancho"] / 2, -1)).rotate((0, 0, CABLE["angulo"]))
+    canal = Manifold.cube((100, CABLE["ancho"], CABLE["alto"] + 1)).translate((0, -CABLE["ancho"] / 2, -1)) \
+        .rotate((0, 0, CABLE["angulo"]))
     base = base - canal - texto_inferior()
-    base = grabar_anillos_arriba(base, ALTO_BASE, PESTANA["radio"] + 4)
 
-    # rodajas
     rodajas = []
+    desorden = np.random.default_rng(SEMILLA + 500)
     for i, z in enumerate(Z_RODAJA):
-        r = log ^ franja(z, z + GROSOR_RODAJA)
-        r = r - hueco_para(i, z, z + GROSOR_RODAJA)
-        r = grabar_anillos_arriba(r, z + GROSOR_RODAJA, radio_nivel(i) + GUIA["alto"] + 5)
+        giro = desorden.uniform(-1, 1) * DESORDEN["giro"]
+        ang = desorden.uniform(0, 2 * np.pi)
+        desp = DESORDEN["desplazamiento"] * desorden.uniform(0.3, 1) * np.array([np.cos(ang), np.sin(ang)])
+        r = bloque(z, z + GROSOR_RODAJA, SEMILLA + 1 + i, giro, desp) - hueco_para(i, z, z + GROSOR_RODAJA)
         rodajas.append(r)
 
-    # remate: se asienta en el último escalón y cubre el extremo del difusor
-    remate = log ^ franja(Z_REMATE, Z_TOPE + 10)
+    remate = bloque(Z_REMATE, Z_TOPE, SEMILLA + 99) ^ corte_superior()
     remate = remate - hueco_para(RODAJAS, Z_REMATE, Z_REMATE + ENTRA_EN_REMATE + 0.5)
-    h = ANILLOS["profundidad"]
-    plano = corte_superior()
-    surcos = anillos(Z_REMATE + ALTO_REMATE, 6.0).extrude(200).translate((0, 0, Z_REMATE))
-    remate = remate - (surcos ^ plano - plano.translate((0, 0, -h / np.cos(np.radians(BISEL)))))
-
     return dict(base=base, rodajas=rodajas, remate=remate, difusor=difusor())
 
 
@@ -311,10 +365,11 @@ def a_trimesh(m):
 
 if __name__ == "__main__":
     p = construir()
+    carpeta = AQUI / ("vista" if VISTA else "piezas")
+    carpeta.mkdir(exist_ok=True)
     todas = [("base", p["base"]), ("remate", p["remate"]), ("difusor", p["difusor"])] + \
         [(f"rodaja_{i + 1:02d}", r) for i, r in enumerate(p["rodajas"])]
     for nombre, m in todas:
         t = a_trimesh(m)
-        t.export(AQUI / f"{nombre}.stl")
-        print(f"{nombre:10s} estanca={t.is_watertight} tamaño={np.round(t.extents, 1)} "
-              f"volumen={t.volume / 1000:.0f} cm3")
+        t.export(carpeta / f"{nombre}.stl")
+        print(f"{nombre:10s} estanca={t.is_watertight} triángulos={len(t.faces)} tamaño={np.round(t.extents, 1)}")
