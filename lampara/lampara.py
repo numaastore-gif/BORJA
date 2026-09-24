@@ -1,8 +1,8 @@
-"""Lámpara abstracta de madera en rodajas para numashome.
-
-Un bloque de madera de contorno facetado (gajos planos con entrantes hondos)
-que gira en espiral de abajo arriba y se ensancha en el centro, cortado en
-rodajas separadas por rendijas de luz:
+"""Lámpara de madera en rodajas para numashome, con la forma de la lámpara
+clara de la referencia: un tronco con la base alta y ensanchada como el pie de
+un árbol (con pliegues verticales hondos), una zona central de rodajas finas
+algo más estrecha que se curva en S, y un remate alto y más ancho cortado en
+un bisel suave, un poco inclinado hacia un lado:
 
   base      bloque macizo con el asiento del difusor, paso para el tubo
             roscado M10 del portalámparas, alojamiento de la tuerca por debajo,
@@ -40,21 +40,25 @@ VISTA = "--vista" in sys.argv
 RESOLUCION = 0.8 if VISTA else 0.4  # separación de puntos en las caras con textura
 SEMILLA = 11
 
-# --- Forma ------------------------------------------------------------------------
-GAJOS = 9               # gajos del contorno
-R_GAJO = (57.0, 65.0)   # radio de las caras planas de los gajos (mín, máx)
-R_ENTRANTE = (46.0, 51.0)  # radio del fondo de los entrantes
-GIRO_TOTAL = 75.0       # grados que gira el contorno de abajo arriba
-PANZA = 0.07            # cuánto se ensancha en el centro
-DESORDEN = dict(giro=7.0, desplazamiento=2.0)  # cada rodaja se gira y se desplaza algo: escalonado
+# --- Forma (proporciones de la lámpara clara de la foto) ------------------------------
+# Radio medio del tronco según la altura (z, radio): pie ensanchado, cintura en
+# las rodajas y remate algo más ancho.
+PERFIL = [(0, 63.0), (12, 59.0), (35, 56.5), (70, 55.5), (95, 54.5), (110, 51.5),
+          (150, 50.0), (185, 51.5), (205, 55.0), (215, 57.5), (250, 58.0), (300, 57.0)]
+# Desplazamiento del eje (z, x, y): las rodajas se curvan en S y el remate se
+# inclina hacia un lado.
+EJE = [(0, 0.0, 0.0), (95, 0.0, 0.0), (140, 5.0, 1.0), (185, 2.0, -1.0), (215, -2.0, 0.0), (300, -5.0, 0.0)]
+LOBULOS = [(2, 0.045), (3, 0.03), (5, 0.012), (7, 0.006)]  # (número, amplitud relativa)
+PLIEGUES = dict(cantidad=8, hondo=7.0, ancho=(7.0, 12.0), alto=95.0)  # pliegues del pie
+DESORDEN = dict(giro=2.0, desplazamiento=0.8)  # cada rodaja, apenas descolocada
 
-# --- Alturas ------------------------------------------------------------------------
-ALTO_BASE = 50.0
+# --- Alturas -----------------------------------------------------------------------------
+ALTO_BASE = 90.0
 RODAJAS = 12
-GROSOR_RODAJA = 7.0
-RENDIJA = 5.0
-ALTO_REMATE = 50.0
-BISEL = 14.0
+GROSOR_RODAJA = 6.3     # como las rodajas de la referencia
+RENDIJA = 3.0
+ALTO_REMATE = 60.0
+BISEL = 8.0
 
 # --- Textura -------------------------------------------------------------------------
 TEXTURA = AQUI / "textura_corteza.npy"
@@ -83,66 +87,43 @@ TEXTO_HONDO = 0.6
 Z_RODAJA = [ALTO_BASE + RENDIJA + i * (GROSOR_RODAJA + RENDIJA) for i in range(RODAJAS)]
 Z_REMATE = Z_RODAJA[-1] + GROSOR_RODAJA + RENDIJA
 ALTO_TOTAL = Z_REMATE + ALTO_REMATE
-Z_TOPE = ALTO_TOTAL + np.tan(np.radians(BISEL)) * R_GAJO[1] * 1.25
+Z_TOPE = ALTO_TOTAL + np.tan(np.radians(BISEL)) * 75
 
 rng = np.random.default_rng(SEMILLA)
 
 
-# --- Contorno abstracto ------------------------------------------------------------------
-def poligono_base():
-    """Gajos de cara plana separados por entrantes en V."""
-    pts = []
-    paso = 2 * np.pi / GAJOS
-    for k in range(GAJOS):
-        a = k * paso + rng.uniform(-0.12, 0.12)
-        r = rng.uniform(*R_GAJO)
-        ancho = paso * rng.uniform(0.28, 0.42)
-        pts += [(r / np.cos(ancho / 2) * np.cos(a - ancho / 2), r / np.cos(ancho / 2) * np.sin(a - ancho / 2)),
-                (r / np.cos(ancho / 2) * np.cos(a + ancho / 2), r / np.cos(ancho / 2) * np.sin(a + ancho / 2))]
-        b = a + paso / 2 + rng.uniform(-0.08, 0.08)
-        re = rng.uniform(*R_ENTRANTE)
-        pts.append((re * np.cos(b), re * np.sin(b)))
-    return np.array(pts)
+# --- Contorno orgánico ---------------------------------------------------------------------
+LOBULO_FASE = [(n, a, rng.uniform(0, 2 * np.pi), rng.uniform(-0.004, 0.004)) for n, a in LOBULOS]
+PLIEGUE = [(rng.uniform(0, 2 * np.pi), rng.uniform(*PLIEGUES["ancho"]), rng.uniform(0.6, 1.0))
+           for _ in range(PLIEGUES["cantidad"])]
+R_MEDIO = 55.0
+PERIMETRO = 2 * np.pi * R_MEDIO
+ANGULOS = np.linspace(0, 2 * np.pi, int(PERIMETRO / RESOLUCION), endpoint=False)
+ARCO = ANGULOS * R_MEDIO  # coordenada horizontal de la textura (mm)
 
 
-BASE = poligono_base()
+def eje(z):
+    zs, xs, ys = zip(*EJE)
+    return np.interp(z, zs, xs), np.interp(z, zs, ys)
 
 
-def remuestrear(poli, paso):
-    """Puntos equiespaciados sobre el perímetro (conservando los vértices) y
-    su posición en longitud de arco."""
-    cerr = np.vstack([poli, poli[:1]])
-    lados = np.diff(cerr, axis=0)
-    largos = np.hypot(*lados.T)
-    pts, s, acum = [], [], 0.0
-    for p, d, l in zip(cerr[:-1], lados, largos):
-        n = max(int(np.ceil(l / paso)), 1)
-        for t in np.arange(n) / n:
-            pts.append(p + d * t)
-            s.append(acum + l * t)
-        acum += l
-    return np.array(pts), np.array(s), acum
-
-
-CONTORNO, ARCO, PERIMETRO = remuestrear(BASE, RESOLUCION)
+def radio(theta, z):
+    r = np.full_like(theta, np.interp(z, *zip(*PERFIL)))
+    for n, a, fase, giro in LOBULO_FASE:
+        r *= 1 + a * np.cos(n * theta + fase + giro * z)
+    # pliegues verticales del pie: surcos anchos que se desvanecen hacia arriba
+    fuerza = np.clip(1 - z / PLIEGUES["alto"], 0, 1) ** 1.5
+    for ang, ancho, k in PLIEGUE:
+        d = (theta - ang + np.pi) % (2 * np.pi) - np.pi
+        r -= PLIEGUES["hondo"] * k * fuerza * np.exp(-0.5 * (d * np.interp(z, *zip(*PERFIL)) / (ancho / 2)) ** 2)
+    return r
 
 
 def normales(pts):
-    """Normal hacia fuera de un contorno antihorario (media en los vértices)."""
+    """Normal hacia fuera de un contorno antihorario."""
     t = np.roll(pts, -1, axis=0) - np.roll(pts, 1, axis=0)
     n = np.c_[t[:, 1], -t[:, 0]]
     return n / np.linalg.norm(n, axis=1)[:, None]
-
-
-NORMALES = normales(CONTORNO)
-
-
-def transformacion(z):
-    """Giro y escala del contorno a la altura z."""
-    giro = np.radians(GIRO_TOTAL) * z / ALTO_TOTAL
-    escala = 1 + PANZA * np.sin(np.pi * np.clip(z / ALTO_TOTAL, 0, 1))
-    c, s = np.cos(giro), np.sin(giro)
-    return np.array([[c, -s], [s, c]]) * escala
 
 
 # --- Textura -----------------------------------------------------------------------------------
@@ -210,23 +191,20 @@ def grietas(u, v, lista):
 
 # --- Sólidos con textura -------------------------------------------------------------------------
 def bloque(z0, z1, semilla, giro_extra=0.0, desplazamiento=(0.0, 0.0)):
-    """Tramo del bloque entre z0 y z1 con la textura aplicada en el lateral.
-    giro_extra (grados) y desplazamiento (mm) descolocan la pieza respecto a la
-    espiral para el efecto escalonado."""
-    ge = np.radians(giro_extra)
-    extra = np.array([[np.cos(ge), -np.sin(ge)], [np.sin(ge), np.cos(ge)]])
+    """Tramo del tronco entre z0 y z1 con la textura aplicada en el lateral.
+    giro_extra (grados) y desplazamiento (mm) descolocan un poco la pieza."""
     filas = max(int(np.ceil((z1 - z0) / RESOLUCION)), 1)
     zs = np.linspace(z0, z1, filas + 1)
     lista = lista_grietas(z0, z1, semilla)
+    ge = np.radians(giro_extra)
     anillos = []
     for z in zs:
-        m = transformacion(z) @ extra
-        p = CONTORNO @ m.T + np.array(desplazamiento)
-        n = NORMALES @ m.T
-        n /= np.linalg.norm(n, axis=1)[:, None]
+        cx, cy = eje(z)
+        r = radio(ANGULOS - ge, z)
+        p = np.c_[cx + desplazamiento[0] + r * np.cos(ANGULOS), cy + desplazamiento[1] + r * np.sin(ANGULOS)]
         d = veta(ARCO, z) + grietas(ARCO, np.full_like(ARCO, z), lista)
-        anillos.append(p + n * d[:, None])
-    k = len(CONTORNO)
+        anillos.append(p + normales(p) * d[:, None])
+    k = len(ANGULOS)
     pts = np.vstack([np.c_[a, np.full(k, z)] for a, z in zip(anillos, zs)])
     caras = []
     for f in range(len(zs) - 1):
@@ -242,7 +220,8 @@ def bloque(z0, z1, semilla, giro_extra=0.0, desplazamiento=(0.0, 0.0)):
 
 def corte_superior():
     caja = Manifold.cube((1000, 1000, 1000), center=True).translate((0, 0, -500))
-    return caja.rotate((0, BISEL, 0)).translate((0, 0, ALTO_TOTAL))
+    # sube hacia +x: el lado alto del corte, como en la foto
+    return caja.rotate((0, -BISEL, 0)).translate((*eje(ALTO_TOTAL), ALTO_TOTAL))
 
 
 # --- Difusor ---------------------------------------------------------------------------------------

@@ -107,7 +107,7 @@
   },
   {
     "id": "lampara",
-    "nombre": "Lámpara numa home (abstracta)",
+    "nombre": "Lámpara numa home",
     "fecha": "2026-09-24",
     "partes": [
       {
@@ -135,6 +135,6 @@
         "nombre": "Difusor"
       }
     ],
-    "notas": "Bloque de madera abstracto: contorno facetado de 9 gajos con entrantes en V que gira 75° en espiral y se ensancha en el centro; cada rodaja va además algo girada y desplazada (escalonado). Ø ~128 × 265 mm: base, 12 rodajas de 7 mm con rendijas de 5 mm y remate en bisel. Textura copiada de la lámpara de referencia (veta escaneada de su STL + grietas); cortes lisos como en la referencia. Difusor escalonado con dos guías (0° y 150°); base con paso M10, tuerca, canal de cable y «numa home» debajo. El visor muestra una versión ligera; las piezas de impresión llevan la textura a 0,4 mm."
+    "notas": "Forma de la lámpara clara de la referencia: tronco de ~Ø 120 × 272 mm con base alta (90 mm) ensanchada como el pie de un árbol y con pliegues verticales, 12 rodajas de 6,3 mm con rendijas de 3 mm en una cintura más estrecha que se curva en S, y remate de 60 mm más ancho con bisel de 8°. Textura de la corteza copiada de la lámpara de referencia; cortes lisos. Difusor escalonado con dos guías (0° y 150°); base con paso M10, tuerca, canal de cable y «numa home» debajo. El visor muestra una versión ligera; las piezas de impresión llevan la textura a 0,4 mm."
   }
 ]
