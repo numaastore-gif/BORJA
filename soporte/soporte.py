@@ -55,27 +55,44 @@ def bloque(ancho, largo, r, alto, chaflan):
     return Manifold.batch_hull(capas)
 
 
+def helice(r_min, r_max, altura, fondo=0.125, cresta=0.875):
+    """Sólido roscado a derechas, M5 x 0,8 de paso, entre z = 0 y z = altura.
+    Su sección es una leva cuyo radio sigue el perfil métrico del filete (60°,
+    con fondos y crestas planos); al extruirla girando 360° por paso sale la
+    hélice. «fondo» y «cresta» son las fracciones del perfil que quedan planas."""
+    p = ROSCA["paso"]
+    t = np.linspace(0, 1, 49)[:-1]  # 7,5° por punto: de sobra para imprimir
+    tri = 1 - np.abs(2 * t - 1)     # 0 en el fondo del filete, 1 en la cresta
+    perfil = np.clip((tri - fondo) / (cresta - fondo), 0, 1)
+    ang = -2 * np.pi * t
+    radio = r_min + (r_max - r_min) * perfil
+    seccion = CrossSection([np.c_[radio * np.cos(ang), radio * np.sin(ang)]], FillRule.EvenOdd)
+    vueltas = (altura + 2 * p) / p
+    return seccion.extrude(altura + 2 * p, n_divisions=int(vueltas * 16),
+                           twist_degrees=360 * vueltas).translate((0, 0, -p)) \
+        ^ Manifold.cylinder(altura, r_max + 1, r_max + 1, 32)
+
+
 def rosca_hembra(profundidad=None, surco_extra=0.0):
-    """Macho de corte con el perfil métrico (60°) para vaciar una rosca
-    interior. Su sección es una leva cuyo radio sigue el perfil del filete;
-    al extruirla girando 360° por paso sale la hélice a derechas."""
+    """Macho de corte para vaciar una rosca interior M5, abierta en z = 0."""
     r = ROSCA
     p, h = r["paso"], profundidad or r["profundidad"]
     r_nom = (r["diametro"] + r["holgura"]) / 2
     r_men = r_nom - 0.541 * p  # agujero: diámetro menor de una rosca interior ISO
     r_may = r_nom + surco_extra  # el surco del filete puede ir más hondo
-    t = np.linspace(0, 1, 49)[:-1]  # 7,5° por punto: de sobra para imprimir
-    tri = 1 - np.abs(2 * t - 1)                 # 0 en el fondo, 1 en la cresta
-    perfil = np.clip((tri - 0.125) / 0.75, 0, 1)  # crestas y fondos planos
-    ang = -2 * np.pi * t
-    radio = r_men + (r_may - r_men) * perfil
-    seccion = CrossSection([np.c_[radio * np.cos(ang), radio * np.sin(ang)]], FillRule.EvenOdd)
-    vueltas = (h + p) / p
-    macho = seccion.extrude(h + p, n_divisions=int(vueltas * 16), twist_degrees=360 * vueltas) \
-        .translate((0, 0, -p))
+    macho = helice(r_men, r_may, h + p).translate((0, 0, -p))
     a = r["avellanado"]
     entrada = Manifold.cylinder(a + 0.01, r_may + a, r_may, 64).translate((0, 0, -0.005))
     return macho + entrada
+
+
+def rosca_macho(largo):
+    """Varilla con rosca exterior M5 a medida nominal (diámetro mayor 5 mm,
+    menor 4,02 mm según ISO), con fondo de filete plano de p/4 y cresta de p/8."""
+    p = ROSCA["paso"]
+    r_may = ROSCA["diametro"] / 2
+    r_men = r_may - 0.6134 * p
+    return helice(r_men, r_may, largo, fondo=0.25, cresta=0.875)
 
 
 def construir():

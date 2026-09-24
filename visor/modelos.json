@@ -59,6 +59,14 @@
     "fecha": "2026-09-24",
     "archivo": "modelos/bolas.txt",
     "origen": "soporte/bolas.stl",
-    "notas": "Cuatro bolas de Ø 30 mm cortadas en plano por abajo (apoyo de ~20 mm) y por arriba (asiento de ~22 mm), de 21 mm de alto. Arriba, rosca hembra M5 × 0,8 de 12 mm: agujero a medida nominal (Ø 4,13 mm, sin holgura) y surco del filete 0,25 mm más hondo (Ø 5,5 mm) para que entren los tornillos que se fabricarán. Se unen a la caja y se desenroscan para limpiarlas. Se imprimen de pie, sin soportes."
+    "notas": "Cuatro bolas de Ø 30 mm, poco recortadas: 2 mm por abajo (apoyo plano de ~15 mm) y 3 mm por arriba (asiento de ~18 mm), 25 mm de alto. Arriba, rosca hembra M5 × 0,8 de 12 mm: agujero a medida nominal (Ø 4,13 mm, sin holgura) y surco del filete 0,25 mm más hondo (Ø 5,5 mm). Se unen a la caja con los espárragos y se desenroscan para limpiarlas. Se imprimen de pie, sin soportes."
+  },
+  {
+    "id": "esparragos",
+    "nombre": "Espárragos M5 (×4)",
+    "fecha": "2026-09-24",
+    "archivo": "modelos/esparrago.txt",
+    "origen": "soporte/esparrago_vista.stl",
+    "notas": "Cuatro espárragos con rosca exterior M5 × 0,8 a derechas a medida nominal (Ø 5,00 / 4,02 mm, sin holgura), de 23 mm: 11,5 mm entran en la caja y 11,5 mm en la bola, sin hacer tope en los agujeros de 12 mm, así la bola asienta contra la caja. Chaflán en las dos puntas y ranura para destornillador arriba. Se imprimen de pie, con relleno al 100 %. El visor muestra uno; esparragos.stl trae los cuatro listos para imprimir."
   }
 ]
