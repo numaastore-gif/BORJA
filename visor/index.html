@@ -405,7 +405,9 @@
     statusEl.hidden = false; statusEl.textContent = "Cargando " + m.nombre + "…";
     try {
       if (!m.cargadas) {
-        const lista = m.buffer ? [{ buffer: m.buffer }] : (m.partes || [{ archivo: m.archivo }]);
+        // un modelo de una pieza puede traer su color fijo (color + nombreColor)
+        const lista = m.buffer ? [{ buffer: m.buffer }]
+          : (m.partes || [{ archivo: m.archivo, color: m.color, nombre: m.nombreColor }]);
         m.cargadas = await Promise.all(lista.map(async (p) => {
           if (p.buffer) return p;
           const res = await fetch(p.archivo);

@@ -41,17 +41,17 @@
       {
         "archivo": "modelos/soporte_pieza_1.txt",
         "origen": "soporte/soporte_pieza_1.stl",
-        "color": "#D1D3D5",
-        "nombre": "Pieza 1 (con colas)"
+        "color": "#CBC6B8",
+        "nombre": "PLA Matte Bone White · Pieza 1"
       },
       {
         "archivo": "modelos/soporte_pieza_2.txt",
         "origen": "soporte/soporte_pieza_2.stl",
-        "color": "#7FA7C9",
-        "nombre": "Pieza 2"
+        "color": "#CBC6B8",
+        "nombre": "PLA Matte Bone White · Pieza 2"
       }
     ],
-    "notas": "Medidas del cliente: 380 × 300 mm, hueco de 340 × 260 mm, laterales de 60 mm sobre un fondo de 14 mm (74 mm de alto). Modelo macizo: imprimir con relleno al 100 %. Partido en dos piezas (210 × 300 y 190 × 300 mm, caben en la H2D) unidas por dos colas de milano verticales en el fondo (cuello 30, cabeza 44, 20 mm de fondo, sin holgura); se encajan deslizando de arriba abajo y se pegan, también los laterales a tope. Cuatro roscas M5 × 0,8 de 12 mm a medida nominal por debajo, a 40 mm de los bordes. El aviso de «cabe en la cama» se refiere al conjunto montado."
+    "notas": "Medidas del cliente: 380 × 300 mm, hueco de 340 × 260 mm, laterales de 60 mm sobre un fondo de 14 mm (74 mm de alto). Modelo macizo: imprimir con relleno al 100 %. Partido en dos piezas (210 × 300 y 190 × 300 mm, caben en la H2D) unidas por dos colas de milano verticales en el fondo (cuello 30, cabeza 44, 20 mm de fondo, sin holgura); se encajan deslizando de arriba abajo y se pegan, también los laterales a tope. Cuatro roscas M5 × 0,8 de 12 mm a medida nominal por debajo, a 40 mm de los bordes. El aviso de «cabe en la cama» se refiere al conjunto montado. Todo en PLA Matte Bone White de Bambu Lab (#CBC6B8)."
   },
   {
     "id": "bolas",
@@ -59,7 +59,9 @@
     "fecha": "2026-09-24",
     "archivo": "modelos/bolas.txt",
     "origen": "soporte/bolas.stl",
-    "notas": "Cuatro bolas de Ø 45 mm, poco recortadas: 2 mm por abajo (apoyo plano de Ø 18,5 mm) y 3 mm por arriba (asiento de Ø 22,4 mm), 40 mm de alto. Arriba, rosca hembra M5 × 0,8 de 12 mm: agujero a medida nominal (Ø 4,13 mm, sin holgura) y surco del filete 0,25 mm más hondo (Ø 5,5 mm). Se unen a la caja con los espárragos y se desenroscan para limpiarlas. Se imprimen de pie, sin soportes."
+    "notas": "Cuatro bolas de Ø 45 mm, poco recortadas: 2 mm por abajo (apoyo plano de Ø 18,5 mm) y 3 mm por arriba (asiento de Ø 22,4 mm), 40 mm de alto. Arriba, rosca hembra M5 × 0,8 de 12 mm: agujero a medida nominal (Ø 4,13 mm, sin holgura) y surco del filete 0,25 mm más hondo (Ø 5,5 mm). Se unen a la caja con los espárragos y se desenroscan para limpiarlas. Se imprimen de pie, sin soportes. Todo en PLA Matte Bone White de Bambu Lab (#CBC6B8).",
+    "color": "#CBC6B8",
+    "nombreColor": "PLA Matte Bone White"
   },
   {
     "id": "esparragos",
@@ -67,7 +69,9 @@
     "fecha": "2026-09-24",
     "archivo": "modelos/esparrago.txt",
     "origen": "soporte/esparrago_vista.stl",
-    "notas": "Cuatro espárragos con rosca exterior M5 × 0,8 a derechas a medida nominal (Ø 5,00 / 4,02 mm, sin holgura), de 23 mm: 11,5 mm entran en la caja y 11,5 mm en la bola, sin hacer tope en los agujeros de 12 mm, así la bola asienta contra la caja. Chaflán en las dos puntas y ranura para destornillador arriba. Se imprimen de pie, con relleno al 100 %. El visor muestra uno; esparragos.stl trae los cuatro listos para imprimir."
+    "notas": "Cuatro espárragos con rosca exterior M5 × 0,8 a derechas a medida nominal (Ø 5,00 / 4,02 mm, sin holgura), de 23 mm: 11,5 mm entran en la caja y 11,5 mm en la bola, sin hacer tope en los agujeros de 12 mm, así la bola asienta contra la caja. Chaflán en las dos puntas y ranura para destornillador arriba. Se imprimen de pie, con relleno al 100 %. El visor muestra uno; esparragos.stl trae los cuatro listos para imprimir. Todo en PLA Matte Bone White de Bambu Lab (#CBC6B8).",
+    "color": "#CBC6B8",
+    "nombreColor": "PLA Matte Bone White"
   },
   {
     "id": "conjunto",
@@ -77,28 +81,28 @@
       {
         "archivo": "modelos/conjunto_pieza_1.txt",
         "origen": "soporte/conjunto_pieza_1.stl",
-        "color": "#D1D3D5",
-        "nombre": "Pieza 1"
+        "color": "#CBC6B8",
+        "nombre": "PLA Matte Bone White · Pieza 1"
       },
       {
         "archivo": "modelos/conjunto_pieza_2.txt",
         "origen": "soporte/conjunto_pieza_2.stl",
-        "color": "#7FA7C9",
-        "nombre": "Pieza 2"
+        "color": "#CBC6B8",
+        "nombre": "PLA Matte Bone White · Pieza 2"
       },
       {
         "archivo": "modelos/conjunto_bolas.txt",
         "origen": "soporte/conjunto_bolas.stl",
-        "color": "#545454",
-        "nombre": "Bolas"
+        "color": "#CBC6B8",
+        "nombre": "PLA Matte Bone White · Bolas"
       },
       {
         "archivo": "modelos/conjunto_esparragos.txt",
         "origen": "soporte/conjunto_esparragos.stl",
-        "color": "#E4BD68",
-        "nombre": "Espárragos"
+        "color": "#CBC6B8",
+        "nombre": "PLA Matte Bone White · Espárragos"
       }
     ],
-    "notas": "Todo montado: las dos piezas del soporte encajadas por sus colas de milano, apoyadas sobre las cuatro bolas, con los espárragos M5 metidos 11,5 mm en la caja y 11,5 mm en cada bola. Mide 380 × 300 × 114 mm (74 de caja + 40 de bolas de Ø 45). Con «Corte» se ven los espárragos dentro de las roscas. Es solo para ver el conjunto: para imprimir se usan las piezas sueltas."
+    "notas": "Todo montado: las dos piezas del soporte encajadas por sus colas de milano, apoyadas sobre las cuatro bolas, con los espárragos M5 metidos 11,5 mm en la caja y 11,5 mm en cada bola. Mide 380 × 300 × 114 mm (74 de caja + 40 de bolas de Ø 45). Con «Corte» se ven los espárragos dentro de las roscas. Es solo para ver el conjunto: para imprimir se usan las piezas sueltas. Todo en PLA Matte Bone White de Bambu Lab (#CBC6B8)."
   }
 ]
