@@ -104,5 +104,37 @@
       }
     ],
     "notas": "Todo montado: las dos piezas del soporte encajadas por sus colas de milano, apoyadas sobre las cuatro bolas, con los espárragos M5 metidos 11,5 mm en la caja y 11,5 mm en cada bola. Mide 380 × 300 × 114 mm (74 de caja + 40 de bolas de Ø 45). Con «Corte» se ven los espárragos dentro de las roscas. Es solo para ver el conjunto: para imprimir se usan las piezas sueltas. Todo en PLA Matte Bone White de Bambu Lab (#CBC6B8)."
+  },
+  {
+    "id": "lampara",
+    "nombre": "Lámpara tronco numa home",
+    "fecha": "2026-09-24",
+    "partes": [
+      {
+        "archivo": "modelos/lampara_base.txt",
+        "origen": "lampara/base.stl",
+        "color": "#7A5230",
+        "nombre": "Base"
+      },
+      {
+        "archivo": "modelos/lampara_rodajas.txt",
+        "origen": "lampara/vista_rodajas.stl",
+        "color": "#7A5230",
+        "nombre": "12 rodajas"
+      },
+      {
+        "archivo": "modelos/lampara_remate.txt",
+        "origen": "lampara/remate.stl",
+        "color": "#7A5230",
+        "nombre": "Remate"
+      },
+      {
+        "archivo": "modelos/lampara_difusor.txt",
+        "origen": "lampara/difusor.stl",
+        "color": "#F4ECD8",
+        "nombre": "Difusor"
+      }
+    ],
+    "notas": "Tronco de Ø 124 × 264 mm con corteza en relieve, cortado en base, 12 rodajas de 7 mm con rendijas de luz de 5 mm y remate en bisel de 14°. Las piezas se ensartan en un difusor escalonado (un escalón cónico por rodaja) y dos guías a 0° y 150° fijan la única posición en que casa la corteza. Base con asiento del difusor, paso para tubo M10, alojamiento de tuerca, canal de cable y «numa home» grabado debajo. Anillos de crecimiento grabados en las caras de corte. Madera: PLA con efecto madera; difusor: PLA/PETG translúcido."
   }
 ]
