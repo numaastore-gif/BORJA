@@ -53,6 +53,10 @@ PLIEGUES = dict(cantidad=5, hondo=7.0, ancho=(8.0, 13.0), alto=80.0)    # surcos
 # Nudos: (ángulo en grados, altura, tamaño): abultamiento con la cicatriz de la rama
 NUDOS = [(35.0, 62.0, 17.0), (215.0, 172.0, 13.0), (300.0, 285.0, 19.0)]
 DESORDEN = dict(giro=1.5, desplazamiento=0.6)  # cada rodaja, apenas descolocada
+# Deformidades de tronco
+RAJA = dict(angulo=110.0, z=(25.0, 240.0), hondo=6.0, ancho=4.5, ondulacion=5.0)  # grieta de secado
+HERIDA = dict(angulo=250.0, z=165.0, ancho=34.0, alto=78.0, hondo=2.2, reborde=2.0)  # zona sin corteza
+VERRUGA = dict(angulo=160.0, z=48.0, tamano=24.0, alto=8.0)                          # abultamiento nudoso
 
 # --- Alturas -----------------------------------------------------------------------------
 ALTO_BASE = 100.0
@@ -73,19 +77,23 @@ GRIETAS_POR_CM2 = 0.07  # densidad de grietas
 GRIETA = dict(largo=(14.0, 38.0), ancho=(1.2, 2.4), hondo=(1.2, 2.2), inclinacion=0.18)
 
 # --- Difusor -------------------------------------------------------------------------
-R_DIFUSOR = 46.0
+R_DIFUSOR = 30.0        # el difusor asienta justo encima del disco LED
 ESCALON = 1.0
 PARED_DIFUSOR = 1.6
 GUIAS = (0.0, 150.0)
 GUIA = dict(ancho=4.0, alto=2.0)
-PESTANA = dict(radio=R_DIFUSOR + 4.0, grosor=3.0, lengueta=4.0)
+PESTANA = dict(radio=R_DIFUSOR + 3.0, grosor=3.0, lengueta=4.0)
 HOLGURA = 0.2
 ENTRA_EN_REMATE = 18.0
 
-# --- Electricidad y rótulo -------------------------------------------------------------
-TUBO_M10 = 10.5
-TUERCA = dict(diametro=26.0, alto=8.0)
-CABLE = dict(ancho=7.0, alto=5.0, angulo=180.0)
+# --- Luz: Bambu Lab LED Lamp Kit 001 (disco de Ø 59 × 18 mm, cable de 1,5 m) --------------
+# Alojamiento y recorrido del cable copiados de la base de referencia: disco en un
+# hueco de Ø 62, estría vertical en la pared del hueco para la salida lateral del
+# cable, ranura bajo el suelo hasta el agujero central de Ø 20 y salida por abajo.
+LED = dict(diametro=62.0, alto=19.0)          # hueco del disco (Ø 59 + holgura)
+AGUJERO_CENTRAL = 20.0
+RANURA_CABLE = dict(ancho=4.0, hondo=6.0, largo=37.0, angulo=200.0)  # estría + ranura del suelo
+SALIDA_CABLE = dict(ancho=4.0, alto=5.0)      # salida por la cara inferior hacia el lateral
 TEXTO = "numa home"
 TEXTO_ALTO = 8.0
 TEXTO_HONDO = 0.6
@@ -210,6 +218,34 @@ def grietas(u, v, lista):
 
 
 # --- Sólidos con textura -------------------------------------------------------------------------
+def deformidades(theta, z):
+    """Raja de secado, herida sin corteza y verruga. Devuelve el peso de la
+    textura de corteza (0 donde no hay corteza) y el relieve añadido."""
+    peso = np.ones_like(theta)
+    extra = np.zeros_like(theta)
+    arco = lambda ang: ((theta - np.radians(ang) + np.pi) % (2 * np.pi) - np.pi) * R_MEDIO
+    # raja: surco en V que serpentea y se afina en los extremos
+    j = RAJA
+    if j["z"][0] <= z <= j["z"][1]:
+        t = (z - j["z"][0]) / (j["z"][1] - j["z"][0])
+        centro = j["ondulacion"] * np.sin(t * 7.0) + 2.0 * np.sin(t * 19.0)
+        ancho = j["ancho"] * np.sin(np.pi * t) ** 0.5
+        perfil = np.clip(1 - np.abs(arco(j["angulo"]) - centro) / max(ancho, 1e-3), 0, 1)
+        extra -= j["hondo"] * np.sin(np.pi * t) ** 0.4 * perfil
+    # herida: elipse sin corteza (madera lisa y algo hundida) con reborde de cicatrización
+    h = HERIDA
+    e = np.sqrt((arco(h["angulo"]) / (h["ancho"] / 2)) ** 2 + ((z - h["z"]) / (h["alto"] / 2)) ** 2)
+    dentro = np.clip((1.0 - e) / 0.08, 0, 1)
+    peso *= 1 - dentro
+    extra += -h["hondo"] * dentro + h["reborde"] * np.exp(-((e - 1.05) / 0.09) ** 2)
+    # verruga: bulto grande con bultitos encima
+    v = VERRUGA
+    d2 = (arco(v["angulo"]) ** 2 + (z - v["z"]) ** 2) / v["tamano"] ** 2
+    bulto = np.exp(-d2 * 2.2)
+    extra += v["alto"] * bulto * (1 + 0.18 * np.sin(arco(v["angulo"]) * 0.9) * np.sin(z * 0.8))
+    return peso, extra
+
+
 def bloque(z0, z1, semilla, giro_extra=0.0, desplazamiento=(0.0, 0.0)):
     """Tramo del tronco entre z0 y z1 con la textura aplicada en el lateral.
     giro_extra (grados) y desplazamiento (mm) descolocan un poco la pieza."""
@@ -222,7 +258,8 @@ def bloque(z0, z1, semilla, giro_extra=0.0, desplazamiento=(0.0, 0.0)):
         cx, cy = eje(z)
         r = radio(ANGULOS - ge, z)
         p = np.c_[cx + desplazamiento[0] + r * np.cos(ANGULOS), cy + desplazamiento[1] + r * np.sin(ANGULOS)]
-        d = veta(ARCO, z) + grietas(ARCO, np.full_like(ARCO, z), lista)
+        peso, extra = deformidades(ANGULOS - ge, z)
+        d = veta(ARCO, z) * peso + grietas(ARCO, np.full_like(ARCO, z), lista) * peso + extra
         anillos.append(p + normales(p) * d[:, None])
     k = len(ANGULOS)
     pts = np.vstack([np.c_[a, np.full(k, z)] for a, z in zip(anillos, zs)])
@@ -384,11 +421,18 @@ def construir():
         asiento = asiento + Manifold.cube((PESTANA["lengueta"] + 1 + HOLGURA, 6.0 + 2 * HOLGURA, PESTANA["grosor"] + 1)) \
             .translate((PESTANA["radio"] - 1, -3.0 - HOLGURA, 0)).rotate((0, 0, ang))
     base = base - asiento.translate((0, 0, ALTO_BASE - PESTANA["grosor"]))
-    base = base - Manifold.cylinder(ALTO_BASE + 2, TUBO_M10 / 2, TUBO_M10 / 2, 48).translate((0, 0, -1))
-    base = base - Manifold.cylinder(TUERCA["alto"] + 1, TUERCA["diametro"] / 2, TUERCA["diametro"] / 2, 96) \
-        .translate((0, 0, -1))
-    canal = Manifold.cube((100, CABLE["ancho"], CABLE["alto"] + 1)).translate((0, -CABLE["ancho"] / 2, -1)) \
-        .rotate((0, 0, CABLE["angulo"]))
+    z_led = ALTO_BASE - PESTANA["grosor"] - LED["alto"]  # suelo del hueco del disco
+    base = base - Manifold.cylinder(LED["alto"] + 1, LED["diametro"] / 2, LED["diametro"] / 2, 180) \
+        .translate((0, 0, z_led))
+    base = base - Manifold.cylinder(z_led + 1, AGUJERO_CENTRAL / 2, AGUJERO_CENTRAL / 2, 96).translate((0, 0, -0.5))
+    rc = RANURA_CABLE
+    ranura = Manifold.cube((rc["largo"], rc["ancho"], rc["hondo"] + 0.5)) \
+        .translate((0, -rc["ancho"] / 2, z_led - rc["hondo"]))
+    estria = Manifold.cube((rc["largo"] - LED["diametro"] / 2 + 0.5, rc["ancho"], LED["alto"] + rc["hondo"])) \
+        .translate((LED["diametro"] / 2 - 0.5, -rc["ancho"] / 2, z_led - rc["hondo"] + 0.01))
+    base = base - (ranura + estria).rotate((0, 0, rc["angulo"]))
+    canal = Manifold.cube((120, SALIDA_CABLE["ancho"], SALIDA_CABLE["alto"] + 0.5)) \
+        .translate((0, -SALIDA_CABLE["ancho"] / 2, -0.5)).rotate((0, 0, rc["angulo"]))
     base = base - canal - texto_inferior()
 
     rodajas = []
