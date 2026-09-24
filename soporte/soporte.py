@@ -28,13 +28,13 @@ BORDE = 60.0          # altura de los laterales por encima del fondo
 # Dos colas en el fondo; los laterales van a tope y se pegan.
 COLAS = [(-65.0, 30.0, 44.0, 20.0),
          (65.0, 30.0, 44.0, 20.0)]
-HOLGURA_UNION = 0.15  # mm que se retira cada pieza en la unión para que encaje
+HOLGURA_UNION = 0.0   # sin holgura en la unión
 RADIO_EXT = 15.0      # esquinas redondeadas por fuera
 RADIO_INT = 8.0       # y por dentro (la papelera suele tener esquinas curvas)
 CHAFLAN = 2.0         # chaflán en los cantos de arriba y de abajo
 # Roscas M5 x 0,8 a derechas, abiertas por abajo, una por esquina
 ROSCA = dict(diametro=5.0, paso=0.8, profundidad=12.0,
-             holgura=0.3,       # mm de más en diámetro: el plástico impreso encoge
+             holgura=0.0,       # sin holgura: medida nominal M5
              avellanado=0.8)    # chaflán de entrada para que el tornillo entre recto
 ROSCA_DESDE_BORDE = 40.0  # centro de la rosca: 20 mm hacia dentro del hueco
 
@@ -55,14 +55,15 @@ def bloque(ancho, largo, r, alto, chaflan):
     return Manifold.batch_hull(capas)
 
 
-def rosca_hembra():
+def rosca_hembra(profundidad=None, surco_extra=0.0):
     """Macho de corte con el perfil métrico (60°) para vaciar una rosca
     interior. Su sección es una leva cuyo radio sigue el perfil del filete;
     al extruirla girando 360° por paso sale la hélice a derechas."""
     r = ROSCA
-    p, h = r["paso"], r["profundidad"]
-    r_may = (r["diametro"] + r["holgura"]) / 2
-    r_men = r_may - 0.541 * p  # profundidad de filete de una rosca interior ISO
+    p, h = r["paso"], profundidad or r["profundidad"]
+    r_nom = (r["diametro"] + r["holgura"]) / 2
+    r_men = r_nom - 0.541 * p  # agujero: diámetro menor de una rosca interior ISO
+    r_may = r_nom + surco_extra  # el surco del filete puede ir más hondo
     t = np.linspace(0, 1, 49)[:-1]  # 7,5° por punto: de sobra para imprimir
     tri = 1 - np.abs(2 * t - 1)                 # 0 en el fondo, 1 en la cresta
     perfil = np.clip((tri - 0.125) / 0.75, 0, 1)  # crestas y fondos planos
@@ -104,7 +105,8 @@ def piezas():
     der = CrossSection([np.array(linea + [(1000.0, 1000.0), (1000.0, -1000.0)])], FillRule.EvenOdd)
     todo = construir()
     alto = FONDO + BORDE + 2
-    corta = lambda region: region.offset(-HOLGURA_UNION, JoinType.Miter).extrude(alto).translate((0, 0, -1))
+    corta = lambda region: (region.offset(-HOLGURA_UNION, JoinType.Miter) if HOLGURA_UNION else region) \
+        .extrude(alto).translate((0, 0, -1))
     return todo ^ corta(izq), todo ^ corta(der)
 
 
