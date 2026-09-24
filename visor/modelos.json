@@ -32,5 +32,13 @@
       }
     ],
     "notas": "Pala a 42 × 77 × 4,5 mm (70 mm la pala + argolla) en tres piezas de PLA Matte. Dibujos con geometría limpia: X de rectas a 45° con su muesca circular y las líneas que separan sus piezas, logo «nox» redibujado con las proporciones de la foto, franja y puente del cuello simétricos y suavizados. Incrustados 0,6 mm en las dos caras (reverso en espejo). Franja negra entre la cabeza y el mango blanco, con argolla de Ø 3,4 mm."
+  },
+  {
+    "id": "soporte",
+    "nombre": "Soporte papelera (v1)",
+    "fecha": "2026-09-24",
+    "archivo": "modelos/soporte.txt",
+    "origen": "soporte/soporte.stl",
+    "notas": "Primer modelo según el croquis, sin ruedas: bandeja de 380 × 300 mm con hueco de 340 × 260 mm para la papelera (marco de 20 mm), fondo de 4 mm y borde de 25 mm (29 mm de alto en total), esquinas redondeadas y cantos achaflanados. Entera no cabe en ninguna Bambu Lab: para imprimirla se partirá en piezas que encajan."
   }
 ]
