@@ -16,7 +16,7 @@ corteza:
             las dos guías y una pestaña que se encaja en la base.
 
 Textura: la de la lámpara de referencia. textura_corteza.npy es el relieve
-de la corteza escaneado de su STL (60 × 42 mm a 0,3 mm/px, sin la forma
+de la corteza escaneado de su STL (60 × 42 mm a 0,15 mm/px, sin la forma
 general); con sus zonas limpias se compone una baldosa que se repite sin
 costuras y se aplica como relieve real en todas las caras laterales, más
 grietas estrechas y profundas como las de la referencia. Las caras de corte
@@ -38,7 +38,7 @@ from matplotlib.textpath import TextPath
 
 AQUI = pathlib.Path(__file__).parent
 VISTA = "--vista" in sys.argv
-RESOLUCION = 0.8 if VISTA else 0.4  # separación de puntos en las caras con textura
+RESOLUCION = 0.7 if VISTA else 0.25  # separación de puntos en las caras con textura
 SEMILLA = 11
 
 # --- Forma del tronco -------------------------------------------------------------------------
@@ -75,7 +75,7 @@ CORTE = dict(anillo_hondo=0.5, anillo_ancho=0.6, separacion=(2.5, 6.0), corteza=
 
 # --- Textura -------------------------------------------------------------------------
 TEXTURA = AQUI / "textura_corteza.npy"
-PIXEL = 0.3             # mm por píxel de la textura escaneada
+PIXEL = 0.15            # mm por píxel de la textura escaneada
 GRIETAS_POR_CM2 = 0.07  # densidad de grietas
 GRIETA = dict(largo=(14.0, 38.0), ancho=(1.2, 2.4), hondo=(1.2, 2.2), inclinacion=0.18)
 
@@ -173,12 +173,13 @@ def baldosa():
     """Baldosa periódica hecha con las zonas limpias del escaneo (sin la
     grieta y sus halos), empalmadas con fundidos."""
     d = np.load(TEXTURA)
-    a, b = d[:, 5:70], d[:, 145:198]
-    f = 10
+    px = lambda mm: int(round(mm / PIXEL))
+    a, b = d[:, px(1.5):px(21.0)], d[:, px(43.5):px(59.4)]
+    f = px(3.0)
     w = np.linspace(0, 1, f)[None, :]
     t = np.hstack([a[:, :-f], a[:, -f:] * (1 - w) + b[:, :f] * w, b[:, f:]])
     # periódica en horizontal y en vertical
-    f = 14
+    f = px(4.2)
     w = np.linspace(0, 1, f)[None, :]
     t = np.hstack([t[:, f:-f], t[:, -f:] * (1 - w) + t[:, :f] * w])
     w = np.linspace(0, 1, f)[:, None]
