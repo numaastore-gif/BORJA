@@ -43,7 +43,7 @@ ASA_Z = 188.0          # altura del borde inferior de la ranura
 # Cada línea: tramos (texto, cursiva), altura de mayúscula, espaciado entre
 # letras (fracción de la altura) y línea base.
 LINEAS = [
-    dict(tramos=[("Jose ", False), ("y", True), (" Valle", False)], letra=14.0, aire=0.0, z=166.0),
+    dict(tramos=[("Valle ", False), ("y", True), (" Jose", False)], letra=14.0, aire=0.0, z=166.0),
     dict(tramos=[("10/09/1994", False)], letra=8.5, aire=0.12, z=151.0),
 ]
 FUENTES = {False: "PlayfairDisplay-Medium.ttf", True: "PlayfairDisplay-MediumItalic.ttf"}  # OFL
