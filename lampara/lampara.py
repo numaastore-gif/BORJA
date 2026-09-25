@@ -5,15 +5,18 @@ inclinación, nudos con su abultamiento y la cicatriz de la rama, y en el corte
 de arriba anillos de crecimiento, médula, grietas de secado y la línea de la
 corteza:
 
-  base      bloque macizo con el asiento del difusor, paso para el tubo
-            roscado M10 del portalámparas, alojamiento de la tuerca por debajo,
-            canal para el cable y «numa home» grabado en la cara inferior.
-  rodajas   12 piezas. Cada una baja por el difusor y se asienta sola en su
-            escalón, así que las rendijas salen iguales. Dos muescas a 0° y
-            150° encajan en las guías del difusor: solo entran en una posición.
-  remate    tapa superior cortada en bisel que cubre el extremo del difusor.
-  difusor   tubo escalonado translúcido con un escalón cónico a 45° por pieza,
-            las dos guías y una pestaña que se encaja en la base.
+  1 base      bloque macizo con el asiento del difusor, hueco del LED Lamp
+              Kit, canal para el cable y el logotipo «nüma» grabado debajo.
+  2 difusor   tubo escalonado translúcido con un escalón cónico a 45° por
+              pieza, las dos guías y una pestaña que se encaja en la base.
+  3-16 rodajas  cada una baja por el difusor y se asienta sola en su escalón,
+              así que las rendijas salen iguales. Dos muescas a 0° y 150°
+              encajan en las guías: solo entran en una posición.
+  17 remate   tapa superior cortada en bisel que cubre el extremo del difusor.
+
+Cada pieza lleva grabado debajo su número de montaje. Los huecos que abrazan
+el difusor (asiento de la base, rodajas y remate) llevan tres nervios de
+presión que aprietan 0,15 mm: las piezas quedan firmes y sin juego.
 
 Textura: la de la lámpara de referencia. textura_corteza.npy es el relieve
 de la corteza escaneado de su STL (60 × 42 mm a 0,15 mm/px, sin la forma
@@ -35,6 +38,8 @@ import trimesh
 from manifold3d import CrossSection, FillRule, Manifold, Mesh, OpType, triangulate
 from matplotlib.font_manager import FontProperties
 from matplotlib.textpath import TextPath
+from shapely.geometry import LineString, Point
+from shapely.ops import unary_union
 
 AQUI = pathlib.Path(__file__).parent
 VISTA = "--vista" in sys.argv
@@ -44,8 +49,10 @@ SEMILLA = 11
 # --- Forma del tronco -------------------------------------------------------------------------
 # Radio medio según la altura (z, radio): pie que se abre en raíces y tronco
 # que se estrecha muy poco hacia arriba.
-PERFIL = [(0, 84.0), (8, 78.0), (22, 74.0), (45, 71.5), (100, 70.0), (180, 69.0),
-          (260, 68.0), (360, 67.0)]
+# Una sola curva suave, r(z) = c0 - c1*z + c2*exp(-z/L), ajustada a los puntos de
+# antes (84 abajo, 70 a 100 mm, 67 arriba): sin tramos rectos, así la pared no
+# hace quiebros (antes se veía una franja en el pie).
+PERFIL = dict(c0=71.40, c1=0.0127, c2=12.467, L=14.02)
 EJE = [(0, 0.0, 0.0), (360, 6.0, -3.0)]  # el tronco se inclina un poco
 LOBULOS = [(2, 0.05), (3, 0.035), (4, 0.02), (5, 0.015), (7, 0.01)]  # (número, amplitud relativa)
 RAICES = dict(cantidad=5, fuerza=11.0, ancho=(22.0, 32.0), alto=55.0)   # contrafuertes del pie
@@ -86,7 +93,12 @@ PARED_DIFUSOR = 1.6
 GUIAS = (0.0, 150.0)
 GUIA = dict(ancho=4.0, alto=2.0)
 PESTANA = dict(radio=R_DIFUSOR + 3.0, grosor=3.0, lengueta=4.0)
-HOLGURA = 0.2
+HOLGURA = 0.15          # holgura radial de los huecos; el apriete lo dan los nervios
+# Nervios de presión: tiras verticales redondeadas en la pared de cada hueco que
+# invaden el difusor NERVIO["aprieto"] mm. Al montar se aplastan un poco y la
+# pieza queda firme, sin juego y sin tener que forzar todo el contorno. Llevan
+# una rampa de entrada para que empiecen a apretar poco a poco.
+NERVIO = dict(angulos=(75.0, 225.0, 300.0), radio=0.6, aprieto=0.15, entrada=1.7)
 ENTRA_EN_REMATE = 18.0
 
 # --- Luz: Bambu Lab LED Lamp Kit 001 (disco de Ø 59 × 18 mm, cable de 1,5 m) --------------
@@ -97,9 +109,12 @@ LED = dict(diametro=62.0, alto=19.0)          # hueco del disco (Ø 59 + holgura
 AGUJERO_CENTRAL = 20.0
 RANURA_CABLE = dict(ancho=4.0, hondo=6.0, largo=37.0, angulo=200.0)  # estría + ranura del suelo
 SALIDA_CABLE = dict(ancho=4.0, alto=5.0)      # salida por la cara inferior hacia el lateral
-TEXTO = "numa home"
-TEXTO_ALTO = 8.0
-TEXTO_HONDO = 0.6
+# Logotipo «nüma» grabado en la cara inferior, calcado de la imagen del logo
+# (trazo monolínea de palo seco, «a» de un piso): (ancho total, grosor de trazo)
+LOGO = dict(ancho=55.0, trazo=1.05, punto=1.35, y=-42.0, hondo=0.8)
+# Número de montaje de cada pieza, grabado en su cara de abajo (se lee al
+# darle la vuelta): 1 base, 2 difusor, 3-16 rodajas de abajo arriba, 17 remate.
+NUMERO = dict(alto=7.0, hondo=0.6, alto_difusor=3.4, hondo_difusor=0.4)
 
 Z_RODAJA = [ALTO_BASE + RENDIJA + i * (GROSOR_RODAJA + RENDIJA) for i in range(RODAJAS)]
 Z_REMATE = Z_RODAJA[-1] + GROSOR_RODAJA + RENDIJA
@@ -130,10 +145,21 @@ def eje(z):
     return np.interp(z, zs, xs), np.interp(z, zs, ys)
 
 
+def perfil(z):
+    p = PERFIL
+    return p["c0"] - p["c1"] * z + p["c2"] * np.exp(-z / p["L"])
+
+
+def suave(x):
+    """Rampa de 0 a 1 sin quiebros en los extremos (smoothstep)."""
+    x = np.clip(x, 0, 1)
+    return x * x * (3 - 2 * x)
+
+
 def radio(theta, z, detalle=True):
     """Radio del tronco en (ángulo, altura). Sin «detalle» no lleva los
     entrantes (se usa para dibujar los anillos del corte)."""
-    r0 = np.interp(z, *zip(*PERFIL))
+    r0 = perfil(z)
     r = np.full_like(theta, r0)
     for n, a, fase, giro in LOBULO_FASE:
         r *= 1 + a * np.cos(n * theta + fase + giro * z)
@@ -149,8 +175,9 @@ def radio(theta, z, detalle=True):
         for (ang, hondo, ancho, asim, z0, z1), fase in zip(ENTRANTES, SERPENTEO_FASE):
             if not (z0 - 20 <= z <= z1 + 20):
                 continue
-            entrada = np.clip((z - z0) / 20 + 1, 0, 1) if z0 > 0 else 1.0
-            salida = np.clip((z1 - z) / 20 + 1, 0, 1)
+            # los entrantes nacen y mueren con rampas suaves: sin cortes horizontales
+            entrada = suave((z - z0) / 30 + 1) if z0 > 0 else 1.0
+            salida = suave((z1 - z) / 30 + 1)
             desvio = SERPENTEO["amplitud"] * np.sin(2 * np.pi * z / SERPENTEO["periodo"] + fase)
             da = ((theta - np.radians(ang) + np.pi) % (2 * np.pi) - np.pi) * r0 - desvio
             mitad = np.where(da < 0, ancho * asim / (1 + asim), ancho / (1 + asim))
@@ -237,7 +264,7 @@ def deformidades(theta, z):
     """Dentro de los entrantes la textura de corteza se suaviza (en el fondo de
     una V estrecha, el relieve completo haría que las paredes se cruzaran)."""
     hueco = radio(theta, z, detalle=False) - radio(theta, z)
-    return 1 - 0.75 * np.clip(hueco / 6.0, 0, 1), np.zeros_like(theta)
+    return 1 - 0.75 * suave(hueco / 6.0), np.zeros_like(theta)
 
 
 def bloque(z0, z1, semilla, giro_extra=0.0, desplazamiento=(0.0, 0.0)):
@@ -336,27 +363,103 @@ def difusor():
     for ang in GUIAS:
         pestana = pestana + Manifold.cube((PESTANA["lengueta"] + 1, 6.0, PESTANA["grosor"])) \
             .translate((PESTANA["radio"] - 1, -3.0, z0)).rotate((0, 0, ang))
-    return (fuera + pestana) - dentro
+    marca = numero(2, z0, (30.7 * np.cos(np.radians(75)), 30.7 * np.sin(np.radians(75))),
+                   NUMERO["alto_difusor"], NUMERO["hondo_difusor"])
+    return (fuera + pestana) - dentro - marca
 
 
-def hueco_para(nivel, z0, z1):
+def nervios(r, z0, z1, entra_por_arriba=False):
+    """Nervios de presión en la pared de un hueco de radio r, entre z0 y z1,
+    con la rampa de entrada en el lado por el que entra el difusor."""
+    n = NERVIO
+    # la punta de la rampa queda 0,5 mm fuera de la pieza: sin aristas sobre sus caras
+    if entra_por_arriba:
+        z1 += 0.5
+    else:
+        z0 -= 0.5
+    c = r + n["radio"] - n["aprieto"] - HOLGURA  # sobresalen HOLGURA + aprieto
+    punta = Manifold.cylinder(0.05, 0.1, 0.1, 8).translate((r + 0.1, 0, 0))
+    lleno = Manifold.cylinder(z1 - z0 - n["entrada"], n["radio"], n["radio"], 24).translate((c, 0, 0))
+    if entra_por_arriba:
+        tira = Manifold.batch_hull([lleno, punta.translate((0, 0, z1 - z0 - 0.05))])
+    else:
+        tira = Manifold.batch_hull([lleno.translate((0, 0, n["entrada"])), punta])
+    return Manifold.batch_boolean([tira.rotate((0, 0, a)) for a in n["angulos"]], OpType.Add).translate((0, 0, z0))
+
+
+def hueco_para(nivel, z0, z1, apriete=None):
+    """Hueco de una pieza para el tramo «nivel» del difusor, con las ranuras de
+    las guías y los nervios de presión en apriete=(desde, hasta)."""
     r = radio_nivel(nivel) + HOLGURA
     h = z1 - z0 + 2
     agujero = Manifold.cylinder(h, r, r, 180)
     for ang in GUIAS:
         agujero = agujero + Manifold.cube((GUIA["alto"] + 1.0 + HOLGURA, GUIA["ancho"] + 2 * HOLGURA, h)) \
             .translate((r - 1.0, -(GUIA["ancho"] + 2 * HOLGURA) / 2, 0)).rotate((0, 0, ang))
-    return agujero.translate((0, 0, z0 - 1))
+    agujero = agujero.translate((0, 0, z0 - 1))
+    if apriete:
+        agujero = agujero - nervios(r, *apriete)
+    return agujero
 
 
-def texto_inferior():
-    prop = FontProperties(fname=str(AQUI / "PlayfairDisplay-Medium.ttf"))
-    ruta = TextPath((0, 0), TEXTO, size=1.0, prop=prop)
-    escala = TEXTO_ALTO / TextPath((0, 0), "h", size=1.0, prop=prop).get_extents().height
-    letras = CrossSection([p * escala for p in ruta.to_polygons() if len(p) > 2], FillRule.EvenOdd)
+def arco(cx, cy, r, a0, a1, n=64):
+    t = np.radians(np.linspace(a0, a1, n))
+    return list(zip(cx + r * np.cos(t), cy + r * np.sin(t)))
+
+
+def trazos_logo():
+    """Líneas centrales del logotipo «nüma», medidas sobre la imagen del logo
+    (en píxeles de la imagen, con y hacia abajo): palos rectos, arcos
+    circulares y la «a» de un piso (círculo más palo)."""
+    lineas, arriba, abajo = [], 23.0, 38.5
+
+    def n(x, ancho=12.8, r=6.3):  # palo y arco (n, y los dos tramos de la m)
+        cx, cy = x + ancho - r, arriba + 0.5 + r
+        a = 180 + np.degrees(np.arccos(min((cx - x - 0.4) / r, 1)))  # donde el arco sale del palo
+        lineas.append([(x, arriba), (x, abajo)])
+        arc = arco(cx, cy, r, a, 360)
+        lineas.append([(x, arc[0][1])] + arc + [(cx + r, abajo)])
+
+    n(11.5)
+    n(50.5)
+    n(63.0)
+    x0, x1, r = 31.5, 43.2, 5.85  # u: la n girada
+    cx, cy = x0 + r, abajo - 1.0 - r
+    arc = arco(cx, cy, r, 180, np.degrees(np.arccos(min((x1 - 0.4 - cx) / r, 1))))
+    lineas.append([(x0, arriba)] + arc + [(x1, arc[-1][1])])
+    lineas.append([(x1, arriba), (x1, abajo)])
+    lineas.append(arco(87.7, 30.75, 7.2, 0, 360, 128))  # a
+    lineas.append([(95.3, arriba), (95.3, abajo)])
+    return lineas, [(34.0, 17.5), (41.0, 17.5)]  # y los puntos de la diéresis
+
+
+def logo_inferior():
+    """Logotipo grabado en la cara inferior de la base, en espejo para que se
+    lea mirando la base desde abajo; trazo algo más grueso que en la imagen."""
+    lineas, puntos = trazos_logo()
+    xs = np.concatenate([np.array(l)[:, 0] for l in lineas])
+    escala = LOGO["ancho"] / (xs.max() - xs.min() + LOGO["trazo"] / (LOGO["ancho"] / 85))
+    formas = [LineString(l).buffer(LOGO["trazo"] / 2 / escala, cap_style=2, join_style=1) for l in lineas]
+    formas += [Point(p).buffer(LOGO["punto"] / 2 / escala, 32) for p in puntos]
+    dibujo = unary_union(formas)
+    anillos = [np.array(a.coords)[:-1] for g in getattr(dibujo, "geoms", [dibujo])
+               for a in [g.exterior, *g.interiors]]
+    letras = CrossSection([a * (escala, -escala) for a in anillos], FillRule.EvenOdd)
     x0, y0, x1, y1 = letras.bounds()
-    letras = letras.translate((-(x0 + x1) / 2, -(y0 + y1) / 2)).mirror((1, 0)).translate((0, -42.0))
-    return letras.extrude(TEXTO_HONDO + 1).translate((0, 0, -1))
+    letras = letras.translate((-(x0 + x1) / 2, -(y0 + y1) / 2)).mirror((1, 0)).translate((0, LOGO["y"]))
+    return letras.extrude(LOGO["hondo"] + 1).translate((0, 0, -1))
+
+
+def numero(n, z, centro, alto, hondo):
+    """Número de montaje grabado hacia arriba desde la cara inferior z de una
+    pieza, en espejo para que se lea desde abajo."""
+    prop = FontProperties(family="DejaVu Sans", weight="bold")
+    ruta = TextPath((0, 0), str(n), size=1.0, prop=prop)
+    escala = alto / TextPath((0, 0), "0", size=1.0, prop=prop).get_extents().height
+    cifras = CrossSection([p * escala for p in ruta.to_polygons() if len(p) > 2], FillRule.EvenOdd)
+    x0, y0, x1, y1 = cifras.bounds()
+    cifras = cifras.translate((-(x0 + x1) / 2, -(y0 + y1) / 2)).mirror((1, 0)).translate(centro)
+    return cifras.extrude(hondo + 1).translate((0, 0, z - 1))
 
 
 # --- Corte de arriba: anillos, médula, grietas y corteza ----------------------------------------
@@ -414,7 +517,10 @@ def construir():
     for ang in GUIAS:
         asiento = asiento + Manifold.cube((PESTANA["lengueta"] + 1 + HOLGURA, 6.0 + 2 * HOLGURA, PESTANA["grosor"] + 1)) \
             .translate((PESTANA["radio"] - 1, -3.0 - HOLGURA, 0)).rotate((0, 0, ang))
-    base = base - asiento.translate((0, 0, ALTO_BASE - PESTANA["grosor"]))
+    z_asiento = ALTO_BASE - PESTANA["grosor"]
+    asiento = asiento.translate((0, 0, z_asiento)) - nervios(PESTANA["radio"] + HOLGURA, z_asiento - 1,
+                                                          ALTO_BASE + 1, entra_por_arriba=True)
+    base = base - asiento
     z_led = ALTO_BASE - PESTANA["grosor"] - LED["alto"]  # suelo del hueco del disco
     base = base - Manifold.cylinder(LED["alto"] + 1, LED["diametro"] / 2, LED["diametro"] / 2, 180) \
         .translate((0, 0, z_led))
@@ -427,7 +533,7 @@ def construir():
     base = base - (ranura + estria).rotate((0, 0, rc["angulo"]))
     canal = Manifold.cube((120, SALIDA_CABLE["ancho"], SALIDA_CABLE["alto"] + 0.5)) \
         .translate((0, -SALIDA_CABLE["ancho"] / 2, -0.5)).rotate((0, 0, rc["angulo"]))
-    base = base - canal - texto_inferior()
+    base = base - canal - logo_inferior() - numero(1, 0.0, (0.0, 42.0), NUMERO["alto"], NUMERO["hondo"])
 
     rodajas = []
     desorden = np.random.default_rng(SEMILLA + 500)
@@ -435,13 +541,24 @@ def construir():
         giro = desorden.uniform(-1, 1) * DESORDEN["giro"]
         ang = desorden.uniform(0, 2 * np.pi)
         desp = DESORDEN["desplazamiento"] * desorden.uniform(0.3, 1) * np.array([np.cos(ang), np.sin(ang)])
-        r = bloque(z, z + GROSOR_RODAJA, SEMILLA + 1 + i, giro, desp) - hueco_para(i, z, z + GROSOR_RODAJA)
-        rodajas.append(r)
+        r = bloque(z, z + GROSOR_RODAJA, SEMILLA + 1 + i, giro, desp)
+        r = r - hueco_para(i, z, z + GROSOR_RODAJA, apriete=(z, z + GROSOR_RODAJA + 1))
+        rodajas.append(r - numero(3 + i, z, (0.0, 46.0), NUMERO["alto"], NUMERO["hondo"]))
 
     remate = bloque(Z_REMATE, Z_TOPE, SEMILLA + 99) ^ corte_superior()
-    remate = remate - hueco_para(RODAJAS, Z_REMATE, Z_REMATE + ENTRA_EN_REMATE + 0.5)
+    remate = remate - hueco_para(RODAJAS, Z_REMATE, Z_REMATE + ENTRA_EN_REMATE + 0.5,
+                                 apriete=(Z_REMATE, Z_REMATE + 10.0))
+    remate = remate - numero(3 + RODAJAS, Z_REMATE, (0.0, 46.0), NUMERO["alto"], NUMERO["hondo"])
     remate = grabar_corte(remate)
     return dict(base=base, rodajas=rodajas, remate=remate, difusor=difusor())
+
+
+def piezas_numeradas(p):
+    """(nombre de fichero, sólido) en el orden de montaje; el número del nombre
+    es el que lleva grabado la pieza."""
+    orden = [("base", p["base"]), ("difusor", p["difusor"])] + [("rodaja", r) for r in p["rodajas"]] \
+        + [("remate", p["remate"])]
+    return [(f"{i:02d}_{nombre}", m) for i, (nombre, m) in enumerate(orden, 1)]
 
 
 def a_trimesh(m):
@@ -453,9 +570,17 @@ if __name__ == "__main__":
     p = construir()
     carpeta = AQUI / ("vista" if VISTA else "piezas")
     carpeta.mkdir(exist_ok=True)
-    todas = [("base", p["base"]), ("remate", p["remate"]), ("difusor", p["difusor"])] + \
-        [(f"rodaja_{i + 1:02d}", r) for i, r in enumerate(p["rodajas"])]
-    for nombre, m in todas:
+    for viejo in carpeta.glob("*.stl"):
+        viejo.unlink()
+    rodajas = []
+    for nombre, m in piezas_numeradas(p):
         t = a_trimesh(m)
         t.export(carpeta / f"{nombre}.stl")
-        print(f"{nombre:10s} estanca={t.is_watertight} triángulos={len(t.faces)} tamaño={np.round(t.extents, 1)}")
+        if "rodaja" in nombre:
+            rodajas.append(t)
+        print(f"{nombre:14s} estanca={t.is_watertight} triángulos={len(t.faces)} tamaño={np.round(t.extents, 1)}")
+    if VISTA:  # para el visor: las rodajas juntas y una a resolución de impresión
+        trimesh.util.concatenate(rodajas).export(carpeta / "rodajas.stl")
+        detalle = AQUI / "piezas" / "08_rodaja.stl"
+        if detalle.exists():
+            (carpeta / "rodaja_detalle.stl").write_bytes(detalle.read_bytes())

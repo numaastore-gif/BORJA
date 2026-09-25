@@ -108,39 +108,39 @@
   {
     "id": "lampara",
     "nombre": "Lámpara tronco numa home",
-    "fecha": "2026-09-24",
+    "fecha": "2026-09-25",
     "partes": [
       {
         "archivo": "modelos/lampara_base.txt",
-        "origen": "lampara/vista/base.stl",
+        "origen": "lampara/vista/01_base.stl",
         "color": "#8A6440",
-        "nombre": "Base"
+        "nombre": "1 · Base"
       },
       {
         "archivo": "modelos/lampara_rodajas.txt",
         "origen": "lampara/vista/rodajas.stl",
         "color": "#8A6440",
-        "nombre": "12 rodajas"
+        "nombre": "3-16 · Rodajas"
       },
       {
         "archivo": "modelos/lampara_remate.txt",
-        "origen": "lampara/vista/remate.stl",
+        "origen": "lampara/vista/17_remate.stl",
         "color": "#8A6440",
-        "nombre": "Remate"
+        "nombre": "17 · Remate"
       },
       {
         "archivo": "modelos/lampara_difusor.txt",
-        "origen": "lampara/vista/difusor.stl",
+        "origen": "lampara/vista/02_difusor.stl",
         "color": "#F4ECD8",
-        "nombre": "Difusor"
+        "nombre": "2 · Difusor"
       }
     ],
-    "notas": "Tronco de ~Ø 150 × 330 mm (pie de 187 mm con raíces) al estilo de las piezas de referencia: contorno irregular y festoneado con seis entrantes verticales en V que recorren el tronco serpenteando, y forma que cambia de una pieza a otra. Base de 100 mm, 14 rodajas de 6,3 mm con rendijas de 3 mm y remate de 80 mm con bisel de 9° (anillos, médula y grietas en el corte). Corteza con la textura de la referencia, escaneada a 0,15 mm/px; las piezas de impresión la llevan con un punto cada 0,25 mm (1,4 M de triángulos la base y 1,2 M el remate, como las piezas de referencia). Este visor muestra una versión aligerada: la rodaja de detalle se ve a resolución real. Luz: Bambu Lab LED Lamp Kit 001 (disco Ø 59 × 18) en un hueco de Ø 62 con el recorrido de cable de la base de referencia. Difusor escalonado de Ø 60 con dos guías."
+    "notas": "Tronco de ~Ø 150 × 330 mm (pie de 187 mm con raíces) al estilo de las piezas de referencia: contorno irregular y festoneado con seis entrantes verticales en V que recorren el tronco serpenteando, y forma que cambia de una pieza a otra. Base de 100 mm, 14 rodajas de 6,3 mm con rendijas de 3 mm y remate de 80 mm con bisel de 9° (anillos, médula y grietas en el corte). Corteza con la textura de la referencia, escaneada a 0,15 mm/px; las piezas de impresión la llevan con un punto cada 0,25 mm (1,4 M de triángulos la base y 1,2 M el remate, como las piezas de referencia). Este visor muestra una versión aligerada: la rodaja de detalle se ve a resolución real. Cada pieza lleva grabado debajo su número de montaje (1 base, 2 difusor, 3-16 rodajas, 17 remate) y el logotipo «nüma» va en la cara inferior de la base. Los huecos que abrazan el difusor llevan tres nervios de presión que aprietan 0,15 mm para que todo quede firme. El perfil es una sola curva suave, sin quiebros en el pie. Luz: Bambu Lab LED Lamp Kit 001 (disco Ø 59 × 18) en un hueco de Ø 62 con el recorrido de cable de la base de referencia. Difusor escalonado de Ø 60 con dos guías."
   },
   {
     "id": "lampara_detalle",
     "nombre": "Lámpara · rodaja a resolución de impresión",
-    "fecha": "2026-09-24",
+    "fecha": "2026-09-25",
     "archivo": "modelos/lampara_rodaja_detalle.txt",
     "origen": "lampara/vista/rodaja_detalle.stl",
     "color": "#8A6440",

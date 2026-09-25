@@ -29,10 +29,11 @@ FICHEROS = {"lampara_numa_home_H2D_1.3mf": (1, 6), "lampara_numa_home_H2D_2.3mf"
 
 # (cama, pieza, posición del centro respecto al centro de la cama)
 CUATRO = [(-77, 70), (77, 70), (-77, -70), (77, -70)]
-PROYECTO = [(1, "base", (-80, 0)), (1, "remate", (95, 0))]
+# los nombres llevan el número de montaje grabado en cada pieza
+PROYECTO = [(1, "01_base", (-80, 0)), (1, "17_remate", (95, 0))]
 for i in range(14):
-    PROYECTO.append((2 + i // 4, f"rodaja_{i + 1:02d}", CUATRO[i % 4]))
-PROYECTO.append((6, "difusor", (0, 0)))
+    PROYECTO.append((2 + i // 4, f"{i + 3:02d}_rodaja", CUATRO[i % 4]))
+PROYECTO.append((6, "02_difusor", (0, 0)))
 
 TIPOS = """<?xml version="1.0" encoding="UTF-8"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
@@ -59,9 +60,23 @@ def num(x):
     return f"{x:.4f}".rstrip("0").rstrip(".")
 
 
+def redondear(m):
+    """Malla con los vértices a 0,0001 mm, como se escriben. Donde los grabados
+    del corte dejan astillas más finas, se funden sus vértices y se quitan los
+    triángulos que quedan sin área; la malla tiene que seguir cerrada."""
+    v, primero, inv = np.unique(np.round(m.vertices, 4), axis=0, return_index=True, return_inverse=True)
+    orden = np.argsort(primero)  # conserva el orden original: el zip comprime mucho mejor
+    nuevo = np.empty_like(orden)
+    nuevo[orden] = np.arange(len(orden))
+    v, f = v[orden], nuevo[inv.reshape(-1)][m.faces]
+    f = f[(f[:, 0] != f[:, 1]) & (f[:, 1] != f[:, 2]) & (f[:, 0] != f[:, 2])]
+    _, veces = np.unique(np.sort(np.vstack([f[:, [0, 1]], f[:, [1, 2]], f[:, [2, 0]]]), axis=1),
+                         axis=0, return_counts=True)
+    assert (veces == 2).all(), "la malla se abre al redondear"
+    return trimesh.Trimesh(v, f, process=False)
+
+
 def xml_malla(m):
-    # a 0,0001 mm no se funden vértices distintos (la malla va a 0,25 mm)
-    assert len(np.unique(np.round(m.vertices, 4), axis=0)) == len(m.vertices)
     v = "\n".join(f'<vertex x="{num(x)}" y="{num(y)}" z="{num(z)}"/>' for x, y, z in m.vertices)
     t = "\n".join(f'<triangle v1="{a}" v2="{b}" v3="{c}"/>' for a, b, c in m.faces)
     return f"<mesh><vertices>\n{v}\n</vertices><triangles>\n{t}\n</triangles></mesh>"
@@ -75,6 +90,7 @@ def exportar(destino, camas):
         m = trimesh.load(AQUI / "piezas" / f"{nombre}.stl")
         c = (m.bounds[0] + m.bounds[1]) / 2
         m.apply_translation([-c[0], -c[1], -m.bounds[0][2]])  # centrada y apoyada en la cama
+        m = redondear(m)
         objetos.append(f'  <object id="{i}" type="model" name="{nombre}">\n{xml_malla(m)}\n  </object>')
         ox, oy = origen_cama(orden[cama], len(camas))
         x, y = ox + CAMA[0] / 2 + dx, oy + CAMA[1] / 2 + dy
