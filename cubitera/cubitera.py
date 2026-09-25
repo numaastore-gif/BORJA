@@ -7,6 +7,10 @@ en curva (baja en un lado y alta en el del asa). El asa es una ranura
 triangular redondeada y simétrica; debajo van el nombre y la fecha en relieve
 siguiendo la pared, y en el fondo hay un tope para que la botella quede
 recostada contra la pared alta.
+Estanca para hielo sin relleno al 100 %: el fondo mide 10 capas de 0,2 mm y
+el tope es hueco con el hueco apoyado en el fondo, así el laminador lo hace
+todo con capas y perímetros macizos, sin relleno entre la base y la
+superficie donde apoya la botella.
 Todas las medidas en mm.
 
     pip install numpy trimesh manifold3d matplotlib shapely fonttools
@@ -31,7 +35,12 @@ PERFIL = dict(c0=76.456, c1=0.1166, c2=34.238, L=33.336)
 BOCA = dict(p0=5.14e-4, p1=0.260454, p2=207.33)
 ANCHO_RELATIVO = 20.5 / 20.0  # semieje transversal / semieje largo
 PARED = 3.0
-FONDO = 4.0
+# Fondo estanco para hielo sin relleno al 100 %: tan fino como 10 capas de
+# 0,2 mm, así el laminador lo hace entero de capas macizas (5 inferiores + 5
+# superiores) y no queda relleno ni hueco entre la base y donde apoya la botella.
+CAPA = 0.2
+CAPAS_FONDO = 10
+FONDO = CAPA * CAPAS_FONDO
 REDONDEO_FONDO = (8.0, 5.0)  # radio de la arista del fondo por fuera y por dentro
 # Asa: ranura triangular redondeada y simétrica (base abajo, vértice arriba).
 # (u, v, radio horizontal, radio vertical) de las elipses que la envuelven;
@@ -52,6 +61,7 @@ ENGROSAR = 0.15        # mm que se engordan los trazos finos para que se imprima
 # así las letras nacen de la pared en vez de parecer pegadas.
 RELIEVE = [(0.3, 0.4), (0.0, 0.8)]
 TOPE = dict(x=-34.0, ancho=30.0, alto=16.0)  # suplemento del fondo
+PARED_TOPE = 1.9      # el tope es hueco: ~4 perímetros y su hueco apoya en el fondo
 SEGMENTOS = 240
 PASO_Z = 1.5           # separación entre anillos de la pared
 ALTO_CUERPO = 290.0    # el cuerpo se genera algo más alto y la boca lo recorta
@@ -203,10 +213,25 @@ def tope():
     return Manifold.batch_hull(esferas)
 
 
+def interior_tope(exterior, hueco):
+    """Hueco del tope: el tope erosionado PARED_TOPE mm (intersección de copias
+    desplazadas en 64 direcciones), sumándole antes una losa bajo el fondo para
+    que el hueco baje hasta el propio fondo. Así no queda nada macizo entre la
+    base y la superficie donde apoya la botella: el laminador pone capas
+    superiores en el fondo también debajo del tope y no hay relleno."""
+    solido = (tope() ^ exterior) + Manifold.cube((300, 300, 20)).translate((-150, -150, FONDO - 20))
+    k = np.arange(64) + 0.5
+    fi, th = np.arccos(1 - 2 * k / 64), np.pi * (1 + 5 ** 0.5) * k
+    dirs = np.c_[np.sin(fi) * np.cos(th), np.sin(fi) * np.sin(th), np.cos(fi)]
+    nucleo = Manifold.batch_boolean([solido.translate(tuple(PARED_TOPE * u)) for u in dirs], OpType.Intersect)
+    encima = Manifold.cube((400, 400, 400)).translate((-200, -200, FONDO))
+    return nucleo ^ encima ^ hueco.scale((0.98, 0.98, 1.0))  # a ~1 mm de la pared del cubo
+
+
 def construir():
     exterior = cuerpo() ^ bajo_la_boca()
     hueco = cuerpo(interior=True)
-    solido = exterior - hueco + (tope() ^ exterior) + (texto() - hueco)
+    solido = exterior - hueco + (tope() ^ exterior) + (texto() - hueco) - interior_tope(exterior, hueco)
     solido = solido - asa()
     m = solido.to_mesh()
     return trimesh.Trimesh(m.vert_properties[:, :3], m.tri_verts, process=False)
