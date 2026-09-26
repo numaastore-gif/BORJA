@@ -231,15 +231,26 @@ def interior_tope(exterior, hueco):
 def construir():
     exterior = cuerpo() ^ bajo_la_boca()
     hueco = cuerpo(interior=True)
-    solido = exterior - hueco + (tope() ^ exterior) + (texto() - hueco) - interior_tope(exterior, hueco)
-    solido = solido - asa()
+    vaso = exterior - hueco + (tope() ^ exterior) - interior_tope(exterior, hueco) - asa()
+    # letras: solo el relieve que sobresale de la pared, como pieza aparte
+    # para imprimirlo en otro color (rojo en el proyecto 3MF)
+    letras = texto() - hueco - vaso - asa()
+    # en una pieza: el relieve entra 2 mm en la pared y se funde con ella
+    solido = exterior - hueco + (tope() ^ exterior) + (texto() - hueco) - interior_tope(exterior, hueco) - asa()
+    return a_trimesh(vaso), a_trimesh(letras), a_trimesh(solido)
+
+
+def a_trimesh(solido):
     m = solido.to_mesh()
     return trimesh.Trimesh(m.vert_properties[:, :3], m.tri_verts, process=False)
 
 
 if __name__ == "__main__":
-    malla = construir()
+    cuerpo, letras, malla = construir()
     malla.export(pathlib.Path(__file__).with_name("cubitera.stl"))
+    cuerpo.export(pathlib.Path(__file__).with_name("cubitera_cuerpo.stl"))
+    letras.export(pathlib.Path(__file__).with_name("cubitera_letras.stl"))
+    print("cuerpo estanco:", cuerpo.is_watertight, "| letras estancas:", letras.is_watertight)
     print("estanca:", malla.is_watertight, "| cuerpos:", malla.body_count,
           "| volumen cm3:", round(malla.volume / 1000, 1))
     print("tamaño mm:", np.round(malla.extents, 1))
