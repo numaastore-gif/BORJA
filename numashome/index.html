@@ -802,7 +802,7 @@ button,input{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
         <button class="nh-btn nh-btn--order" type="button" data-action="order" data-magnetic><span>Encargar pieza</span> <span data-lab-out="price">— €</span></button>
       </div>
       <details class="nh-lab__json" open>
-        <summary>params.json <span data-action="export" role="button" tabindex="0" style="margin-left:auto;margin-right:12px;text-decoration:underline">EXPORTAR</span></summary>
+        <summary>params.json <span data-action="export" role="button" tabindex="0" style="margin-left:auto;margin-right:12px;text-decoration:underline">COPIAR</span></summary>
         <pre><code data-lab-json></code></pre>
       </details>
     </form>
@@ -1913,9 +1913,11 @@ function initLab() {
   const doExport = e => {
     e.preventDefault(); e.stopPropagation();
     const data = renderJSON(estimate());
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${data.model}.json`;
-    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    // Copia el JSON al portapapeles (si falla, selecciona el bloque para copiarlo a mano)
+    const txt = JSON.stringify(data, null, 2);
+    const ok = () => { exportBtn.textContent = 'COPIADO ✓'; setTimeout(() => (exportBtn.textContent = 'COPIAR'), 1400); };
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents(json); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); };
+    try { navigator.clipboard.writeText(txt).then(ok, fallback); } catch (err) { fallback(); }
   };
   exportBtn.addEventListener('click', doExport);
   exportBtn.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') doExport(e); });
