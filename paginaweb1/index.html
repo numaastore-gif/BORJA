@@ -1,0 +1,2147 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>paginaweb1</title>
+<meta name="description" content="paginaweb1: objetos de decoración para el hogar diseñados con IA e impresos en 3D. Jarrones, lámparas, bandejas y macetas generativas.">
+<meta name="theme-color" content="#0A0A0A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<script>document.documentElement.classList.add('pw-js');</script>
+
+<style>
+/* =====================================================================
+   paginaweb1 — landing brutalista
+   Estructura CSS:
+   00. Tokens · 01. Base · 02. Utilidades (tags, botones, cabeceras)
+   03. Preloader · 04. Cursor · 05. Header · 06. Hero · 07. Marquee
+   08. Proceso · 09. Laboratorio · 10. Colección · 11. Manifiesto
+   12. Cifras · 13. Newsletter · 14. Footer · 15. Reveal · 16. Responsive
+   17. Reduced motion
+   Todas las clases llevan prefijo pw- + componente para portarlas a
+   secciones independientes de un tema de Shopify.
+   ===================================================================== */
+
+/* ---------- 00. TOKENS ---------- */
+:root{
+  --pw-white:#F2F0EB;
+  --pw-black:#0A0A0A;
+  --pw-gray:#8C8C8C;
+  --pw-gray-2:#D9D6CF;
+  --pw-accent:#007CF8;
+  --pw-line:3px;
+  --pw-border:var(--pw-line) solid var(--pw-black);
+  --pw-font-display:'Archivo Black','Arial Black',Impact,sans-serif;
+  --pw-font-body:'Space Grotesk',system-ui,-apple-system,sans-serif;
+  --pw-font-mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --pw-header-h:58px;
+  --pw-gutter:clamp(16px,2.2vw,32px);
+  --pw-ease:cubic-bezier(.7,0,.2,1);
+}
+
+/* ---------- 01. BASE ---------- */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;border-radius:0}
+html{scroll-behavior:smooth;scroll-padding-top:var(--pw-header-h);-webkit-text-size-adjust:100%}
+body{
+  background:var(--pw-white);color:var(--pw-black);
+  font-family:var(--pw-font-body);font-size:16px;line-height:1.45;
+  overflow-x:hidden;overflow-x:clip;
+  -webkit-font-smoothing:antialiased;
+}
+img,svg,canvas{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button,input{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+::selection{background:var(--pw-accent);color:var(--pw-white)}
+:focus-visible{outline:3px solid var(--pw-accent);outline-offset:2px}
+.pw-skip{position:absolute;left:-999px;top:0;z-index:1000;background:var(--pw-black);color:var(--pw-white);padding:12px 16px;font-family:var(--pw-font-mono)}
+.pw-skip:focus{left:8px;top:8px}
+.pw-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.pw-section{position:relative;border-bottom:var(--pw-border);overflow:hidden;overflow:clip}
+
+/* ---------- 02. UTILIDADES ---------- */
+.pw-mono{font-family:var(--pw-font-mono)}
+.pw-tag{
+  display:inline-flex;align-items:center;gap:.5em;
+  font-family:var(--pw-font-mono);font-size:11px;line-height:1;letter-spacing:.02em;text-transform:uppercase;
+  border:2px solid currentColor;padding:5px 7px;white-space:nowrap;
+}
+.pw-tag b{font-weight:700;color:var(--pw-gray)}
+.pw-tag--solid{background:var(--pw-black);color:var(--pw-white);border-color:var(--pw-black)}
+.pw-tag--solid b{color:var(--pw-gray)}
+.pw-dot{display:inline-block;width:8px;height:8px;background:var(--pw-accent);animation:pw-blink 1s steps(1) infinite}
+@keyframes pw-blink{50%{opacity:0}}
+
+.pw-btn{
+  position:relative;display:inline-flex;align-items:center;justify-content:space-between;gap:24px;
+  font-family:var(--pw-font-display);font-size:clamp(16px,1.6vw,22px);text-transform:uppercase;letter-spacing:-.01em;
+  background:var(--pw-black);color:var(--pw-white);border:var(--pw-border);
+  padding:20px 26px;transition:background .15s,color .15s,box-shadow .15s,transform .15s;
+  will-change:transform;
+}
+.pw-btn__arrow{display:inline-block;transition:transform .2s var(--pw-ease)}
+.pw-btn:hover{background:var(--pw-accent);border-color:var(--pw-black);box-shadow:6px 6px 0 var(--pw-black)}
+.pw-btn:hover .pw-btn__arrow{transform:translateX(8px)}
+.pw-btn:active{box-shadow:0 0 0 var(--pw-black)}
+.pw-btn--ghost{background:transparent;color:var(--pw-black)}
+.pw-btn--ghost:hover{background:var(--pw-black);color:var(--pw-white)}
+.pw-btn--sm{font-family:var(--pw-font-mono);font-weight:700;font-size:13px;padding:13px 16px;letter-spacing:.02em}
+
+/* Cabecera de sección reutilizable */
+.pw-sechead{
+  display:grid;grid-template-columns:auto 1fr auto;align-items:end;gap:var(--pw-gutter);
+  padding:calc(var(--pw-gutter)*1.5) var(--pw-gutter) var(--pw-gutter);border-bottom:var(--pw-border);
+}
+.pw-sechead__idx{font-family:var(--pw-font-mono);font-size:13px;font-weight:700;align-self:start;padding-top:.6em}
+.pw-sechead__title{
+  font-family:var(--pw-font-display);font-weight:400;text-transform:uppercase;
+  font-size:clamp(44px,9vw,150px);line-height:.84;letter-spacing:-.045em;
+}
+.pw-sechead__aside{max-width:340px;font-family:var(--pw-font-mono);font-size:12px;line-height:1.55;text-transform:uppercase}
+.pw-sechead__aside .pw-tag{margin:0 6px 6px 0}
+
+/* ---------- 03. PRELOADER ---------- */
+.pw-preloader{display:none}
+.pw-js .pw-preloader{
+  display:flex;position:fixed;inset:0;z-index:900;background:var(--pw-black);color:var(--pw-white);
+  font-family:var(--pw-font-mono);font-size:clamp(12px,1.2vw,15px);
+  align-items:flex-end;padding:var(--pw-gutter);
+  transition:transform .75s var(--pw-ease);
+}
+.pw-preloader.is-done{transform:translateY(-101%)}
+.pw-preloader__inner{width:min(680px,100%)}
+.pw-preloader__log p{white-space:pre;overflow:hidden;text-overflow:clip;line-height:1.7}
+.pw-preloader__log p span{color:var(--pw-accent)}
+.pw-preloader__row{display:flex;align-items:center;gap:16px;margin-top:18px}
+.pw-preloader__bar{flex:1;height:18px;border:2px solid var(--pw-white);padding:2px}
+.pw-preloader__bar span{display:block;height:100%;width:0;background:var(--pw-white)}
+.pw-preloader__pct{font-family:var(--pw-font-display);font-size:clamp(40px,8vw,110px);line-height:.8;letter-spacing:-.04em;min-width:3.2ch;text-align:right}
+
+/* ---------- 04. CURSOR ---------- */
+.pw-cursor{display:none}
+.pw-has-cursor, .pw-has-cursor *{cursor:none !important}
+.pw-has-cursor .pw-cursor{
+  display:block;position:fixed;left:0;top:0;z-index:950;pointer-events:none;
+  mix-blend-mode:difference;color:#fff;
+}
+.pw-cursor__box{
+  position:absolute;left:0;top:0;width:18px;height:18px;border:2px solid #fff;
+  transition:width .18s var(--pw-ease),height .18s var(--pw-ease),border-width .18s;
+}
+.pw-cursor__box::before,.pw-cursor__box::after{content:"";position:absolute;background:#fff}
+.pw-cursor__box::before{left:50%;top:-9px;bottom:-9px;width:2px;transform:translateX(-50%)}
+.pw-cursor__box::after{top:50%;left:-9px;right:-9px;height:2px;transform:translateY(-50%)}
+.pw-cursor.is-hover .pw-cursor__box::before,.pw-cursor.is-hover .pw-cursor__box::after,
+.pw-cursor.is-magnet .pw-cursor__box::before,.pw-cursor.is-magnet .pw-cursor__box::after{opacity:0}
+.pw-cursor.is-down .pw-cursor__box{border-width:5px}
+.pw-cursor__label{
+  position:absolute;left:0;top:0;white-space:nowrap;
+  font-family:var(--pw-font-mono);font-size:10px;font-weight:700;letter-spacing:.04em;
+}
+.pw-cursor.is-hidden{opacity:0}
+
+/* ---------- 05. HEADER ---------- */
+.pw-header{
+  position:sticky;top:0;z-index:100;height:var(--pw-header-h);
+  display:grid;grid-template-columns:auto 1fr auto auto;
+  background:var(--pw-white);border-bottom:var(--pw-border);
+  font-family:var(--pw-font-mono);font-size:12px;text-transform:uppercase;
+}
+.pw-header > *{display:flex;align-items:center;padding:0 var(--pw-gutter);border-right:var(--pw-border);height:100%}
+.pw-header > *:last-child{border-right:0}
+.pw-header__logo{font-family:var(--pw-font-display);font-size:24px;text-transform:none;letter-spacing:-.04em}
+.pw-header__logo sup{font-family:var(--pw-font-mono);font-size:9px;margin-left:2px;align-self:flex-start;margin-top:14px}
+.pw-header__nav{gap:0;padding:0}
+.pw-header__nav a,.pw-header__cart{
+  display:flex;align-items:center;height:100%;padding:0 18px;border-right:2px solid var(--pw-black);
+  font-weight:500;white-space:nowrap;transition:background .12s,color .12s;
+}
+.pw-header__nav a:hover,.pw-header__cart:hover{background:var(--pw-black);color:var(--pw-white)}
+.pw-header__cart{margin-left:auto;border-right:0;border-left:2px solid var(--pw-black);font-family:var(--pw-font-mono);font-size:12px;font-weight:700;text-transform:uppercase}
+.pw-header__cart.is-bump{background:var(--pw-accent);color:var(--pw-white)}
+.pw-header__live{gap:10px;white-space:nowrap}
+.pw-header__live b{font-family:var(--pw-font-mono);font-size:15px;min-width:5ch;display:inline-block}
+.pw-header__live b.is-flash{color:var(--pw-accent)}
+.pw-header__clock{gap:8px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.pw-header__clock b{font-size:15px}
+.pw-header__menu{display:none;font-family:var(--pw-font-mono);font-weight:700;font-size:12px;text-transform:uppercase}
+
+/* ---------- 06. HERO ---------- */
+.pw-hero{
+  background:var(--pw-white);isolation:isolate;
+  min-height:calc(100svh - var(--pw-header-h));
+  display:flex;flex-direction:column;
+}
+.pw-hero__meta{display:flex;flex-wrap:wrap;gap:8px;padding:var(--pw-gutter) var(--pw-gutter) 0;position:relative;z-index:3}
+.pw-hero__title{
+  position:relative;z-index:3;pointer-events:none;
+  font-family:var(--pw-font-display);font-weight:400;text-transform:uppercase;
+  color:var(--pw-white);mix-blend-mode:difference;
+  line-height:.8;letter-spacing:-.055em;
+  padding:2.2vw 0 0 calc(var(--pw-gutter) - .04em);
+}
+.pw-hero__line{display:block;white-space:nowrap}
+.pw-hero__line--1{font-size:clamp(64px,15vw,15vw)}
+.pw-hero__line--2{font-size:clamp(52px,12.4vw,12.4vw);padding-left:5vw}
+.pw-hero__line--3{font-size:clamp(64px,15vw,15vw);padding-left:13vw}
+.pw-hero__line--4{font-size:clamp(52px,12.4vw,12.4vw);padding-left:3vw}
+.pw-hero__line--4 em{font-style:normal;color:var(--pw-white)}
+.pw-hero__viewport{
+  position:absolute;z-index:1;right:var(--pw-gutter);top:calc(var(--pw-gutter) + 58px);
+  width:41vw;height:min(44vw,calc(100% - 250px));min-height:380px;
+  border:var(--pw-border);
+  background-color:#E7E4DD;
+  background-image:
+    linear-gradient(rgba(10,10,10,.09) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(10,10,10,.09) 1px,transparent 1px);
+  background-size:32px 32px;background-position:-1px -1px;
+}
+.pw-hero__viewport::before,.pw-hero__viewport::after{content:"";position:absolute;background:rgba(10,10,10,.35);pointer-events:none}
+.pw-hero__viewport::before{left:50%;top:0;bottom:0;width:1px}
+.pw-hero__viewport::after{top:50%;left:0;right:0;height:1px}
+.pw-hero__canvas{position:absolute;inset:0;width:100%;height:100%;z-index:1}
+.pw-hud{position:absolute;z-index:2;font-family:var(--pw-font-mono);font-size:10px;line-height:1.5;text-transform:uppercase;letter-spacing:.03em;padding:8px 10px;pointer-events:none;font-variant-numeric:tabular-nums}
+.pw-hud--tl{left:0;top:0}.pw-hud--tr{right:0;top:0;text-align:right}
+.pw-hud--bl{left:0;bottom:0}.pw-hud--br{right:0;bottom:0;text-align:right}
+.pw-hud b{font-weight:700}
+.pw-hud__accent{color:var(--pw-accent)}
+.pw-hero__bottom{
+  position:relative;z-index:3;margin-top:auto;
+  display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr) auto;
+  border-top:var(--pw-border);background:var(--pw-white);
+}
+.pw-hero__bottom > *{padding:var(--pw-gutter);border-right:var(--pw-border)}
+.pw-hero__bottom > *:last-child{border-right:0}
+.pw-spec{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;font-family:var(--pw-font-mono);font-size:11px;text-transform:uppercase}
+.pw-spec div{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed var(--pw-gray)}
+.pw-spec div:nth-child(odd){margin-right:14px}
+.pw-spec dt{color:var(--pw-gray)}
+.pw-spec dd{font-weight:700;text-align:right}
+.pw-hero__lead{font-size:clamp(16px,1.35vw,20px);line-height:1.35;max-width:46ch}
+.pw-hero__lead strong{font-weight:700}
+.pw-hero__cta{display:flex;flex-direction:column;justify-content:center;gap:10px;padding:var(--pw-gutter)}
+
+/* ---------- 07. MARQUEE ---------- */
+.pw-marquee{border-bottom:var(--pw-border);overflow:hidden;user-select:none}
+.pw-marquee__row{overflow:hidden;white-space:nowrap}
+.pw-marquee__track{display:inline-flex;will-change:transform}
+.pw-marquee__row--a{background:var(--pw-black);color:var(--pw-white);border-bottom:var(--pw-border)}
+.pw-marquee__row--a .pw-marquee__item{font-family:var(--pw-font-display);font-size:clamp(34px,5.4vw,84px);line-height:1;padding:.2em 0 .12em;letter-spacing:-.035em;text-transform:uppercase}
+.pw-marquee__row--a .pw-marquee__sep{color:var(--pw-accent);font-family:var(--pw-font-display);font-size:clamp(34px,5.4vw,84px);line-height:1;padding:.2em .35em .12em}
+.pw-marquee__row--b{background:var(--pw-white)}
+.pw-marquee__row--b .pw-marquee__item{font-family:var(--pw-font-mono);font-size:13px;font-weight:500;padding:11px 0;text-transform:uppercase}
+.pw-marquee__row--b .pw-marquee__sep{font-family:var(--pw-font-mono);font-size:13px;padding:11px 18px;color:var(--pw-gray)}
+.pw-marquee__item--outline{color:transparent !important;-webkit-text-stroke:2px var(--pw-white)}
+
+/* ---------- 08. PROCESO ---------- */
+.pw-process__grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.pw-step{display:flex;flex-direction:column;border-right:var(--pw-border);min-width:0}
+.pw-step:last-child{border-right:0}
+.pw-step__num{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  font-family:var(--pw-font-display);font-size:clamp(90px,11vw,190px);line-height:.78;letter-spacing:-.06em;
+  padding:var(--pw-gutter) var(--pw-gutter) 10px;border-bottom:var(--pw-border);
+}
+.pw-step__num small{font-family:var(--pw-font-mono);font-size:12px;letter-spacing:0;line-height:1.2;text-align:right;padding-top:.4em}
+.pw-step:nth-child(even) .pw-step__num{justify-content:flex-end;flex-direction:row-reverse}
+.pw-step:nth-child(even) .pw-step__num small{text-align:left}
+.pw-step__title{
+  font-family:var(--pw-font-display);font-weight:400;font-size:clamp(24px,2.3vw,36px);letter-spacing:-.03em;
+  padding:14px var(--pw-gutter);border-bottom:var(--pw-border);display:flex;justify-content:space-between;
+}
+.pw-step__title span:last-child{color:var(--pw-gray)}
+.pw-step:last-child .pw-step__title span:last-child{color:var(--pw-accent)}
+.pw-step__viz{
+  position:relative;aspect-ratio:4/3;border-bottom:var(--pw-border);overflow:hidden;
+  background-color:var(--pw-white);
+  background-image:linear-gradient(rgba(10,10,10,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(10,10,10,.07) 1px,transparent 1px);
+  background-size:16px 16px;
+}
+.pw-step__text{padding:var(--pw-gutter);font-size:15px;line-height:1.45;flex:1}
+.pw-step__tags{display:flex;flex-wrap:wrap;gap:6px;padding:0 var(--pw-gutter) var(--pw-gutter)}
+.pw-step__read{position:absolute;left:8px;bottom:8px;font-family:var(--pw-font-mono);font-size:10px;font-weight:700;background:var(--pw-white);padding:3px 5px;border:2px solid var(--pw-black);font-variant-numeric:tabular-nums;text-transform:uppercase}
+
+/* viz 1: prompt */
+.pw-viz-prompt{background:var(--pw-black);color:var(--pw-white);background-image:none;display:flex;flex-direction:column}
+.pw-viz-prompt__bar{display:flex;justify-content:space-between;font-family:var(--pw-font-mono);font-size:10px;padding:8px 10px;border-bottom:2px solid #2a2a2a;color:var(--pw-gray)}
+.pw-viz-prompt__bar span{color:var(--pw-accent)}
+.pw-viz-prompt__text{flex:1;padding:12px 10px;font-family:var(--pw-font-mono);font-size:clamp(12px,1.05vw,14px);line-height:1.55}
+.pw-viz-prompt__text::before{content:"> ";color:var(--pw-accent)}
+.pw-caret{display:inline-block;width:.6em;height:1.1em;background:var(--pw-white);vertical-align:-.18em;margin-left:1px;animation:pw-blink 1s steps(1) infinite}
+.pw-viz-prompt__meta{font-family:var(--pw-font-mono);font-size:10px;color:var(--pw-gray);padding:8px 10px;border-top:2px solid #2a2a2a}
+.pw-viz-prompt__meta b{color:var(--pw-white)}
+/* viz 2: wire */
+.pw-viz-wire canvas{position:absolute;inset:0;width:100%;height:100%}
+/* viz 3: capas */
+.pw-viz-layers__stack{position:absolute;left:14%;right:14%;top:14%;bottom:18%;display:flex;flex-direction:column-reverse;gap:2px}
+.pw-viz-layers__layer{height:100%;margin:0 auto;background:var(--pw-black);opacity:0;transform:translateY(-14px) scaleX(.96);transition:opacity .12s,transform .18s var(--pw-ease)}
+.pw-viz-layers__layer.is-on{opacity:1;transform:none}
+.pw-viz-layers__layer.is-current{background:var(--pw-accent)}
+/* viz 4: impresora */
+.pw-viz-print svg{position:absolute;inset:0;width:100%;height:100%}
+.pw-viz-print__guide{fill:none;stroke:rgba(10,10,10,.22);stroke-width:1;stroke-dasharray:2 3}
+.pw-viz-print__path{fill:none;stroke:var(--pw-black);stroke-width:2.4;stroke-linejoin:round;stroke-linecap:square}
+.pw-viz-print__gantry{stroke:var(--pw-black);stroke-width:1;opacity:.55}
+.pw-viz-print__head rect:first-child{fill:var(--pw-white);stroke:var(--pw-black);stroke-width:2}
+.pw-viz-print__head rect:last-child{fill:var(--pw-accent)}
+
+/* ---------- 09. LABORATORIO ---------- */
+.pw-lab__grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(320px,1fr)}
+.pw-lab__grid{align-items:start}
+.pw-lab__stage{
+  position:sticky;top:var(--pw-header-h);height:calc(100vh - var(--pw-header-h));min-height:520px;border-right:var(--pw-border);
+  background-color:var(--pw-black);color:var(--pw-white);
+  background-image:
+    linear-gradient(rgba(242,240,235,.07) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(242,240,235,.07) 1px,transparent 1px);
+  background-size:40px 40px;
+  touch-action:pan-y;
+}
+.pw-lab__canvas{position:absolute;inset:0;width:100%;height:100%}
+.pw-lab__views{display:flex;pointer-events:auto}
+.pw-lab__views button{font-family:var(--pw-font-mono);font-size:10px;font-weight:700;padding:6px 9px;border:2px solid var(--pw-white);margin-left:-2px;color:var(--pw-white)}
+.pw-lab__views button[aria-pressed="true"]{background:var(--pw-white);color:var(--pw-black)}
+.pw-lab__stage .pw-hud{font-size:11px;padding:12px 14px}
+.pw-lab__stage .pw-hud--tr{pointer-events:auto}
+.pw-lab__progress{display:inline-block;width:90px;height:8px;border:1px solid var(--pw-white);vertical-align:middle;margin-left:6px;position:relative}
+.pw-lab__progress i{position:absolute;left:0;top:0;bottom:0;background:var(--pw-accent);width:0}
+.pw-lab__panel{display:flex;flex-direction:column;min-width:0}
+.pw-lab__block{padding:18px var(--pw-gutter);border-bottom:var(--pw-border)}
+.pw-lab__label{font-family:var(--pw-font-mono);font-size:11px;font-weight:700;color:var(--pw-gray);text-transform:uppercase;margin-bottom:10px;display:block}
+.pw-lab__types{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border:var(--pw-border)}
+.pw-lab__types button{font-family:var(--pw-font-mono);font-size:11px;font-weight:700;padding:10px 4px;border-right:2px solid var(--pw-black);text-transform:uppercase}
+.pw-lab__types button:last-child{border-right:0}
+.pw-lab__types button[aria-pressed="true"]{background:var(--pw-black);color:var(--pw-white)}
+.pw-lab__types button:hover:not([aria-pressed="true"]){background:var(--pw-gray-2)}
+.pw-slider{display:block;padding:9px 0}
+.pw-slider + .pw-slider{border-top:1px dashed var(--pw-gray)}
+.pw-slider__head{display:flex;justify-content:space-between;font-family:var(--pw-font-mono);font-size:12px;font-weight:700;text-transform:uppercase;margin-bottom:8px}
+.pw-slider__head output{font-variant-numeric:tabular-nums}
+.pw-slider input{-webkit-appearance:none;appearance:none;width:100%;height:22px;background:transparent;display:block}
+.pw-slider input::-webkit-slider-runnable-track{height:22px;border:2px solid var(--pw-black);background:repeating-linear-gradient(90deg,transparent 0 9px,rgba(10,10,10,.25) 9px 10px)}
+.pw-slider input::-moz-range-track{height:18px;border:2px solid var(--pw-black);background:repeating-linear-gradient(90deg,transparent 0 9px,rgba(10,10,10,.25) 9px 10px)}
+.pw-slider input::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;margin-top:-2px;background:var(--pw-black);border:0}
+.pw-slider input::-moz-range-thumb{width:20px;height:20px;background:var(--pw-black);border:0;border-radius:0}
+.pw-slider input:active::-webkit-slider-thumb{background:var(--pw-accent)}
+.pw-slider input:active::-moz-range-thumb{background:var(--pw-accent)}
+.pw-lab__actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pw-lab__actions .pw-btn{justify-content:center}
+.pw-lab__actions .pw-btn--order{grid-column:1/-1;justify-content:space-between}
+.pw-lab__json{flex:1;background:var(--pw-white);min-height:0}
+.pw-lab__json summary{list-style:none;display:flex;justify-content:space-between;padding:12px var(--pw-gutter);font-family:var(--pw-font-mono);font-size:11px;font-weight:700;border-bottom:2px solid var(--pw-black);text-transform:uppercase}
+.pw-lab__json summary::-webkit-details-marker{display:none}
+.pw-lab__json summary::after{content:"[−]"}
+.pw-lab__json:not([open]) summary::after{content:"[+]"}
+.pw-lab__json pre{margin:0;padding:14px var(--pw-gutter);font-family:var(--pw-font-mono);font-size:12px;line-height:1.6;overflow:auto;max-height:340px}
+.pw-json-k{color:var(--pw-gray)}
+.pw-json-s{color:var(--pw-black)}
+.pw-json-n{color:var(--pw-black);font-weight:700}
+.pw-json-changed{background:var(--pw-accent);color:var(--pw-white) !important}
+.pw-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--pw-font-mono);font-size:12px;text-align:center;padding:20px}
+
+/* ---------- 10. COLECCIÓN ---------- */
+.pw-collection__grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:var(--pw-line);background:var(--pw-black)}
+.pw-card{grid-column:span var(--span,4);grid-row:span var(--rows,1);display:flex;flex-direction:column;background:var(--pw-white);min-width:0}
+.pw-card__media{position:relative;flex:1;min-height:300px;overflow:hidden;border-bottom:var(--pw-border)}
+.pw-card--hero .pw-card__media{min-height:520px}
+.pw-card__img,.pw-card__wire{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.pw-card__img svg,.pw-card__wire svg{width:100%;height:100%}
+.pw-card__wire{background:var(--pw-black);opacity:0;transition:opacity .08s steps(1) .28s}
+.pw-card__badge{position:absolute;left:12px;top:12px;z-index:3;background:var(--pw-white)}
+.pw-card__seed{position:absolute;right:12px;top:12px;z-index:3;font-family:var(--pw-font-mono);font-size:10px;font-weight:700;background:var(--pw-black);color:var(--pw-white);padding:5px 7px}
+.pw-card__scan{position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0;background:repeating-linear-gradient(0deg,rgba(10,10,10,.0) 0 2px,rgba(10,10,10,.18) 2px 3px);mix-blend-mode:multiply}
+.pw-card:hover .pw-card__img{animation:pw-glitch .36s steps(1) both}
+.pw-card:hover .pw-card__wire{opacity:1;animation:pw-rgb 1.8s steps(1) .3s infinite}
+.pw-card:hover .pw-card__scan{opacity:1;animation:pw-scan .36s steps(1)}
+.pw-card:hover .pw-card__badge{background:var(--pw-accent);color:var(--pw-white);border-color:var(--pw-accent)}
+@keyframes pw-glitch{
+  0%{clip-path:inset(0);transform:none;filter:none}
+  12%{clip-path:inset(8% 0 62% 0);transform:translate(-10px,0);filter:drop-shadow(6px 0 0 var(--pw-accent)) drop-shadow(-6px 0 0 #ff2a2a)}
+  25%{clip-path:inset(48% 0 22% 0);transform:translate(12px,0);filter:drop-shadow(-5px 0 0 var(--pw-accent)) drop-shadow(5px 0 0 #ff2a2a)}
+  38%{clip-path:inset(24% 0 40% 0);transform:translate(-6px,2px);filter:drop-shadow(4px 0 0 var(--pw-accent))}
+  52%{clip-path:inset(70% 0 4% 0);transform:translate(8px,0);filter:drop-shadow(-8px 0 0 #ff2a2a)}
+  66%{clip-path:inset(2% 0 80% 0);transform:translate(-14px,0);filter:drop-shadow(6px 0 0 var(--pw-accent))}
+  80%{clip-path:inset(35% 0 35% 0);transform:translate(4px,0);filter:none}
+  100%{clip-path:inset(50% 0 50% 0);transform:none}
+}
+@keyframes pw-rgb{
+  0%,100%{filter:drop-shadow(2px 0 0 var(--pw-accent)) drop-shadow(-2px 0 0 rgba(255,42,42,.7));transform:none}
+  47%{filter:drop-shadow(5px 0 0 var(--pw-accent)) drop-shadow(-5px 0 0 rgba(255,42,42,.8));transform:translateX(-2px)}
+  50%{filter:drop-shadow(1px 0 0 var(--pw-accent));transform:translateX(3px)}
+  53%{filter:drop-shadow(2px 0 0 var(--pw-accent)) drop-shadow(-2px 0 0 rgba(255,42,42,.7));transform:none}
+}
+@keyframes pw-scan{0%{transform:translateY(-30%)}50%{transform:translateY(20%)}100%{transform:none}}
+/* patrones generados por CSS */
+.pw-pat--dots{background:radial-gradient(rgba(10,10,10,.55) 1px,transparent 1.6px) 0 0/12px 12px,var(--pw-white)}
+.pw-pat--lines{background:repeating-linear-gradient(0deg,transparent 0 6px,rgba(10,10,10,.13) 6px 7px),var(--pw-gray-2)}
+.pw-pat--grid{background:linear-gradient(rgba(10,10,10,.14) 1px,transparent 1px) 0 0/24px 24px,linear-gradient(90deg,rgba(10,10,10,.14) 1px,transparent 1px) 0 0/24px 24px,var(--pw-white)}
+.pw-pat--diag{background:repeating-linear-gradient(45deg,transparent 0 10px,rgba(10,10,10,.1) 10px 11px),var(--pw-white)}
+.pw-pat--concrete{background-color:#B9B6AF;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.pw-pat--topo{background:repeating-radial-gradient(circle at 30% 70%,transparent 0 14px,rgba(10,10,10,.14) 14px 15px),var(--pw-white)}
+.pw-card__body{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:14px 16px 16px}
+.pw-card__code{font-family:var(--pw-font-mono);font-weight:700;font-size:13px}
+.pw-card__price{font-family:var(--pw-font-display);font-size:24px;line-height:1;letter-spacing:-.03em;grid-row:span 2;align-self:start}
+.pw-card__name{grid-column:1;font-family:var(--pw-font-display);font-weight:400;font-size:clamp(18px,1.6vw,24px);line-height:1.02;letter-spacing:-.02em}
+.pw-card__spec{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:10px;font-family:var(--pw-font-mono);font-size:10.5px;text-transform:uppercase;border-top:2px solid var(--pw-black)}
+.pw-card__spec div{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed var(--pw-gray)}
+.pw-card__spec div:nth-child(odd){padding-right:10px}
+.pw-card__spec div:nth-child(even){padding-left:10px;border-left:1px dashed var(--pw-gray)}
+.pw-card__spec dt{color:var(--pw-gray)}
+.pw-card__spec dd{font-weight:700}
+.pw-card__add{grid-column:1/-1;margin-top:12px;width:100%;justify-content:space-between}
+
+/* ---------- 11. MANIFIESTO ---------- */
+.pw-manifesto{background:var(--pw-black);color:var(--pw-white);height:240vh;overflow:visible}
+.pw-manifesto__pin{
+  position:sticky;top:var(--pw-header-h);height:calc(100vh - var(--pw-header-h));
+  display:flex;flex-direction:column;justify-content:center;padding:var(--pw-gutter);overflow:hidden;
+}
+.pw-manifesto__head{display:flex;justify-content:space-between;align-items:center;font-family:var(--pw-font-mono);font-size:12px;color:var(--pw-gray);text-transform:uppercase;margin-bottom:3vh;gap:12px}
+.pw-manifesto__bar{flex:1;height:2px;background:#2a2a2a;position:relative;max-width:420px}
+.pw-manifesto__bar i{position:absolute;left:0;top:0;bottom:0;background:var(--pw-white);width:0}
+.pw-manifesto__text{
+  font-family:var(--pw-font-display);font-weight:400;text-transform:uppercase;
+  font-size:min(5.1vw,7.2vh);line-height:.98;letter-spacing:-.035em;
+}
+.pw-manifesto__w{color:#2b2b2b;transition:color .25s}
+.pw-manifesto__w.is-on{color:var(--pw-white)}
+.pw-manifesto__w.is-on.is-accent{color:var(--pw-accent)}
+.pw-manifesto__sign{margin-top:3vh;font-family:var(--pw-font-mono);font-size:12px;color:var(--pw-gray);text-transform:uppercase;display:flex;gap:18px;flex-wrap:wrap}
+
+/* ---------- 12. CIFRAS ---------- */
+.pw-stats__grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.pw-stat{padding:var(--pw-gutter);border-right:var(--pw-border);display:flex;flex-direction:column;gap:14px;min-width:0}
+.pw-stat:last-child{border-right:0}
+.pw-stat__label{font-family:var(--pw-font-mono);font-size:11px;font-weight:700;text-transform:uppercase;display:flex;justify-content:space-between}
+.pw-stat__label span:last-child{color:var(--pw-gray)}
+.pw-stat__num{font-family:var(--pw-font-display);font-size:clamp(40px,5.6vw,96px);line-height:.85;letter-spacing:-.05em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pw-stat__num small{font-size:.32em;letter-spacing:0;margin-left:.15em}
+.pw-stat__meter{height:14px;border:2px solid var(--pw-black);padding:2px;margin-top:auto}
+.pw-stat__meter i{display:block;height:100%;width:0;background:var(--pw-black);transition:width 2s var(--pw-ease)}
+.pw-stat:nth-child(2) .pw-stat__meter i{background:var(--pw-accent)}
+.pw-stat__note{font-family:var(--pw-font-mono);font-size:11px;color:var(--pw-gray);text-transform:uppercase}
+
+/* ---------- 13. NEWSLETTER ---------- */
+.pw-news{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)}
+.pw-news__intro{padding:calc(var(--pw-gutter)*1.5) var(--pw-gutter);border-right:var(--pw-border);display:flex;flex-direction:column;gap:18px}
+.pw-news__title{font-family:var(--pw-font-display);font-weight:400;font-size:clamp(40px,6vw,96px);line-height:.86;letter-spacing:-.045em;text-transform:uppercase}
+.pw-news__intro p{max-width:42ch}
+.pw-news__term{background:var(--pw-black);color:var(--pw-white);font-family:var(--pw-font-mono);font-size:clamp(14px,1.4vw,18px);display:flex;flex-direction:column}
+.pw-news__termbar{display:flex;justify-content:space-between;padding:10px var(--pw-gutter);border-bottom:2px solid #2a2a2a;font-size:11px;color:var(--pw-gray);text-transform:uppercase}
+.pw-news__log{padding:18px var(--pw-gutter) 0;font-size:13px;color:var(--pw-gray);line-height:1.7;min-height:92px}
+.pw-news__log p.is-ok{color:var(--pw-white)}
+.pw-news__log p.is-ok::first-letter{color:var(--pw-accent)}
+.pw-news__log p.is-err{color:#ff5a5a}
+.pw-news__form{display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:18px var(--pw-gutter) calc(var(--pw-gutter)*1.5);margin-top:auto}
+.pw-news__field{position:relative;flex:1 1 280px;display:flex;align-items:center;min-height:56px;border-bottom:2px solid var(--pw-white);font-size:clamp(18px,2vw,28px)}
+.pw-news__prompt{color:var(--pw-accent);margin-right:.5em;font-weight:700}
+.pw-news__inputwrap{position:relative;flex:1;min-width:0;display:flex;align-items:center}
+.pw-news__input{width:100%;font-family:var(--pw-font-mono);font-size:inherit;color:var(--pw-white);caret-color:transparent;outline:none;padding:8px 0}
+.pw-news__input::placeholder{color:#5a5a5a}
+.pw-news__input:placeholder-shown{text-indent:.9em}
+.pw-news__block{position:absolute;left:0;top:50%;width:.62em;height:1.15em;background:var(--pw-white);transform:translateY(-50%);animation:pw-blink 1s steps(1) infinite;pointer-events:none}
+.pw-news__mirror{position:absolute;visibility:hidden;white-space:pre;font-family:var(--pw-font-mono);font-size:inherit}
+.pw-news__submit{font-family:var(--pw-font-mono);font-weight:700;font-size:13px;padding:16px 18px;border:2px solid var(--pw-white);text-transform:uppercase}
+.pw-news__submit:hover{background:var(--pw-white);color:var(--pw-black)}
+.pw-news__legal{width:100%;font-size:11px;color:#6b6b6b;text-transform:uppercase}
+
+/* ---------- 14. FOOTER ---------- */
+.pw-footer{background:var(--pw-black);color:var(--pw-white);overflow:hidden}
+.pw-footer__cols{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) minmax(0,1.3fr);border-bottom:3px solid var(--pw-white)}
+.pw-footer__col{padding:var(--pw-gutter);border-right:3px solid var(--pw-white);font-family:var(--pw-font-mono);font-size:12px;text-transform:uppercase;min-width:0}
+.pw-footer__col:last-child{border-right:0}
+.pw-footer__col h4{font-size:11px;color:var(--pw-gray);font-weight:700;margin-bottom:14px}
+.pw-footer__col li{list-style:none;padding:3px 0}
+.pw-footer__col a{position:relative;display:inline-block}
+.pw-footer__col a:hover{color:var(--pw-accent)}
+.pw-footer__col a::before{content:"→";position:absolute;right:100%;margin-right:.4em;opacity:0;transition:opacity .1s}
+.pw-footer__col a:hover::before{opacity:1}
+.pw-footer__coords{font-size:12px;line-height:1.7}
+.pw-footer__coords b{font-size:18px;display:block;font-family:var(--pw-font-display);letter-spacing:-.02em;margin-bottom:6px}
+.pw-footer__brand{
+  display:inline-block;font-family:var(--pw-font-display);font-weight:400;letter-spacing:-.065em;line-height:.76;
+  white-space:nowrap;padding:3vw 0 0;margin-left:-.02em;font-size:20vw;
+}
+.pw-footer__base{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:14px var(--pw-gutter);border-top:3px solid var(--pw-white);font-family:var(--pw-font-mono);font-size:11px;color:var(--pw-gray);text-transform:uppercase}
+
+/* ---------- 15. REVEAL ---------- */
+/* El estado inicial usa opacidad (no clip-path) para que IntersectionObserver detecte el elemento */
+.pw-js .pw-reveal{opacity:0}
+.pw-js .pw-reveal.is-in{opacity:1;animation:pw-wipe .9s var(--pw-ease) both}
+.pw-js .pw-reveal--d1.is-in{animation-delay:.08s}.pw-js .pw-reveal--d2.is-in{animation-delay:.16s}.pw-js .pw-reveal--d3.is-in{animation-delay:.24s}
+@keyframes pw-wipe{from{clip-path:inset(0 0 100% 0);transform:translateY(30px)}to{clip-path:inset(-40% -10% -10% -10%);transform:none}}
+
+/* ---------- 16. RESPONSIVE ---------- */
+@media (max-width:1180px){
+  .pw-header__nav a{padding:0 11px}
+  .pw-process__grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .pw-step:nth-child(2){border-right:0}
+  .pw-step:nth-child(-n+2){border-bottom:var(--pw-border)}
+  .pw-stats__grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .pw-stat:nth-child(2){border-right:0}
+  .pw-stat:nth-child(-n+2){border-bottom:var(--pw-border)}
+  .pw-collection__grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .pw-card{grid-column:span 3;grid-row:span 1}
+  .pw-card--wide,.pw-card--hero{grid-column:span 6}
+  .pw-card--hero .pw-card__media{min-height:440px}
+  .pw-footer__cols{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .pw-footer__col{border-bottom:3px solid var(--pw-white)}
+  .pw-footer__col:nth-child(2n){border-right:0}
+  .pw-footer__col:last-child{grid-column:1/-1;border-bottom:0}
+}
+@media (max-width:980px){
+  .pw-header{grid-template-columns:1fr auto auto}
+  .pw-header__clock{display:none}
+  .pw-header__menu{display:flex}
+  .pw-header__nav{
+    position:absolute;left:0;right:0;top:100%;flex-direction:column;align-items:stretch;height:auto;
+    background:var(--pw-white);border-bottom:var(--pw-border);border-right:0;
+    transform:scaleY(0);transform-origin:top;transition:transform .25s var(--pw-ease);visibility:hidden;
+  }
+  .pw-header.is-open .pw-header__nav{transform:none;visibility:visible}
+  .pw-header__nav a,.pw-header__cart{height:auto;padding:16px var(--pw-gutter);border-right:0;border-bottom:2px solid var(--pw-black);font-size:15px}
+  .pw-header__cart{margin-left:0;border-left:0;border-bottom:0;text-align:left}
+  .pw-hero__viewport{position:relative;right:auto;top:auto;width:auto;height:92vw;max-height:620px;min-height:0;margin:-14vw var(--pw-gutter) 0;order:3}
+  .pw-hero__title{order:2}
+  .pw-hero__bottom{order:4;margin-top:var(--pw-gutter);grid-template-columns:1fr 1fr}
+  .pw-hero__cta{grid-column:1/-1;border-top:var(--pw-border);flex-direction:row;flex-wrap:wrap}
+  .pw-hero__cta .pw-btn{flex:1 1 220px}
+  .pw-lab__grid{grid-template-columns:1fr}
+  .pw-lab__stage{position:relative;top:auto;min-height:0;height:88vw;max-height:620px;border-right:0;border-bottom:var(--pw-border)}
+  .pw-news{grid-template-columns:1fr}
+  .pw-news__intro{border-right:0;border-bottom:var(--pw-border)}
+  .pw-sechead{grid-template-columns:1fr}
+  .pw-sechead__idx{padding-top:0}
+}
+@media (max-width:640px){
+  :root{--pw-header-h:54px}
+  .pw-header__logo{font-size:20px}
+  .pw-header__live{font-size:10px;gap:6px}
+  .pw-header__live .pw-header__livetxt{display:none}
+  .pw-hero__line--1,.pw-hero__line--3{font-size:18vw}
+  .pw-hero__line--2,.pw-hero__line--4{font-size:14.6vw}
+  .pw-hero__line--3{padding-left:10vw}
+  .pw-hero__title{line-height:.86}
+  .pw-hero__viewport{margin-top:-3vw}
+  .pw-lab__stage .pw-hud--br{bottom:46px}
+  .pw-hero__bottom{grid-template-columns:1fr}
+  .pw-hero__bottom > *{border-right:0;border-bottom:var(--pw-border)}
+  .pw-hero__bottom > *:last-child{border-bottom:0}
+  .pw-hero__cta{border-top:0}
+  .pw-process__grid,.pw-stats__grid{grid-template-columns:1fr}
+  .pw-step,.pw-stat{border-right:0 !important;border-bottom:var(--pw-border)}
+  .pw-step:last-child,.pw-stat:last-child{border-bottom:0}
+  .pw-collection__grid{grid-template-columns:1fr}
+  .pw-card,.pw-card--wide,.pw-card--hero{grid-column:auto;grid-row:auto}
+  .pw-card__media,.pw-card--hero .pw-card__media{min-height:0;aspect-ratio:1/1;flex:none}
+  .pw-lab__types{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .pw-lab__types button:nth-child(3){border-right:0}
+  .pw-lab__types button:nth-child(-n+3){border-bottom:2px solid var(--pw-black)}
+  .pw-lab__slider--adv{display:none}
+  .pw-lab__actions{grid-template-columns:1fr}
+  .pw-manifesto{height:200vh}
+  .pw-manifesto__text{font-size:min(8.4vw,5.6vh)}
+  .pw-footer__cols{grid-template-columns:1fr}
+  .pw-footer__col{border-right:0 !important}
+}
+
+/* ---------- 17. REDUCED MOTION ---------- */
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;transition-delay:0s !important}
+  .pw-js .pw-reveal{opacity:1}
+  .pw-manifesto{height:auto}
+  .pw-manifesto__pin{position:relative;top:0;height:auto;padding:calc(var(--pw-gutter)*3) var(--pw-gutter)}
+  .pw-dot,.pw-caret,.pw-news__block{animation:none}
+}
+</style>
+</head>
+
+<body>
+<a class="pw-skip" href="#contenido">Saltar al contenido</a>
+
+<!-- =====================================================================
+     PRELOADER (consola)
+     ===================================================================== -->
+<div class="pw-preloader" aria-hidden="true">
+  <div class="pw-preloader__inner">
+    <div class="pw-preloader__log"></div>
+    <div class="pw-preloader__row">
+      <div class="pw-preloader__bar"><span></span></div>
+      <div class="pw-preloader__pct">0%</div>
+    </div>
+  </div>
+</div>
+
+<!-- CURSOR CUSTOM -->
+<div class="pw-cursor is-hidden" aria-hidden="true">
+  <span class="pw-cursor__box"></span>
+  <span class="pw-cursor__label">X0000 Y0000</span>
+</div>
+
+<!-- =====================================================================
+     01. HEADER
+     ===================================================================== -->
+<header class="pw-header" data-section="header">
+  <a class="pw-header__logo" href="#top" aria-label="paginaweb1, inicio">paginaweb1<sup>®</sup></a>
+  <nav class="pw-header__nav" id="pw-nav" aria-label="Principal">
+    <a href="#proceso" data-scramble-hover>[01] Proceso</a>
+    <a href="#laboratorio" data-scramble-hover>[02] Laboratorio</a>
+    <a href="#coleccion" data-scramble-hover>[03] Colección</a>
+    <a href="#manifiesto" data-scramble-hover>[04] Manifiesto</a>
+    <button class="pw-header__cart" type="button">Carrito [<span id="pw-cart-count">0</span>]</button>
+  </nav>
+  <div class="pw-header__live" aria-live="off">
+    <span class="pw-dot" aria-hidden="true"></span>
+    <span class="pw-header__livetxt">Objetos generados hoy:</span>
+    <b id="pw-gen-count">0000</b>
+  </div>
+  <div class="pw-header__clock"><span>BCN</span><b id="pw-clock">00:00:00</b></div>
+  <button class="pw-header__menu" type="button" aria-expanded="false" aria-controls="pw-nav">Menú +</button>
+</header>
+
+<main id="contenido">
+
+<!-- =====================================================================
+     02. HERO
+     ===================================================================== -->
+<section class="pw-section pw-hero" id="top" data-section="hero">
+  <div class="pw-hero__meta">
+    <span class="pw-tag pw-tag--solid"><b>SERIE:</b> 04/GEN</span>
+    <span class="pw-tag"><b>SEED:</b> <span id="pw-hero-seed">48213</span></span>
+    <span class="pw-tag"><b>LAYER_HEIGHT:</b> 0.2mm</span>
+    <span class="pw-tag"><b>STATUS:</b> <span class="pw-hud__accent">PRINTING</span></span>
+  </div>
+
+  <h1 class="pw-hero__title" aria-label="Forma generada. Materia impresa.">
+    <span class="pw-hero__line pw-hero__line--1" aria-hidden="true" data-scramble data-scramble-hover>FORMA</span>
+    <span class="pw-hero__line pw-hero__line--2" aria-hidden="true" data-scramble data-scramble-hover>GENERADA.</span>
+    <span class="pw-hero__line pw-hero__line--3" aria-hidden="true" data-scramble data-scramble-hover>MATERIA</span>
+    <span class="pw-hero__line pw-hero__line--4" aria-hidden="true" data-scramble data-scramble-hover>IMPRESA.</span>
+  </h1>
+
+  <div class="pw-hero__viewport" data-cursor="MUEVE">
+    <canvas class="pw-hero__canvas" aria-label="Jarrón generativo en 3D que reacciona al ratón" role="img"></canvas>
+    <div class="pw-hud pw-hud--tl">VIEWPORT_01<br>PERSPECTIVE · PLA_MATTE</div>
+    <div class="pw-hud pw-hud--tr">ROT <b data-hero-hud="rot">000.0°</b><br>FPS <b data-hero-hud="fps">60</b></div>
+    <div class="pw-hud pw-hud--bl">TWIST <b data-hero-hud="twist">000°</b><br>WAVE <b data-hero-hud="wave">0.00</b></div>
+    <div class="pw-hud pw-hud--br">VERTS <b data-hero-hud="verts">0</b><br>LAYER <b class="pw-hud__accent" data-hero-hud="layer">000</b></div>
+  </div>
+
+  <div class="pw-hero__bottom">
+    <dl class="pw-spec">
+      <div><dt>Modelo</dt><dd>VSL_042</dd></div>
+      <div><dt>Material</dt><dd>PLA_MATTE</dd></div>
+      <div><dt>Print_time</dt><dd>14h32m</dd></div>
+      <div><dt>Nozzle</dt><dd>0.4mm</dd></div>
+      <div><dt>Layers</dt><dd>1.200</dd></div>
+      <div><dt>Infill</dt><dd>VASE_MODE</dd></div>
+    </dl>
+    <p class="pw-hero__lead"><strong>Objetos para el hogar escritos en código.</strong> Cada pieza nace de una semilla numérica, se modela con un algoritmo y se imprime capa a capa en nuestro estudio. Sin moldes. Sin stock. Sin dos iguales.</p>
+    <div class="pw-hero__cta">
+      <a class="pw-btn" href="#coleccion" data-magnetic><span data-scramble-hover>Ver colección</span> <span class="pw-btn__arrow" aria-hidden="true">→</span></a>
+      <a class="pw-btn pw-btn--ghost pw-btn--sm" href="#laboratorio" data-magnetic><span>Abrir laboratorio</span> <span class="pw-btn__arrow" aria-hidden="true">↘</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- =====================================================================
+     03. MARQUEE
+     ===================================================================== -->
+<section class="pw-marquee" data-section="marquee" aria-label="Materiales y técnicas">
+  <div class="pw-marquee__row pw-marquee__row--a" data-speed="70">
+    <div class="pw-marquee__track">
+      <span class="pw-marquee__item">AI</span><span class="pw-marquee__sep">×</span>
+      <span class="pw-marquee__item">3D PRINT</span><span class="pw-marquee__sep">×</span>
+      <span class="pw-marquee__item pw-marquee__item--outline">PLA MATE</span><span class="pw-marquee__sep">×</span>
+      <span class="pw-marquee__item">PETG</span><span class="pw-marquee__sep">×</span>
+      <span class="pw-marquee__item pw-marquee__item--outline">FILAMENTO RECICLADO</span><span class="pw-marquee__sep">×</span>
+      <span class="pw-marquee__item">GEOMETRÍA ALGORÍTMICA</span><span class="pw-marquee__sep">×</span>
+    </div>
+  </div>
+  <div class="pw-marquee__row pw-marquee__row--b" data-speed="-45">
+    <div class="pw-marquee__track">
+      <span class="pw-marquee__item">LAYER_HEIGHT: 0.2mm</span><span class="pw-marquee__sep">///</span>
+      <span class="pw-marquee__item">VASE_MODE</span><span class="pw-marquee__sep">///</span>
+      <span class="pw-marquee__item">NOISE: PERLIN_3D</span><span class="pw-marquee__sep">///</span>
+      <span class="pw-marquee__item">NOZZLE_TEMP: 215°C</span><span class="pw-marquee__sep">///</span>
+      <span class="pw-marquee__item">LATHE + TWIST + WAVE</span><span class="pw-marquee__sep">///</span>
+      <span class="pw-marquee__item">BIOPOLÍMERO DE MAÍZ</span><span class="pw-marquee__sep">///</span>
+      <span class="pw-marquee__item">G-CODE SIN MOLDES</span><span class="pw-marquee__sep">///</span>
+    </div>
+  </div>
+</section>
+
+<!-- =====================================================================
+     04. PROCESO
+     ===================================================================== -->
+<section class="pw-section pw-process" id="proceso" data-section="process">
+  <header class="pw-sechead">
+    <span class="pw-sechead__idx">[01]</span>
+    <h2 class="pw-sechead__title pw-reveal" data-scramble-hover>Del prompt<br>a la pieza.</h2>
+    <p class="pw-sechead__aside">
+      <span class="pw-tag"><b>FASES:</b> 04</span><span class="pw-tag"><b>T_MEDIO:</b> 16h</span><br>
+      Un pipeline abierto: lenguaje natural, geometría procedural, laminado y deposición de filamento. Todo ocurre en el estudio.
+    </p>
+  </header>
+
+  <div class="pw-process__grid">
+    <!-- Paso 01 -->
+    <article class="pw-step pw-reveal">
+      <div class="pw-step__num">01 <small>INPUT<br>T+00:00</small></div>
+      <h3 class="pw-step__title"><span data-scramble-hover>PROMPT</span><span>→</span></h3>
+      <div class="pw-step__viz pw-viz-prompt" data-viz="prompt">
+        <div class="pw-viz-prompt__bar">PROMPT.TXT <span>● REC</span></div>
+        <p class="pw-viz-prompt__text"><span data-typer></span><span class="pw-caret" aria-hidden="true"></span></p>
+        <div class="pw-viz-prompt__meta">TOKENS: <b data-typer-tokens>0</b> · MODEL: FORM-GEN_v4</div>
+      </div>
+      <p class="pw-step__text">Describimos una intención —forma, uso, textura, luz— en lenguaje natural. El modelo la traduce a parámetros geométricos.</p>
+      <div class="pw-step__tags"><span class="pw-tag"><b>IN:</b> TEXTO</span><span class="pw-tag"><b>OUT:</b> PARAMS</span></div>
+    </article>
+    <!-- Paso 02 -->
+    <article class="pw-step pw-reveal pw-reveal--d1">
+      <div class="pw-step__num">02 <small>GEOMETRÍA<br>T+00:04</small></div>
+      <h3 class="pw-step__title"><span data-scramble-hover>ALGORITMO</span><span>→</span></h3>
+      <div class="pw-step__viz pw-viz-wire" data-viz="wire">
+        <canvas></canvas>
+        <span class="pw-step__read" data-wire-read>VERTS 0000</span>
+      </div>
+      <p class="pw-step__text">Una función de revolución con torsión, ruido y ondulación genera la malla. La seed hace cada pieza única y reproducible.</p>
+      <div class="pw-step__tags"><span class="pw-tag"><b>SEED:</b> 48213</span><span class="pw-tag"><b>MESH:</b> LATHE</span></div>
+    </article>
+    <!-- Paso 03 -->
+    <article class="pw-step pw-reveal pw-reveal--d2">
+      <div class="pw-step__num">03 <small>LAMINADO<br>T+00:09</small></div>
+      <h3 class="pw-step__title"><span data-scramble-hover>SLICING</span><span>→</span></h3>
+      <div class="pw-step__viz pw-viz-layers" data-viz="layers">
+        <div class="pw-viz-layers__stack"></div>
+        <span class="pw-step__read" data-layers-read>LAYER 000/120</span>
+      </div>
+      <p class="pw-step__text">El modelo se corta en cientos de capas de 0.2&nbsp;mm y se convierte en trayectorias de máquina: G-code puro.</p>
+      <div class="pw-step__tags"><span class="pw-tag"><b>LAYER:</b> 0.2mm</span><span class="pw-tag"><b>WALLS:</b> 2</span></div>
+    </article>
+    <!-- Paso 04 -->
+    <article class="pw-step pw-reveal pw-reveal--d3">
+      <div class="pw-step__num">04 <small>MATERIA<br>T+14:32</small></div>
+      <h3 class="pw-step__title"><span data-scramble-hover>IMPRESIÓN</span><span>■</span></h3>
+      <div class="pw-step__viz pw-viz-print" data-viz="print">
+        <svg viewBox="0 0 200 150" aria-hidden="true">
+          <path class="pw-viz-print__guide"/>
+          <path class="pw-viz-print__path"/>
+          <line class="pw-viz-print__gantry" data-g="x" x1="0" x2="200"/>
+          <line class="pw-viz-print__gantry" data-g="y" y1="0" y2="150"/>
+          <g class="pw-viz-print__head"><rect x="-7" y="-7" width="14" height="14"/><rect x="-2" y="-2" width="4" height="4"/></g>
+        </svg>
+        <span class="pw-step__read" data-print-read>X000.0 Y000.0</span>
+      </div>
+      <p class="pw-step__text">El cabezal deposita filamento reciclado a 215&nbsp;°C, capa sobre capa. Las líneas de impresión quedan visibles: son la firma.</p>
+      <div class="pw-step__tags"><span class="pw-tag"><b>TEMP:</b> 215°C</span><span class="pw-tag"><b>SPEED:</b> 60mm/s</span></div>
+    </article>
+  </div>
+</section>
+
+<!-- =====================================================================
+     05. GENERADOR INTERACTIVO (LABORATORIO)
+     ===================================================================== -->
+<section class="pw-section pw-lab" id="laboratorio" data-section="lab">
+  <header class="pw-sechead">
+    <span class="pw-sechead__idx">[02]</span>
+    <h2 class="pw-sechead__title pw-reveal" data-scramble-hover>Laboratorio</h2>
+    <p class="pw-sechead__aside">
+      <span class="pw-tag pw-tag--solid"><b>MODE:</b> LIVE</span><br>
+      Mueve los parámetros y genera tu propia pieza en tiempo real. Arrastra el modelo para girarlo. Cada combinación es imprimible.
+    </p>
+  </header>
+
+  <div class="pw-lab__grid">
+    <div class="pw-lab__stage" data-cursor="ARRASTRA">
+      <canvas class="pw-lab__canvas" role="img" aria-label="Vista previa 3D de la pieza generada"></canvas>
+      <div class="pw-hud pw-hud--tl">MODEL <b data-lab-out="code">VSL_48213</b><br>VIEWPORT_02 · ORBIT</div>
+      <div class="pw-hud pw-hud--tr">
+        <div class="pw-lab__views" role="group" aria-label="Modo de vista">
+          <button type="button" data-view="solid" aria-pressed="true">SOLID</button>
+          <button type="button" data-view="wire" aria-pressed="false">WIRE</button>
+          <button type="button" data-view="layers" aria-pressed="false">LAYERS</button>
+        </div>
+      </div>
+      <div class="pw-hud pw-hud--bl">
+        VERTS <b data-lab-out="verts">0</b><br>
+        PESO <b data-lab-out="weight">0g</b> · PRINT_TIME <b data-lab-out="time">0h00m</b>
+      </div>
+      <div class="pw-hud pw-hud--br">STATUS <b data-lab-out="status">READY</b><span class="pw-lab__progress"><i data-lab-out="progress"></i></span></div>
+    </div>
+
+    <form class="pw-lab__panel" onsubmit="return false" aria-label="Parámetros del generador">
+      <div class="pw-lab__block">
+        <span class="pw-lab__label">01 · Tipología</span>
+        <div class="pw-lab__types" role="group" aria-label="Tipo de objeto">
+          <button type="button" data-type="vase" aria-pressed="true">Jarrón</button>
+          <button type="button" data-type="lamp" aria-pressed="false">Lámpara</button>
+          <button type="button" data-type="planter" aria-pressed="false">Maceta</button>
+          <button type="button" data-type="tray" aria-pressed="false">Bandeja</button>
+          <button type="button" data-type="candle" aria-pressed="false">Velas</button>
+        </div>
+      </div>
+      <div class="pw-lab__block">
+        <span class="pw-lab__label">02 · Parámetros</span>
+        <label class="pw-slider"><span class="pw-slider__head"><span>Altura</span><output data-out="height">24 CM</output></span>
+          <input type="range" name="height" min="6" max="40" step="1" value="24"></label>
+        <label class="pw-slider"><span class="pw-slider__head"><span>Torsión</span><output data-out="twist">90°</output></span>
+          <input type="range" name="twist" min="-360" max="360" step="1" value="90"></label>
+        <label class="pw-slider"><span class="pw-slider__head"><span>Nº de lados</span><output data-out="sides">6</output></span>
+          <input type="range" name="sides" min="3" max="32" step="1" value="6"></label>
+        <label class="pw-slider pw-lab__slider--adv"><span class="pw-slider__head"><span>Ondulación</span><output data-out="wave">0.25</output></span>
+          <input type="range" name="wave" min="0" max="1" step="0.01" value="0.25"></label>
+        <label class="pw-slider"><span class="pw-slider__head"><span>Seed</span><output data-out="seed">48213</output></span>
+          <input type="range" name="seed" min="1" max="99999" step="1" value="48213"></label>
+      </div>
+      <div class="pw-lab__block pw-lab__actions">
+        <button class="pw-btn pw-btn--sm" type="button" data-action="randomize" data-magnetic>Randomize seed</button>
+        <button class="pw-btn pw-btn--sm pw-btn--ghost" type="button" data-action="mutate" data-magnetic>Mutar todo</button>
+        <button class="pw-btn pw-btn--order" type="button" data-action="order" data-magnetic><span>Encargar pieza</span> <span data-lab-out="price">— €</span></button>
+      </div>
+      <details class="pw-lab__json" open>
+        <summary>params.json <span data-action="export" role="button" tabindex="0" style="margin-left:auto;margin-right:12px;text-decoration:underline">COPIAR</span></summary>
+        <pre><code data-lab-json></code></pre>
+      </details>
+    </form>
+  </div>
+</section>
+
+<!-- =====================================================================
+     06. COLECCIÓN
+     ===================================================================== -->
+<section class="pw-section pw-collection" id="coleccion" data-section="collection">
+  <header class="pw-sechead">
+    <span class="pw-sechead__idx">[03]</span>
+    <h2 class="pw-sechead__title pw-reveal" data-scramble-hover>Colección<br>04/GEN</h2>
+    <p class="pw-sechead__aside">
+      <span class="pw-tag"><b>PIEZAS:</b> 08</span><span class="pw-tag"><b>EDICIÓN:</b> 50 U.</span><br>
+      Series cortas numeradas. Cada unidad se imprime bajo pedido con su propia seed: pequeñas variaciones, mismo ADN.
+    </p>
+  </header>
+
+  <!-- Cada tarjeta lleva sus parámetros en data-form: el JS dibuja la imagen (SVG sólido) y la vista wireframe. -->
+  <div class="pw-collection__grid">
+    <article class="pw-card pw-card--hero pw-reveal" style="--span:7;--rows:2" data-form='{"type":"vase","seed":42,"height":28,"twist":140,"sides":6,"wave":0.1}' data-pattern="grid">
+      <div class="pw-card__media" data-cursor="VER">
+        <div class="pw-card__img"></div><div class="pw-card__wire"></div><div class="pw-card__scan"></div>
+        <span class="pw-tag pw-card__badge">NUEVO · 1/50</span><span class="pw-card__seed">SEED 00042</span>
+      </div>
+      <div class="pw-card__body">
+        <span class="pw-card__code" data-scramble-hover>VSL_042</span><span class="pw-card__price">48 €</span>
+        <h3 class="pw-card__name">Jarrón Torsión Hexagonal</h3>
+        <dl class="pw-card__spec"><div><dt>Layer</dt><dd>0.2mm</dd></div><div><dt>Print</dt><dd>14h32m</dd></div><div><dt>Material</dt><dd>PLA_MATTE</dd></div><div><dt>Alto</dt><dd>28cm</dd></div></dl>
+        <button class="pw-btn pw-btn--sm pw-card__add" type="button" data-add data-magnetic><span>Añadir</span><span>+</span></button>
+      </div>
+    </article>
+
+    <article class="pw-card pw-reveal pw-reveal--d1" style="--span:5" data-form='{"type":"lamp","seed":17,"height":22,"twist":40,"sides":32,"wave":0.55}' data-pattern="concrete">
+      <div class="pw-card__media" data-cursor="VER">
+        <div class="pw-card__img"></div><div class="pw-card__wire"></div><div class="pw-card__scan"></div>
+        <span class="pw-tag pw-card__badge">LUZ CÁLIDA</span><span class="pw-card__seed">SEED 00017</span>
+      </div>
+      <div class="pw-card__body">
+        <span class="pw-card__code" data-scramble-hover>LMP_017</span><span class="pw-card__price">129 €</span>
+        <h3 class="pw-card__name">Lámpara Estrato</h3>
+        <dl class="pw-card__spec"><div><dt>Layer</dt><dd>0.16mm</dd></div><div><dt>Print</dt><dd>21h08m</dd></div><div><dt>Material</dt><dd>PETG_OPAL</dd></div><div><dt>Alto</dt><dd>22cm</dd></div></dl>
+        <button class="pw-btn pw-btn--sm pw-card__add" type="button" data-add data-magnetic><span>Añadir</span><span>+</span></button>
+      </div>
+    </article>
+
+    <article class="pw-card pw-reveal pw-reveal--d2" style="--span:5" data-form='{"type":"tray","seed":8,"height":6,"twist":0,"sides":9,"wave":0.35}' data-pattern="topo">
+      <div class="pw-card__media" data-cursor="VER">
+        <div class="pw-card__img"></div><div class="pw-card__wire"></div><div class="pw-card__scan"></div>
+        <span class="pw-tag pw-card__badge">TOPOGRAFÍA</span><span class="pw-card__seed">SEED 00008</span>
+      </div>
+      <div class="pw-card__body">
+        <span class="pw-card__code" data-scramble-hover>TRY_008</span><span class="pw-card__price">36 €</span>
+        <h3 class="pw-card__name">Bandeja Curva de Nivel</h3>
+        <dl class="pw-card__spec"><div><dt>Layer</dt><dd>0.2mm</dd></div><div><dt>Print</dt><dd>06h12m</dd></div><div><dt>Material</dt><dd>PLA_STONE</dd></div><div><dt>Ø</dt><dd>24cm</dd></div></dl>
+        <button class="pw-btn pw-btn--sm pw-card__add" type="button" data-add data-magnetic><span>Añadir</span><span>+</span></button>
+      </div>
+    </article>
+
+    <article class="pw-card pw-reveal" style="--span:4" data-form='{"type":"candle","seed":23,"height":9,"twist":-60,"sides":5,"wave":0.2}' data-pattern="dots">
+      <div class="pw-card__media" data-cursor="VER">
+        <div class="pw-card__img"></div><div class="pw-card__wire"></div><div class="pw-card__scan"></div>
+        <span class="pw-tag pw-card__badge">SET ×3</span><span class="pw-card__seed">SEED 00023</span>
+      </div>
+      <div class="pw-card__body">
+        <span class="pw-card__code" data-scramble-hover>CND_023</span><span class="pw-card__price">24 €</span>
+        <h3 class="pw-card__name">Portavelas Pentágono</h3>
+        <dl class="pw-card__spec"><div><dt>Layer</dt><dd>0.2mm</dd></div><div><dt>Print</dt><dd>02h45m</dd></div><div><dt>Material</dt><dd>PLA_MATTE</dd></div><div><dt>Alto</dt><dd>9cm</dd></div></dl>
+        <button class="pw-btn pw-btn--sm pw-card__add" type="button" data-add data-magnetic><span>Añadir</span><span>+</span></button>
+      </div>
+    </article>
+
+    <article class="pw-card pw-reveal pw-reveal--d1" style="--span:4" data-form='{"type":"planter","seed":31,"height":16,"twist":20,"sides":32,"wave":0.8}' data-pattern="lines">
+      <div class="pw-card__media" data-cursor="VER">
+        <div class="pw-card__img"></div><div class="pw-card__wire"></div><div class="pw-card__scan"></div>
+        <span class="pw-tag pw-card__badge">CON DRENAJE</span><span class="pw-card__seed">SEED 00031</span>
+      </div>
+      <div class="pw-card__body">
+        <span class="pw-card__code" data-scramble-hover>PLT_031</span><span class="pw-card__price">42 €</span>
+        <h3 class="pw-card__name">Maceta Onda</h3>
+        <dl class="pw-card__spec"><div><dt>Layer</dt><dd>0.24mm</dd></div><div><dt>Print</dt><dd>11h50m</dd></div><div><dt>Material</dt><dd>PLA_RECY</dd></div><div><dt>Alto</dt><dd>16cm</dd></div></dl>
+        <button class="pw-btn pw-btn--sm pw-card__add" type="button" data-add data-magnetic><span>Añadir</span><span>+</span></button>
+      </div>
+    </article>
+
+    <article class="pw-card pw-reveal pw-reveal--d2" style="--span:4" data-form='{"type":"vase","seed":77,"height":34,"twist":-220,"sides":4,"wave":0}' data-pattern="diag">
+      <div class="pw-card__media" data-cursor="VER">
+        <div class="pw-card__img"></div><div class="pw-card__wire"></div><div class="pw-card__scan"></div>
+        <span class="pw-tag pw-card__badge">ÚLTIMAS 06</span><span class="pw-card__seed">SEED 00077</span>
+      </div>
+      <div class="pw-card__body">
+        <span class="pw-card__code" data-scramble-hover>VSL_077</span><span class="pw-card__price">64 €</span>
+        <h3 class="pw-card__name">Jarrón Monolito</h3>
+        <dl class="pw-card__spec"><div><dt>Layer</dt><dd>0.2mm</dd></div><div><dt>Print</dt><dd>18h04m</dd></div><div><dt>Material</dt><dd>PLA_BLACK</dd></div><div><dt>Alto</dt><dd>34cm</dd></div></dl>
+        <button class="pw-btn pw-btn--sm pw-card__add" type="button" data-add data-magnetic><span>Añadir</span><span>+</span></button>
+      </div>
+    </article>
+
+    <article class="pw-card pw-reveal" style="--span:5" data-form='{"type":"lamp","seed":5,"height":30,"twist":180,"sides":12,"wave":0.15}' data-pattern="dots">
+      <div class="pw-card__media" data-cursor="VER">
+        <div class="pw-card__img"></div><div class="pw-card__wire"></div><div class="pw-card__scan"></div>
+        <span class="pw-tag pw-card__badge">E27 · LED</span><span class="pw-card__seed">SEED 00005</span>
+      </div>
+      <div class="pw-card__body">
+        <span class="pw-card__code" data-scramble-hover>LMP_005</span><span class="pw-card__price">149 €</span>
+        <h3 class="pw-card__name">Lámpara Espiral 12</h3>
+        <dl class="pw-card__spec"><div><dt>Layer</dt><dd>0.16mm</dd></div><div><dt>Print</dt><dd>26h40m</dd></div><div><dt>Material</dt><dd>PETG_OPAL</dd></div><div><dt>Alto</dt><dd>30cm</dd></div></dl>
+        <button class="pw-btn pw-btn--sm pw-card__add" type="button" data-add data-magnetic><span>Añadir</span><span>+</span></button>
+      </div>
+    </article>
+
+    <article class="pw-card pw-card--wide pw-reveal pw-reveal--d1" style="--span:7" data-form='{"type":"planter","seed":12,"height":20,"twist":-30,"sides":8,"wave":0.3}' data-pattern="concrete">
+      <div class="pw-card__media" data-cursor="VER">
+        <div class="pw-card__img"></div><div class="pw-card__wire"></div><div class="pw-card__scan"></div>
+        <span class="pw-tag pw-card__badge">EXTERIOR · UV</span><span class="pw-card__seed">SEED 00012</span>
+      </div>
+      <div class="pw-card__body">
+        <span class="pw-card__code" data-scramble-hover>PLT_012</span><span class="pw-card__price">38 €</span>
+        <h3 class="pw-card__name">Maceta Octógono Escalonada</h3>
+        <dl class="pw-card__spec"><div><dt>Layer</dt><dd>0.28mm</dd></div><div><dt>Print</dt><dd>09h22m</dd></div><div><dt>Material</dt><dd>ASA_GREY</dd></div><div><dt>Alto</dt><dd>20cm</dd></div></dl>
+        <button class="pw-btn pw-btn--sm pw-card__add" type="button" data-add data-magnetic><span>Añadir</span><span>+</span></button>
+      </div>
+    </article>
+  </div>
+</section>
+
+<!-- =====================================================================
+     07. MANIFIESTO
+     ===================================================================== -->
+<section class="pw-manifesto" id="manifiesto" data-section="manifesto">
+  <div class="pw-manifesto__pin">
+    <div class="pw-manifesto__head"><span>[04] Manifiesto</span><span class="pw-manifesto__bar"><i></i></span><span data-manifesto-pct>000%</span></div>
+    <p class="pw-manifesto__text" data-manifesto>No vendemos objetos. Publicamos resultados. Cada pieza nace de una *semilla numérica, crece dentro de un *algoritmo y se deposita *capa a *capa, dos décimas de milímetro cada vez. No hay moldes. No hay stock. No hay dos iguales. La máquina no sustituye a la mano: la extiende. Esto es artesanía escrita en *código.</p>
+    <div class="pw-manifesto__sign"><span>— Estudio paginaweb1</span><span>Barcelona · MMXXVI</span><span>Firmado con SEED 48213</span></div>
+  </div>
+</section>
+
+<!-- =====================================================================
+     08. CIFRAS
+     ===================================================================== -->
+<section class="pw-section pw-stats" id="cifras" data-section="stats">
+  <div class="pw-stats__grid">
+    <div class="pw-stat">
+      <span class="pw-stat__label"><span>Horas de impresión</span><span>/01</span></span>
+      <span class="pw-stat__num"><span data-count="48213">0</span><small>H</small></span>
+      <span class="pw-stat__note">Máquinas activas 24/7 · 12 impresoras</span>
+      <span class="pw-stat__meter"><i data-meter=".82"></i></span>
+    </div>
+    <div class="pw-stat">
+      <span class="pw-stat__label"><span>Filamento reciclado</span><span>/02</span></span>
+      <span class="pw-stat__num"><span data-count="1286.4" data-decimals="1">0</span><small>KG</small></span>
+      <span class="pw-stat__note">De botellas PET y descartes de estudio</span>
+      <span class="pw-stat__meter"><i data-meter=".64"></i></span>
+    </div>
+    <div class="pw-stat">
+      <span class="pw-stat__label"><span>Diseños únicos</span><span>/03</span></span>
+      <span class="pw-stat__num"><span data-count="9740">0</span></span>
+      <span class="pw-stat__note">Ningún objeto se repite</span>
+      <span class="pw-stat__meter"><i data-meter=".47"></i></span>
+    </div>
+    <div class="pw-stat">
+      <span class="pw-stat__label"><span>Seeds generadas</span><span>/04</span></span>
+      <span class="pw-stat__num"><span data-count="1204388">0</span></span>
+      <span class="pw-stat__note">Exploradas por el algoritmo</span>
+      <span class="pw-stat__meter"><i data-meter=".96"></i></span>
+    </div>
+  </div>
+</section>
+
+<!-- =====================================================================
+     09. NEWSLETTER
+     ===================================================================== -->
+<section class="pw-section pw-news" id="newsletter" data-section="newsletter">
+  <div class="pw-news__intro">
+    <span class="pw-sechead__idx">[05]</span>
+    <h2 class="pw-news__title pw-reveal" data-scramble-hover>Recibe<br>el log.</h2>
+    <p>Un correo al mes con nuevas series, seeds descartadas, procesos del estudio y acceso anticipado a ediciones de 50 unidades.</p>
+    <div><span class="pw-tag"><b>FREQ:</b> 1/MES</span> <span class="pw-tag"><b>SPAM:</b> NULL</span></div>
+  </div>
+  <div class="pw-news__term">
+    <div class="pw-news__termbar"><span>pw@estudio:~/newsletter</span><span>bash — 80×24</span></div>
+    <div class="pw-news__log" aria-live="polite">
+      <p>$ ./subscribe --list=log_mensual</p>
+      <p>esperando entrada...</p>
+    </div>
+    <form class="pw-news__form" novalidate>
+      <label class="pw-news__field" for="pw-email">
+        <span class="pw-news__prompt" aria-hidden="true">&gt;</span>
+        <span class="pw-news__inputwrap">
+          <input class="pw-news__input" id="pw-email" name="email" type="email" autocomplete="email" placeholder="introduce_email_" aria-label="Correo electrónico" required>
+          <span class="pw-news__block" aria-hidden="true"></span>
+          <span class="pw-news__mirror" aria-hidden="true"></span>
+        </span>
+      </label>
+      <button class="pw-news__submit" type="submit" data-magnetic>[ENTER] Suscribir</button>
+      <p class="pw-news__legal">Al suscribirte aceptas la política de privacidad. Baja en un clic.</p>
+    </form>
+  </div>
+</section>
+
+</main>
+
+<!-- =====================================================================
+     10. FOOTER
+     ===================================================================== -->
+<footer class="pw-footer" data-section="footer">
+  <div class="pw-footer__cols">
+    <div class="pw-footer__col"><h4>/Tienda</h4><ul><li><a href="#coleccion">Jarrones</a></li><li><a href="#coleccion">Lámparas</a></li><li><a href="#coleccion">Bandejas</a></li><li><a href="#coleccion">Macetas</a></li></ul></div>
+    <div class="pw-footer__col"><h4>/Estudio</h4><ul><li><a href="#proceso">Proceso</a></li><li><a href="#laboratorio">Laboratorio</a></li><li><a href="#manifiesto">Manifiesto</a></li><li><a href="#cifras">Cifras</a></li></ul></div>
+    <div class="pw-footer__col"><h4>/Social</h4><ul><li><a href="#">Instagram</a></li><li><a href="#">Pinterest</a></li><li><a href="#">TikTok</a></li><li><a href="#">Printables</a></li></ul></div>
+    <div class="pw-footer__col"><h4>/Legal</h4><ul><li><a href="#">Envíos</a></li><li><a href="#">Devoluciones</a></li><li><a href="#">Privacidad</a></li><li><a href="#">Cookies</a></li></ul></div>
+    <div class="pw-footer__col pw-footer__coords"><h4>/Coordenadas</h4><b>41.3874° N<br>2.1686° E</b>Estudio · Barcelona, ES<br>Lun–Vie 10:00–19:00<br>hola@paginaweb1.studio</div>
+  </div>
+  <span class="pw-footer__brand" aria-hidden="true">paginaweb1</span>
+  <div class="pw-footer__base"><span>© <span data-year>2026</span> paginaweb1 — Forma generada. Materia impresa.</span><span>Build 04.GEN · Hecho con código y filamento</span></div>
+</footer>
+
+<!-- Three.js (cdnjs) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+/* =====================================================================
+   paginaweb1 — JS vanilla
+   Índice:
+   00. Utilidades           08. Proceso (mini animaciones)
+   01. Núcleo de forma       09. Laboratorio (generador)
+   02. Escena Three.js       10. Colección (SVG + glitch)
+   03. Preloader             11. Manifiesto
+   04. Cursor                12. Cifras
+   05. Header                13. Newsletter
+   06. Scramble + reveal     14. Footer
+   07. Hero 3D + marquee     15. Arranque
+   ===================================================================== */
+(function () {
+'use strict';
+
+/* ---------- 00. UTILIDADES ---------- */
+const PW = {
+  reduced: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  fine: window.matchMedia('(hover: hover) and (pointer: fine)').matches,
+  isMobile: () => window.innerWidth < 640,
+  hasThree: typeof window.THREE !== 'undefined',
+};
+const $ = (s, c = document) => c.querySelector(s);
+const $$ = (s, c = document) => Array.from(c.querySelectorAll(s));
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const easeOutExpo = t => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * t));
+const easeInOut = t => (t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const pad = (n, l) => String(n).padStart(l, '0');
+// Formato español con punto de miles (también para 4 cifras)
+const fmt = (n, d = 0) => {
+  const [i, f] = Math.abs(n).toFixed(d).split('.');
+  return (n < 0 ? '-' : '') + i.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (f ? ',' + f : '');
+};
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+// Observa visibilidad (para pausar animaciones fuera de pantalla)
+function watchVisible(el, cb, margin = '100px') {
+  if (!el) return;
+  const io = new IntersectionObserver(es => es.forEach(e => cb(e.isIntersecting)), { rootMargin: margin });
+  io.observe(el);
+  return io;
+}
+// Bus mínimo de eventos entre secciones
+const bus = new EventTarget();
+const emit = (n, d) => bus.dispatchEvent(new CustomEvent(n, { detail: d }));
+const on = (n, fn) => bus.addEventListener(n, e => fn(e.detail));
+
+/* ---------- 01. NÚCLEO DE FORMA (compartido por Three.js y SVG) ----------
+   params: { type, height (cm), twist (grados), sides (3–32, 32 = redondo), wave (0–1), seed } */
+const PWForm = {
+  CODES: { vase: 'VSL', lamp: 'LMP', planter: 'PLT', tray: 'TRY', candle: 'CND' },
+  coeffs(seed) {
+    const r = mulberry32((seed * 9301 + 49297) | 0);
+    return {
+      bc: .22 + r() * .32, bw: .13 + r() * .15, bulb: .26 + r() * .24, lip: r() * .16,
+      a2: .02 + r() * .05, f2: 1 + r() * 2.6, p2: r(), wf: 3 + Math.floor(r() * 6), wp: r() * 6.283,
+      k: r(),
+    };
+  },
+  // Perfil de revolución r(t), t ∈ [0,1] de abajo arriba
+  radius(type, t, c) {
+    const rip = c.a2 * Math.sin(Math.PI * 2 * (c.f2 * t + c.p2));
+    switch (type) {
+      case 'lamp':    return .2 + .88 * Math.pow(t, 1.15 + c.k * 1.6) + rip * .8 + .05 * smooth(.9, 1, t);
+      case 'planter': return .52 + .3 * t + rip * .7 + .06 * smooth(.88, 1, t) - .05 * (1 - smooth(0, .08, t));
+      case 'tray':    return .82 + .2 * smooth(0, 1, t) + rip * .25;
+      case 'candle':  return .36 + .1 * Math.sin(Math.PI * t) - .06 * t + rip * .6;
+      default: {
+        const bulb = c.bulb * Math.exp(-((t - c.bc) ** 2) / (2 * c.bw * c.bw));
+        return Math.max(.12, .27 + bulb + c.lip * smooth(.78, 1, t) + rip);
+      }
+    }
+  },
+  // Punto de la superficie para t (altura) y phi (ángulo)
+  point(p, c, t, phi, out) {
+    const H = p.height / 10;
+    let r = PWForm.radius(p.type, t, c);
+    if (p.sides < 32) {
+      const seg = (Math.PI * 2) / p.sides;
+      const a = ((phi % seg) + seg) % seg - seg / 2;
+      r *= Math.cos(seg / 2) / Math.cos(a);
+    }
+    r *= 1 + p.wave * .14 * Math.sin(phi * c.wf + t * Math.PI * 4 + c.wp);
+    const ang = phi + (p.twist * Math.PI / 180) * t;
+    out[0] = r * Math.cos(ang); out[1] = t * H; out[2] = r * Math.sin(ang);
+    return out;
+  },
+  code(p) { return `${PWForm.CODES[p.type] || 'OBJ'}_${pad(p.seed, 5)}`; },
+};
+
+/* ---------- 02. ESCENA THREE.JS REUTILIZABLE ----------
+   Una clase para el hero y el laboratorio: geometría procedural,
+   material PLA mate con líneas de capa, vistas solid/wire/layers,
+   construcción capa a capa con plano de corte y bucle pausable. */
+function buildFormGeometry(p, resU, resV) {
+  const n = p.sides;
+  const U = n < 32 ? n * Math.max(1, Math.ceil(resU / n)) : resU;
+  const V = resV;
+  const count = U * (V + 1) + 1;
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(count * 3), 3));
+  geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(count * 2), 2));
+  const idx = [];
+  for (let j = 0; j < V; j++) {
+    for (let i = 0; i < U; i++) {
+      const a = j * U + i, b = j * U + ((i + 1) % U), c = (j + 1) * U + i, d = (j + 1) * U + ((i + 1) % U);
+      idx.push(a, c, b, b, c, d);
+    }
+  }
+  const center = U * (V + 1);
+  for (let i = 0; i < U; i++) idx.push(center, i, (i + 1) % U); // base cerrada
+  geo.setIndex(idx);
+  geo.userData = { U, V };
+  fillFormPositions(geo, p);
+  return geo;
+}
+function fillFormPositions(geo, p) {
+  const { U, V } = geo.userData;
+  const c = PWForm.coeffs(p.seed);
+  const H = p.height / 10;
+  const pos = geo.attributes.position.array, uv = geo.attributes.uv.array;
+  const tmp = [0, 0, 0];
+  let k = 0, q = 0;
+  for (let j = 0; j <= V; j++) {
+    const t = j / V;
+    for (let i = 0; i < U; i++) {
+      PWForm.point(p, c, t, (i / U) * Math.PI * 2, tmp);
+      pos[k++] = tmp[0]; pos[k++] = tmp[1] - H / 2; pos[k++] = tmp[2];
+      uv[q++] = i / U; uv[q++] = t * H * 34; // 34 líneas de capa por unidad (estilizado)
+    }
+  }
+  pos[k++] = 0; pos[k++] = -H / 2; pos[k++] = 0; uv[q++] = 0; uv[q++] = 0;
+  geo.attributes.position.needsUpdate = true;
+  geo.attributes.uv.needsUpdate = true;
+  geo.computeVertexNormals();
+  geo.computeBoundingSphere();
+}
+// Textura de líneas de capa (bump + variación de color)
+function makeLayerTexture() {
+  const cv = document.createElement('canvas'); cv.width = 4; cv.height = 32;
+  const ctx = cv.getContext('2d');
+  for (let y = 0; y < 32; y++) {
+    const v = Math.round(228 + 27 * Math.pow(.5 + .5 * Math.sin((y / 32) * Math.PI * 2), .6));
+    ctx.fillStyle = `rgb(${v},${v},${v})`; ctx.fillRect(0, y, 4, 1);
+  }
+  const tex = new THREE.CanvasTexture(cv);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.magFilter = THREE.LinearFilter;
+  return tex;
+}
+
+class FormStage {
+  constructor(canvas, opts) {
+    this.canvas = canvas;
+    this.o = Object.assign({ color: 0xD4D0C7, line: 0x0A0A0A, resU: 96, resV: 110, autoRotate: .25, elev: .32 }, opts);
+    this.p = Object.assign({}, opts.params);
+    this.running = false; this.visible = false; this.view = 'solid';
+    this.rotY = .6; this.rotVel = 0; this.elev = this.o.elev; this.targetElev = this.o.elev;
+    this.build = null; this.onFrame = null; this.lastT = 0;
+
+    const r = this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+    r.setPixelRatio(Math.min(window.devicePixelRatio || 1, PW.isMobile() ? 1.5 : 2));
+    r.setClearColor(0x000000, 0);
+    r.localClippingEnabled = true;
+
+    this.scene = new THREE.Scene();
+    this.camera = new THREE.PerspectiveCamera(30, 1, .1, 100);
+    this.scene.add(new THREE.HemisphereLight(0xffffff, 0x3a3a3a, .72));
+    const key = new THREE.DirectionalLight(0xffffff, 1.05); key.position.set(3, 5, 4); this.scene.add(key);
+    const rim = new THREE.DirectionalLight(0xffffff, .38); rim.position.set(-4, 2, -3); this.scene.add(rim);
+
+    // Plano de corte para el efecto "capa a capa" (recorta y > constant)
+    this.plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 999);
+    const tex = makeLayerTexture();
+    this.matSolid = new THREE.MeshStandardMaterial({
+      color: this.o.color, roughness: .92, metalness: 0, map: tex, bumpMap: tex, bumpScale: .01,
+      side: THREE.DoubleSide, clippingPlanes: [this.plane],
+    });
+    this.matWire = new THREE.MeshBasicMaterial({ color: this.o.line, wireframe: true, transparent: true, opacity: .85, clippingPlanes: [this.plane] });
+    this.matLayers = new THREE.LineBasicMaterial({ color: this.o.line, transparent: true, opacity: .9, clippingPlanes: [this.plane] });
+
+    this.group = new THREE.Group(); this.scene.add(this.group);
+    this.mesh = new THREE.Mesh(undefined, this.matSolid); this.group.add(this.mesh);
+    this.layers = new THREE.LineSegments(new THREE.BufferGeometry(), this.matLayers); this.layers.visible = false; this.group.add(this.layers);
+    this.ring = new THREE.LineLoop(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x007CF8 })); this.ring.visible = false; this.group.add(this.ring);
+
+    this.regenerate(true);
+    this.loop = this.loop.bind(this);
+    this.resize();
+    if ('ResizeObserver' in window) new ResizeObserver(() => this.resize()).observe(canvas.parentElement);
+    else window.addEventListener('resize', () => this.resize());
+    watchVisible(canvas.parentElement, v => { this.visible = v; this.sync(); }, '0px');
+    document.addEventListener('visibilitychange', () => this.sync());
+  }
+  // Reconstruye buffers (cambia nº de vértices) o solo actualiza posiciones
+  regenerate(rebuild) {
+    if (rebuild || !this.mesh.geometry || this.mesh.geometry.userData.sides !== this.p.sides) {
+      if (this.mesh.geometry) this.mesh.geometry.dispose();
+      const g = buildFormGeometry(this.p, this.o.resU, this.o.resV);
+      g.userData.sides = this.p.sides;
+      this.mesh.geometry = g;
+      const rg = new THREE.BufferGeometry();
+      rg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(g.userData.U * 3), 3));
+      this.ring.geometry.dispose(); this.ring.geometry = rg;
+    } else {
+      fillFormPositions(this.mesh.geometry, this.p);
+    }
+    if (this.view === 'layers') this.buildLayerLines();
+    this.fit();
+  }
+  buildLayerLines() {
+    const g = this.mesh.geometry, { U, V } = g.userData, src = g.attributes.position.array;
+    const step = Math.max(1, Math.round(V / 55));
+    const rows = Math.floor(V / step) + 1;
+    const arr = new Float32Array(rows * U * 6);
+    let k = 0;
+    for (let j = 0; j <= V; j += step) {
+      for (let i = 0; i < U; i++) {
+        const a = (j * U + i) * 3, b = (j * U + ((i + 1) % U)) * 3;
+        arr[k++] = src[a]; arr[k++] = src[a + 1]; arr[k++] = src[a + 2];
+        arr[k++] = src[b]; arr[k++] = src[b + 1]; arr[k++] = src[b + 2];
+      }
+    }
+    this.layers.geometry.dispose();
+    const lg = new THREE.BufferGeometry();
+    lg.setAttribute('position', new THREE.BufferAttribute(arr.subarray(0, k), 3));
+    this.layers.geometry = lg;
+  }
+  setView(v) {
+    this.view = v;
+    this.mesh.visible = v !== 'layers';
+    this.mesh.material = v === 'wire' ? this.matWire : this.matSolid;
+    this.layers.visible = v === 'layers';
+    if (v === 'layers') this.buildLayerLines();
+    this.renderOnce();
+  }
+  fit() {
+    const pos = this.mesh.geometry.attributes.position.array;
+    let maxR = 0;
+    for (let i = 0; i < pos.length; i += 3) maxR = Math.max(maxR, pos[i] * pos[i] + pos[i + 2] * pos[i + 2]);
+    maxR = Math.sqrt(maxR);
+    this.H = this.p.height / 10; this.maxR = maxR;
+    const aspect = this.camera.aspect || 1;
+    const tan = Math.tan((this.camera.fov * Math.PI) / 360);
+    const needV = (this.H * .5 + maxR * .35) * 1.3 / tan;
+    const needH = maxR * 1.35 / (tan * aspect);
+    this.targetDist = Math.max(needV, needH) + maxR;
+    if (!this.dist) this.dist = this.targetDist;
+  }
+  resize() {
+    const el = this.canvas.parentElement, w = el.clientWidth, h = el.clientHeight;
+    if (!w || !h) return;
+    this.renderer.setSize(w, h, false);
+    this.camera.aspect = w / h; this.camera.updateProjectionMatrix();
+    this.fit(); this.dist = this.targetDist;
+    this.renderOnce();
+  }
+  // Construcción capa a capa
+  startBuild(dur = 2200) {
+    if (PW.reduced) { this.plane.constant = 999; this.ring.visible = false; this.renderOnce(); return; }
+    this.build = { start: performance.now(), dur };
+    this.plane.constant = -this.H / 2 - .01;
+    this.sync();
+  }
+  updateBuild(now) {
+    if (!this.build) return 1;
+    const p = clamp((now - this.build.start) / this.build.dur, 0, 1);
+    const e = easeInOut(p);
+    const g = this.mesh.geometry, { U, V } = g.userData, src = g.attributes.position.array;
+    const j = Math.min(V, Math.floor(e * V));
+    this.plane.constant = -this.H / 2 + e * (this.H + .01);
+    const ra = this.ring.geometry.attributes.position.array;
+    for (let i = 0; i < U; i++) {
+      const s = (j * U + i) * 3;
+      ra[i * 3] = src[s] * 1.02; ra[i * 3 + 1] = src[s + 1]; ra[i * 3 + 2] = src[s + 2] * 1.02;
+    }
+    this.ring.geometry.attributes.position.needsUpdate = true;
+    this.ring.visible = p < 1;
+    this.buildProgress = p;
+    if (p >= 1) { this.build = null; this.plane.constant = 999; }
+    return p;
+  }
+  sync() {
+    const should = this.visible && !document.hidden;
+    if (should && !this.running) { this.running = true; this.lastT = performance.now(); requestAnimationFrame(this.loop); }
+    else if (!should) this.running = false;
+  }
+  renderOnce() {
+    const c = this.camera;
+    c.position.set(0, Math.sin(this.elev) * this.dist, Math.cos(this.elev) * this.dist);
+    c.lookAt(0, 0, 0);
+    this.group.rotation.y = this.rotY;
+    this.renderer.render(this.scene, c);
+  }
+  loop(now) {
+    if (!this.running) return;
+    requestAnimationFrame(this.loop);
+    const dt = Math.min(.05, (now - this.lastT) / 1000); this.lastT = now;
+    if (this.onFrame) this.onFrame(dt, now);
+    this.updateBuild(now);
+    this.rotY += (PW.reduced ? 0 : this.o.autoRotate) * dt + this.rotVel * dt;
+    this.rotVel *= Math.pow(.04, dt);
+    this.elev = lerp(this.elev, this.targetElev, 1 - Math.pow(.001, dt));
+    this.dist = lerp(this.dist, this.targetDist, 1 - Math.pow(.01, dt));
+    this.renderOnce();
+  }
+}
+function webglFallback(host) {
+  const d = document.createElement('div');
+  d.className = 'pw-fallback';
+  d.textContent = 'WEBGL_UNAVAILABLE // cargando three.js falló. La forma sigue existiendo en código.';
+  host.appendChild(d);
+}
+
+/* ---------- 03. PRELOADER ---------- */
+function initPreloader(done) {
+  const el = $('.pw-preloader');
+  if (!el) return done();
+  const log = $('.pw-preloader__log', el), bar = $('.pw-preloader__bar span', el), pct = $('.pw-preloader__pct', el);
+  const lines = [
+    '> paginaweb1_os v4.0.26 — estudio de forma generativa',
+    '> INITIALIZING SLICER.......... <span>OK</span>',
+    '> LOADING MESH................. <span>OK</span>',
+    '> CALIBRATING NOZZLE 0.4mm..... <span>OK</span>',
+    '> HEATING BED 60°C............. <span>OK</span>',
+    '> SEED POOL 1.204.388.......... <span>READY</span>',
+  ];
+  const total = PW.reduced ? 250 : 1900;
+  const t0 = performance.now();
+  let shown = 0, finished = false;
+  const finish = () => {
+    if (finished) return; finished = true;
+    pct.textContent = '100%'; bar.style.width = '100%';
+    setTimeout(() => {
+      el.classList.add('is-done');
+      done();
+      setTimeout(() => el.remove(), 900);
+    }, PW.reduced ? 0 : 220);
+  };
+  const tick = now => {
+    const p = clamp((now - t0) / total, 0, 1);
+    const target = Math.floor(p * lines.length + .001);
+    while (shown < Math.min(lines.length, target + 1)) {
+      const row = document.createElement('p'); row.innerHTML = lines[shown++]; log.appendChild(row);
+    }
+    const eased = Math.floor(easeInOut(p) * 100);
+    pct.textContent = eased + '%'; bar.style.width = eased + '%';
+    if (p < 1) requestAnimationFrame(tick); else finish();
+  };
+  requestAnimationFrame(tick);
+  setTimeout(finish, 4000); // red de seguridad
+}
+
+/* ---------- 04. CURSOR CUSTOM (cruceta + estado magnético) ---------- */
+function initCursor() {
+  if (!PW.fine) return;
+  const cur = $('.pw-cursor'); if (!cur) return;
+  document.documentElement.classList.add('pw-has-cursor');
+  const box = $('.pw-cursor__box', cur), label = $('.pw-cursor__label', cur);
+  let x = -100, y = -100, cx = x, cy = y, bw = 18, bh = 18, bx = x, by = y;
+  let magnet = null, hover = null, labelText = '';
+  window.addEventListener('pointermove', e => {
+    x = e.clientX; y = e.clientY;
+    cur.classList.remove('is-hidden');
+    if (magnet) {
+      const r = magnet._pwRect();
+      const dx = x - (r.left + r.width / 2), dy = y - (r.top + r.height / 2);
+      magnet.style.transform = `translate(${dx * .22}px,${dy * .32}px)`;
+    }
+  }, { passive: true });
+  document.addEventListener('pointerleave', () => cur.classList.add('is-hidden'));
+  window.addEventListener('pointerdown', () => cur.classList.add('is-down'));
+  window.addEventListener('pointerup', () => cur.classList.remove('is-down'));
+
+  document.addEventListener('pointerover', e => {
+    const m = e.target.closest('[data-magnetic]');
+    const h = e.target.closest('a,button,input,label,summary,[data-cursor],[role="button"]');
+    if (m !== magnet) {
+      if (magnet) magnet.style.transform = '';
+      magnet = m;
+      if (m) {
+        // rect sin la traslación magnética aplicada
+        m._pwRect = () => {
+          const r = m.getBoundingClientRect();
+          const t = new DOMMatrixReadOnly(getComputedStyle(m).transform === 'none' ? undefined : getComputedStyle(m).transform);
+          return { left: r.left - t.m41, top: r.top - t.m42, width: r.width, height: r.height };
+        };
+      }
+    }
+    hover = h;
+    const dc = e.target.closest('[data-cursor]');
+    labelText = dc ? dc.dataset.cursor : '';
+    cur.classList.toggle('is-magnet', !!magnet);
+    cur.classList.toggle('is-hover', !!h && !magnet);
+  });
+
+  const k = PW.reduced ? 1 : .28;
+  (function loop() {
+    requestAnimationFrame(loop);
+    cx = lerp(cx, x, k); cy = lerp(cy, y, k);
+    let tw = 18, th = 18, tx = cx, ty = cy;
+    if (magnet) {
+      const r = magnet.getBoundingClientRect();
+      tw = r.width + 12; th = r.height + 12; tx = r.left + r.width / 2; ty = r.top + r.height / 2;
+    } else if (hover) { tw = th = 46; }
+    bw = lerp(bw, tw, .3); bh = lerp(bh, th, .3); bx = lerp(bx, tx, magnet ? .35 : 1); by = lerp(by, ty, magnet ? .35 : 1);
+    box.style.width = bw + 'px'; box.style.height = bh + 'px';
+    box.style.transform = `translate(${bx - bw / 2}px,${by - bh / 2}px)`;
+    label.style.transform = `translate(${cx + 16}px,${cy + 14}px)`;
+    label.textContent = labelText || `X${pad(Math.round(x), 4)} Y${pad(Math.round(y), 4)}`;
+  })();
+  box.style.transition = 'border-width .18s';
+}
+
+/* ---------- 05. HEADER (contador en vivo, reloj, menú, carrito) ---------- */
+function initHeader() {
+  const header = $('.pw-header');
+  const clock = $('#pw-clock'), gen = $('#pw-gen-count'), cart = $('#pw-cart-count');
+  const now = new Date();
+  const secs = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+  let count = 140 + Math.floor(secs / 43);
+  const renderCount = flash => {
+    gen.textContent = pad(count, 4);
+    if (flash) { gen.classList.add('is-flash'); setTimeout(() => gen.classList.remove('is-flash'), 400); }
+  };
+  renderCount();
+  const tickClock = () => {
+    clock.textContent = new Date().toLocaleTimeString('es-ES', { hour12: false, timeZone: 'Europe/Madrid' });
+  };
+  tickClock(); setInterval(tickClock, 1000);
+  (function bump() {
+    setTimeout(() => { count += 1 + Math.floor(Math.random() * 2); renderCount(true); bump(); }, 2600 + Math.random() * 4200);
+  })();
+  on('generated', () => { count++; renderCount(true); });
+
+  let cartN = 0;
+  on('cart:add', () => {
+    cartN++; cart.textContent = cartN;
+    const btn = $('.pw-header__cart'); btn.classList.add('is-bump');
+    setTimeout(() => btn.classList.remove('is-bump'), 450);
+  });
+
+  const menu = $('.pw-header__menu');
+  menu.addEventListener('click', () => {
+    const open = header.classList.toggle('is-open');
+    menu.setAttribute('aria-expanded', open); menu.textContent = open ? 'Cerrar ×' : 'Menú +';
+  });
+  $$('.pw-header__nav a').forEach(a => a.addEventListener('click', () => {
+    header.classList.remove('is-open'); menu.setAttribute('aria-expanded', 'false'); menu.textContent = 'Menú +';
+  }));
+}
+
+/* ---------- 06. SCRAMBLE / DECODIFICACIÓN + SCROLL REVEAL ---------- */
+const GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#%&/<>_=+*';
+function scramble(el, dur = 750) {
+  if (PW.reduced) return;
+  // Opera sobre el primer nodo de texto no vacío (conserva <br> y hijos)
+  const nodes = [];
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  while (walker.nextNode()) if (walker.currentNode.nodeValue.trim()) nodes.push(walker.currentNode);
+  if (!nodes.length) return;
+  if (!el._pwRaf || !el._pwFinal) el._pwFinal = nodes.map(n => n.nodeValue);
+  if (el._pwRaf) cancelAnimationFrame(el._pwRaf);
+  const finals = el._pwFinal;
+  const orders = finals.map(s => Array.from(s, (_, i) => (i / s.length) * .65 + Math.random() * .35));
+  const start = performance.now();
+  const tick = now => {
+    const p = clamp((now - start) / dur, 0, 1);
+    nodes.forEach((n, k) => {
+      const f = finals[k]; let out = '';
+      for (let i = 0; i < f.length; i++) {
+        const ch = f[i];
+        out += ch === ' ' || ch === '\n' || p >= orders[k][i] ? ch : GLYPHS[(Math.random() * GLYPHS.length) | 0];
+      }
+      n.nodeValue = out;
+    });
+    if (p < 1) el._pwRaf = requestAnimationFrame(tick);
+    else { nodes.forEach((n, k) => (n.nodeValue = finals[k])); el._pwRaf = null; }
+  };
+  el._pwRaf = requestAnimationFrame(tick);
+}
+function initScramble() {
+  $$('[data-scramble]').forEach((el, i) => setTimeout(() => scramble(el, 900), i * 110));
+  $$('[data-scramble-hover]').forEach(el => {
+    const host = el.closest('a,button,article,.pw-hero__title') || el;
+    let last = 0;
+    const trigger = () => { const t = performance.now(); if (t - last > 500) { last = t; scramble(el, 480); } };
+    if (el.classList.contains('pw-hero__line')) el.addEventListener('pointerenter', trigger);
+    else host.addEventListener('pointerenter', trigger);
+  });
+  // Las líneas del hero no reciben eventos (pointer-events:none); se escuchan desde el hero
+  const hero = $('.pw-hero');
+  if (hero && PW.fine) {
+    const lines = $$('.pw-hero__line');
+    let lastHit = null;
+    hero.addEventListener('pointermove', e => {
+      const hit = lines.find(l => { const r = l.getBoundingClientRect(); return e.clientY >= r.top && e.clientY <= r.bottom && e.clientX >= r.left && e.clientX <= r.left + l.scrollWidth; });
+      if (hit && hit !== lastHit) scramble(hit, 520);
+      lastHit = hit || null;
+    });
+  }
+}
+function initReveal() {
+  const els = $$('.pw-reveal');
+  if (PW.reduced || !('IntersectionObserver' in window)) { els.forEach(e => e.classList.add('is-in')); return; }
+  const io = new IntersectionObserver(entries => entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); }
+  }), { threshold: .12, rootMargin: '0px 0px -6% 0px' });
+  els.forEach(e => io.observe(e));
+}
+
+/* ---------- 07. HERO 3D + MARQUEE ---------- */
+function initHero() {
+  const canvas = $('.pw-hero__canvas');
+  if (!canvas) return;
+  if (!PW.hasThree) return webglFallback(canvas.parentElement);
+  const base = { type: 'vase', height: 26, twist: 70, sides: 7, wave: .12, seed: 48213 };
+  const stage = new FormStage(canvas, {
+    params: base, color: 0xCFCBC2, resU: PW.isMobile() ? 56 : 84, resV: PW.isMobile() ? 70 : 100, autoRotate: .35, elev: .28,
+  });
+  const hud = {}; $$('[data-hero-hud]').forEach(e => (hud[e.dataset.heroHud] = e));
+  hud.verts.textContent = fmt(stage.mesh.geometry.attributes.position.count);
+  let mx = 0, my = 0, frames = 0, fpsAcc = 0;
+  if (PW.fine) window.addEventListener('pointermove', e => { mx = e.clientX / innerWidth * 2 - 1; my = e.clientY / innerHeight * 2 - 1; }, { passive: true });
+  const cur = { twist: base.twist, wave: base.wave };
+  stage.onFrame = (dt, now) => {
+    if (!PW.reduced) {
+      // El ratón deforma el jarrón: X → torsión, Y → ondulación
+      const auto = PW.fine ? 0 : Math.sin(now / 1800);
+      const tTwist = base.twist + (mx + auto) * 150;
+      const tWave = clamp(base.wave + (PW.fine ? (1 - (my + 1) / 2) : .5 + .5 * Math.sin(now / 2300)) * .55, 0, 1);
+      const k = 1 - Math.pow(.02, dt);
+      const nt = lerp(cur.twist, tTwist, k), nw = lerp(cur.wave, tWave, k);
+      if (Math.abs(nt - cur.twist) > .05 || Math.abs(nw - cur.wave) > .0008) {
+        cur.twist = nt; cur.wave = nw;
+        stage.p.twist = nt; stage.p.wave = nw;
+        fillFormPositions(stage.mesh.geometry, stage.p);
+      }
+      stage.targetElev = .28 + my * .12;
+      stage.rotVel += mx * dt * .6;
+    }
+    fpsAcc += dt; frames++;
+    if (frames % 8 === 0) {
+      hud.rot.textContent = pad(((stage.rotY * 180 / Math.PI) % 360 + 360) % 360 | 0, 3) + '.' + (Math.abs(stage.rotY * 10) % 10 | 0) + '°';
+      hud.twist.textContent = (cur.twist < 0 ? '-' : '') + pad(Math.abs(Math.round(cur.twist)), 3) + '°';
+      hud.wave.textContent = cur.wave.toFixed(2);
+      hud.fps.textContent = Math.round(frames / fpsAcc); frames = 0; fpsAcc = 0;
+      hud.layer.textContent = pad(Math.round((stage.build ? stage.buildProgress || 0 : 1) * 1300), 4);
+    }
+  };
+  stage.plane.constant = -99; // oculto hasta que termine el preloader
+  stage.renderOnce();
+  on('ready', () => stage.startBuild(2600));
+}
+
+function initMarquee() {
+  const rows = $$('.pw-marquee__row');
+  if (!rows.length) return;
+  // Duplica el contenido hasta cubrir 2× el ancho para el bucle infinito
+  const state = rows.map(row => {
+    const track = $('.pw-marquee__track', row);
+    const unit = track.innerHTML;
+    let guard = 0;
+    while (track.scrollWidth < window.innerWidth * 2 && guard++ < 12) track.insertAdjacentHTML('beforeend', unit);
+    track.insertAdjacentHTML('beforeend', track.innerHTML); // mitad A + mitad B idénticas
+    return { row, track, speed: parseFloat(row.dataset.speed) || 60, x: 0, half: track.scrollWidth / 2 };
+  });
+  if (PW.reduced) return;
+  let lastY = window.scrollY, vel = 0, running = false, visible = false, last = 0;
+  window.addEventListener('scroll', () => { const y = window.scrollY; vel += (y - lastY); lastY = y; }, { passive: true });
+  window.addEventListener('resize', () => state.forEach(s => (s.half = s.track.scrollWidth / 2)));
+  const loop = now => {
+    if (!visible) { running = false; return; }
+    requestAnimationFrame(loop);
+    const dt = Math.min(.05, (now - last) / 1000); last = now;
+    vel *= Math.pow(.02, dt);
+    const boost = 1 + Math.min(12, Math.abs(vel) * .06);
+    const dir = vel < -2 ? -1 : 1;
+    state.forEach(s => {
+      s.x -= s.speed * boost * dir * dt;
+      if (s.x <= -s.half) s.x += s.half;
+      if (s.x > 0) s.x -= s.half;
+      s.track.style.transform = `translate3d(${s.x}px,0,0) skewX(${clamp(-vel * .04, -12, 12)}deg)`;
+    });
+  };
+  watchVisible($('.pw-marquee'), v => {
+    visible = v;
+    if (v && !running) { running = true; last = performance.now(); requestAnimationFrame(loop); }
+  });
+}
+
+/* ---------- 08. PROCESO: mini animaciones ---------- */
+function initProcess() {
+  // 8.1 Prompt que se escribe solo
+  (function typer() {
+    const box = $('[data-viz="prompt"]'); if (!box) return;
+    const out = $('[data-typer]', box), tok = $('[data-typer-tokens]', box);
+    const prompts = [
+      'jarrón alto, torsión helicoidal de 90°, sección hexagonal, ondas suaves en la superficie',
+      'lámpara colgante que se abre como una flor, difusión cálida, capas visibles',
+      'bandeja baja inspirada en curvas de nivel del Pirineo, borde irregular',
+      'maceta pesada, octogonal, escalonada como un zigurat de hormigón',
+    ];
+    if (PW.reduced) { out.textContent = prompts[0]; tok.textContent = 18; return; }
+    let pi = 0, ci = 0, dir = 1, visible = false, timer = null;
+    const step = () => {
+      if (!visible) { timer = null; return; }
+      const s = prompts[pi];
+      ci += dir;
+      out.textContent = s.slice(0, ci);
+      tok.textContent = Math.ceil(ci / 4.6);
+      let d = dir > 0 ? 28 + Math.random() * 50 : 12;
+      if (dir > 0 && ci >= s.length) { dir = -1; d = 1800; }
+      else if (dir < 0 && ci <= 0) { dir = 1; pi = (pi + 1) % prompts.length; d = 380; }
+      timer = setTimeout(step, d);
+    };
+    watchVisible(box, v => { visible = v; if (v && !timer) step(); });
+  })();
+
+  // 8.2 Malla wireframe girando (canvas 2D)
+  (function wire() {
+    const box = $('[data-viz="wire"]'); if (!box) return;
+    const cv = $('canvas', box), ctx = cv.getContext('2d'), read = $('[data-wire-read]', box);
+    const p = { type: 'vase', height: 24, twist: 60, sides: 32, wave: .35, seed: 48213 };
+    const c = PWForm.coeffs(p.seed), ROWS = 16, COLS = 18, tmp = [0, 0, 0];
+    let w = 0, h = 0, visible = false, running = false, rot = 0, last = 0;
+    const size = () => { const r = box.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio || 1); w = r.width; h = r.height; cv.width = w * dpr; cv.height = h * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); };
+    const draw = () => {
+      ctx.clearRect(0, 0, w, h);
+      const S = h / 3.1, cx = w / 2, by = h * .86, pts = [];
+      for (let j = 0; j <= ROWS; j++) {
+        const row = [];
+        for (let i = 0; i < COLS; i++) {
+          PWForm.point(p, c, j / ROWS, (i / COLS) * Math.PI * 2 + rot, tmp);
+          row.push([cx + tmp[0] * S, by - tmp[1] * S + tmp[2] * S * .26, tmp[2]]);
+        }
+        pts.push(row);
+      }
+      ctx.lineWidth = 1;
+      const seg = (a, b) => {
+        ctx.strokeStyle = a[2] + b[2] > 0 ? 'rgba(10,10,10,.95)' : 'rgba(10,10,10,.2)';
+        ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+      };
+      for (let j = 0; j <= ROWS; j++) for (let i = 0; i < COLS; i++) {
+        seg(pts[j][i], pts[j][(i + 1) % COLS]);
+        if (j < ROWS) seg(pts[j][i], pts[j + 1][i]);
+      }
+      // vértices como pequeños cuadrados
+      ctx.fillStyle = '#0A0A0A';
+      for (let j = 0; j <= ROWS; j += 4) for (let i = 0; i < COLS; i += 3) { const q = pts[j][i]; if (q[2] > 0) ctx.fillRect(q[0] - 2, q[1] - 2, 4, 4); }
+      read.textContent = `VERTS ${fmt((ROWS + 1) * COLS)} · ROT ${pad(((rot * 57.3) % 360) | 0, 3)}°`;
+    };
+    const loop = now => {
+      if (!visible) { running = false; return; }
+      requestAnimationFrame(loop);
+      rot += Math.min(.05, (now - last) / 1000) * .5; last = now;
+      p.twist = 60 + Math.sin(now / 1400) * 50;
+      draw();
+    };
+    size(); draw();
+    window.addEventListener('resize', () => { size(); draw(); });
+    if (PW.reduced) return;
+    watchVisible(box, v => { visible = v; if (v && !running) { running = true; last = performance.now(); requestAnimationFrame(loop); } });
+  })();
+
+  // 8.3 Capas apilándose
+  (function layers() {
+    const box = $('[data-viz="layers"]'); if (!box) return;
+    const stack = $('.pw-viz-layers__stack', box), read = $('[data-layers-read]', box);
+    const N = 22, c = PWForm.coeffs(771);
+    const els = [];
+    let maxR = 0; const rs = [];
+    for (let i = 0; i < N; i++) { const r = PWForm.radius('vase', i / (N - 1), c); rs.push(r); maxR = Math.max(maxR, r); }
+    rs.forEach(r => { const d = document.createElement('div'); d.className = 'pw-viz-layers__layer'; d.style.width = (r / maxR * 100) + '%'; stack.appendChild(d); els.push(d); });
+    if (PW.reduced) { els.forEach(e => e.classList.add('is-on')); read.textContent = 'LAYER 120/120'; return; }
+    let i = 0, visible = false, timer = null;
+    const step = () => {
+      if (!visible) { timer = null; return; }
+      if (i < N) {
+        els.forEach(e => e.classList.remove('is-current'));
+        els[i].classList.add('is-on', 'is-current');
+        i++;
+        read.textContent = `LAYER ${pad(Math.round(i / N * 120), 3)}/120`;
+        timer = setTimeout(step, 150);
+      } else {
+        timer = setTimeout(() => { els.forEach(e => e.classList.remove('is-on', 'is-current')); i = 0; timer = setTimeout(step, 400); }, 1400);
+      }
+    };
+    watchVisible(box, v => { visible = v; if (v && !timer) step(); });
+  })();
+
+  // 8.4 Cabezal de impresora recorriendo una trayectoria
+  (function printer() {
+    const box = $('[data-viz="print"]'); if (!box) return;
+    const guide = $('.pw-viz-print__guide', box), path = $('.pw-viz-print__path', box);
+    const head = $('.pw-viz-print__head', box), gx = $('[data-g="x"]', box), gy = $('[data-g="y"]', box), read = $('[data-print-read]', box);
+    // Perímetro hexagonal doble + relleno en zigzag
+    const hex = (r, cx = 100, cy = 75) => Array.from({ length: 7 }, (_, i) => { const a = Math.PI / 3 * i - Math.PI / 2; return [cx + r * Math.cos(a), cy + r * Math.sin(a) * .92]; });
+    let d = 'M' + hex(58).map(p => p.join(',')).join(' L') + ' L' + hex(52).map(p => p.join(',')).join(' L');
+    for (let y = 44, k = 0; y <= 106; y += 6, k++) d += k % 2 ? ` L140,${y} L60,${y}` : ` L60,${y} L140,${y}`;
+    guide.setAttribute('d', d); path.setAttribute('d', d);
+    const L = path.getTotalLength();
+    path.style.strokeDasharray = L; path.style.strokeDashoffset = L;
+    const place = s => {
+      const pt = path.getPointAtLength(s);
+      head.setAttribute('transform', `translate(${pt.x},${pt.y})`);
+      gx.setAttribute('y1', pt.y); gx.setAttribute('y2', pt.y);
+      gy.setAttribute('x1', pt.x); gy.setAttribute('x2', pt.x);
+      path.style.strokeDashoffset = L - s;
+      read.textContent = `X${pt.x.toFixed(1).padStart(5, '0')} Y${pt.y.toFixed(1).padStart(5, '0')} E${(s / L * 4.12).toFixed(3)}`;
+    };
+    if (PW.reduced) { place(L); return; }
+    let s = 0, visible = false, running = false, last = 0, hold = 0;
+    const loop = now => {
+      if (!visible) { running = false; return; }
+      requestAnimationFrame(loop);
+      const dt = Math.min(.05, (now - last) / 1000); last = now;
+      if (hold > 0) { hold -= dt; if (hold <= 0) s = 0; return; }
+      s += dt * 110;
+      if (s >= L) { s = L; hold = 1.2; }
+      place(s);
+    };
+    place(0);
+    watchVisible(box, v => { visible = v; if (v && !running) { running = true; last = performance.now(); requestAnimationFrame(loop); } });
+  })();
+}
+
+/* ---------- 09. LABORATORIO: generador paramétrico ---------- */
+function initLab() {
+  const root = $('.pw-lab'); if (!root) return;
+  const canvas = $('.pw-lab__canvas', root), form = $('.pw-lab__panel', root);
+  const outs = {}; $$('[data-lab-out]', root).forEach(e => (outs[e.dataset.labOut] = e));
+  const json = $('[data-lab-json]', root), details = $('.pw-lab__json', root);
+  if (PW.isMobile()) details.open = false; // versión simplificada en móvil
+  const p = { type: 'vase', height: 24, twist: 90, sides: 6, wave: .25, seed: 48213 };
+  let stage = null, prevJSON = {};
+
+  if (PW.hasThree) {
+    stage = new FormStage(canvas, {
+      params: p, color: 0xE4E0D7, line: 0xF2F0EB,
+      resU: PW.isMobile() ? 48 : 96, resV: PW.isMobile() ? 60 : 120, autoRotate: .3, elev: .3,
+    });
+    stage.plane.constant = -99;
+    // Arrastrar para orbitar
+    let drag = null;
+    canvas.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY }; canvas.setPointerCapture(e.pointerId); });
+    canvas.addEventListener('pointermove', e => {
+      if (!drag) return;
+      const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag = { x: e.clientX, y: e.clientY };
+      stage.rotY += dx * .01; stage.rotVel = dx * .6;
+      stage.targetElev = clamp(stage.targetElev + dy * .005, -.15, 1.1);
+    });
+    const end = () => (drag = null);
+    canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
+    let built = false;
+    watchVisible(canvas.parentElement, v => { if (v && !built) { built = true; stage.startBuild(2600); } }, '-15% 0px');
+    // HUD de estado durante la construcción
+    stage.onFrame = () => {
+      const pr = stage.build ? stage.buildProgress || 0 : 1;
+      outs.progress.style.width = (pr * 100) + '%';
+      outs.status.textContent = pr < 1 ? `PRINTING ${pad(Math.round(pr * 100), 3)}%` : 'READY';
+    };
+  } else webglFallback(canvas.parentElement);
+
+  // Estimaciones de producción a partir de la superficie real de la malla
+  const estimate = () => {
+    let area = 0;
+    if (stage) {
+      const g = stage.mesh.geometry, P = g.attributes.position.array, I = g.index.array;
+      for (let i = 0; i < I.length; i += 3) {
+        const a = I[i] * 3, b = I[i + 1] * 3, c = I[i + 2] * 3;
+        const ux = P[b] - P[a], uy = P[b + 1] - P[a + 1], uz = P[b + 2] - P[a + 2];
+        const vx = P[c] - P[a], vy = P[c + 1] - P[a + 1], vz = P[c + 2] - P[a + 2];
+        const cx = uy * vz - uz * vy, cy = uz * vx - ux * vz, cz = ux * vy - uy * vx;
+        area += Math.sqrt(cx * cx + cy * cy + cz * cz) / 2;
+      }
+    } else area = p.height / 10 * 3.4;
+    const cm2 = area * 100;                   // 1 unidad = 10 cm
+    const grams = cm2 * .12 * 1.24;           // pared 1.2 mm · densidad PLA
+    const hours = grams / 11;                 // ~11 g/h
+    const price = Math.round(19 + grams * .3);
+    return { grams, hours, price, verts: stage ? stage.mesh.geometry.attributes.position.count : 0 };
+  };
+  const fmtTime = h => `${Math.floor(h)}h${pad(Math.round((h % 1) * 60) % 60, 2)}m`;
+
+  const renderJSON = est => {
+    const data = {
+      model: PWForm.code(p), type: p.type, height_cm: p.height, twist_deg: p.twist,
+      sides: p.sides >= 32 ? 'round' : p.sides, wave: +p.wave.toFixed(2), seed: p.seed,
+      layer_height_mm: .2, layers: Math.round(p.height * 10 / .2), material: 'PLA_MATTE',
+      estimate: { weight_g: +est.grams.toFixed(1), print_time: fmtTime(est.hours), price_eur: est.price },
+    };
+    const lines = [];
+    const val = (k, v) => {
+      const ch = prevJSON[k] !== undefined && prevJSON[k] !== JSON.stringify(v) ? ' pw-json-changed' : '';
+      prevJSON[k] = JSON.stringify(v);
+      return typeof v === 'number' ? `<span class="pw-json-n${ch}">${v}</span>` : `<span class="pw-json-s${ch}">"${v}"</span>`;
+    };
+    lines.push('{');
+    const keys = Object.keys(data);
+    keys.forEach((k, i) => {
+      const comma = i < keys.length - 1 ? ',' : '';
+      if (typeof data[k] === 'object') {
+        lines.push(`  <span class="pw-json-k">"${k}"</span>: {`);
+        const sk = Object.keys(data[k]);
+        sk.forEach((s, j) => lines.push(`    <span class="pw-json-k">"${s}"</span>: ${val(k + '.' + s, data[k][s])}${j < sk.length - 1 ? ',' : ''}`));
+        lines.push(`  }${comma}`);
+      } else lines.push(`  <span class="pw-json-k">"${k}"</span>: ${val(k, data[k])}${comma}`);
+    });
+    lines.push('}');
+    json.innerHTML = lines.join('\n');
+    clearTimeout(renderJSON.t);
+    renderJSON.t = setTimeout(() => $$('.pw-json-changed', json).forEach(e => e.classList.remove('pw-json-changed')), 450);
+    return data;
+  };
+
+  const outputs = {
+    height: v => `${v} CM`, twist: v => `${v}°`, sides: v => (v >= 32 ? '∞' : v), wave: v => (+v).toFixed(2), seed: v => pad(v, 5),
+  };
+  const syncUI = () => {
+    $$('input[type="range"]', form).forEach(inp => {
+      inp.value = p[inp.name];
+      $(`[data-out="${inp.name}"]`, form).textContent = outputs[inp.name](p[inp.name]);
+    });
+    $$('[data-type]', form).forEach(b => b.setAttribute('aria-pressed', b.dataset.type === p.type));
+  };
+  let pending = false;
+  const update = (rebuild, animate) => {
+    if (stage) { Object.assign(stage.p, p); stage.regenerate(rebuild); if (animate) stage.startBuild(1300); else stage.renderOnce(); }
+    const est = estimate();
+    outs.code.textContent = PWForm.code(p);
+    outs.verts.textContent = fmt(est.verts);
+    outs.weight.textContent = Math.round(est.grams) + 'g';
+    outs.time.textContent = fmtTime(est.hours);
+    outs.price.textContent = `— ${est.price} €`;
+    renderJSON(est);
+  };
+  const scheduleUpdate = () => {
+    if (pending) return; pending = true;
+    requestAnimationFrame(() => { pending = false; update(false, false); });
+  };
+
+  form.addEventListener('input', e => {
+    const t = e.target; if (t.type !== 'range') return;
+    p[t.name] = t.name === 'wave' ? parseFloat(t.value) : parseInt(t.value, 10);
+    $(`[data-out="${t.name}"]`, form).textContent = outputs[t.name](p[t.name]);
+    scheduleUpdate();
+  });
+  $$('[data-type]', form).forEach(b => b.addEventListener('click', () => {
+    p.type = b.dataset.type;
+    if (p.type === 'tray' && p.height > 12) p.height = 6;
+    if (p.type === 'candle' && p.height > 16) p.height = 10;
+    if ((p.type === 'vase' || p.type === 'lamp') && p.height < 14) p.height = 24;
+    syncUI(); update(true, true); emit('generated');
+  }));
+  $$('[data-view]', root).forEach(b => b.addEventListener('click', () => {
+    $$('[data-view]', root).forEach(x => x.setAttribute('aria-pressed', x === b));
+    if (stage) stage.setView(b.dataset.view);
+  }));
+  const seedOut = $('[data-out="seed"]', form);
+  $('[data-action="randomize"]', form).addEventListener('click', () => {
+    p.seed = 1 + Math.floor(Math.random() * 99999);
+    syncUI(); update(true, true); emit('generated');
+    seedOut.textContent = pad(p.seed, 5); scramble(seedOut, 400);
+  });
+  $('[data-action="mutate"]', form).addEventListener('click', () => {
+    const types = ['vase', 'lamp', 'planter', 'tray', 'candle'];
+    p.type = types[Math.floor(Math.random() * types.length)];
+    p.seed = 1 + Math.floor(Math.random() * 99999);
+    p.height = p.type === 'tray' ? 4 + Math.floor(Math.random() * 6) : p.type === 'candle' ? 7 + Math.floor(Math.random() * 7) : 14 + Math.floor(Math.random() * 24);
+    p.twist = Math.round((Math.random() * 2 - 1) * 240);
+    p.sides = Math.random() < .3 ? 32 : 3 + Math.floor(Math.random() * 10);
+    p.wave = +(Math.random() * .8).toFixed(2);
+    syncUI(); update(true, true); emit('generated');
+  });
+  $('[data-action="order"]', form).addEventListener('click', () => emit('cart:add', { code: PWForm.code(p) }));
+  const exportBtn = $('[data-action="export"]', root);
+  const doExport = e => {
+    e.preventDefault(); e.stopPropagation();
+    const data = renderJSON(estimate());
+    // Copia el JSON al portapapeles (si falla, selecciona el bloque para copiarlo a mano)
+    const txt = JSON.stringify(data, null, 2);
+    const ok = () => { exportBtn.textContent = 'COPIADO ✓'; setTimeout(() => (exportBtn.textContent = 'COPIAR'), 1400); };
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents(json); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); };
+    try { navigator.clipboard.writeText(txt).then(ok, fallback); } catch (err) { fallback(); }
+  };
+  exportBtn.addEventListener('click', doExport);
+  exportBtn.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') doExport(e); });
+
+  syncUI(); update(false, false);
+}
+
+/* ---------- 10. COLECCIÓN: imágenes SVG generadas + glitch ---------- */
+function formSVG(p, mode, pattern) {
+  const c = PWForm.coeffs(p.seed), H = p.height / 10;
+  const ROWS = 64, SAMPLES = 72, tmp = [0, 0, 0];
+  const rows = [];
+  let maxX = 0;
+  for (let j = 0; j <= ROWS; j++) {
+    const t = j / ROWS; let mn = 0, mx = 0; const ring = [];
+    for (let i = 0; i < SAMPLES; i++) {
+      PWForm.point(p, c, t, (i / SAMPLES) * Math.PI * 2, tmp);
+      ring.push([tmp[0], tmp[1], tmp[2]]);
+      mn = Math.min(mn, tmp[0]); mx = Math.max(mx, tmp[0]);
+    }
+    rows.push({ t, y: t * H, mn, mx, ring }); maxX = Math.max(maxX, -mn, mx);
+  }
+  const tilt = .22;                               // vista ligeramente cenital
+  const W = maxX * 2, padX = W * .42, padY = Math.max(H, W * .6) * .3;
+  const vbW = W + padX * 2, vbH = H + maxX * tilt * 2 + padY * 2;
+  const X = x => (x + maxX + padX).toFixed(3);
+  const Y = (y, z = 0) => (H - y + maxX * tilt + padY + z * tilt).toFixed(3);
+  const sw = (vbW / 420).toFixed(4);
+  let s = `<svg viewBox="0 0 ${vbW.toFixed(3)} ${vbH.toFixed(3)}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">`;
+  if (mode === 'solid') {
+    // silueta
+    let d = `M${X(rows[0].mn)},${Y(0)}`;
+    rows.forEach(r => (d += ` L${X(r.mn)},${Y(r.y)}`));
+    for (let j = ROWS; j >= 0; j--) d += ` L${X(rows[j].mx)},${Y(rows[j].y)}`;
+    s += `<path d="${d}Z" fill="#0A0A0A"/>`;
+    // base elíptica y boca
+    const top = rows[ROWS];
+    let mouth = '';
+    top.ring.forEach((q, i) => (mouth += `${i ? 'L' : 'M'}${X(q[0])},${Y(q[1], q[2])}`));
+    s += `<path d="${mouth}Z" fill="#2a2a2a" stroke="#8C8C8C" stroke-width="${sw}"/>`;
+    // aristas del polígono (muestran la torsión)
+    if (p.sides < 32) {
+      for (let e = 0; e < p.sides; e++) {
+        let seg = '', drawing = false;
+        const phi = (e / p.sides) * Math.PI * 2;
+        for (let j = 0; j <= ROWS; j++) {
+          PWForm.point(p, c, j / ROWS, phi, tmp);
+          if (tmp[2] > 0) { seg += `${drawing ? 'L' : 'M'}${X(tmp[0])},${Y(tmp[1])}`; drawing = true; } else drawing = false;
+        }
+        if (seg) s += `<path d="${seg}" fill="none" stroke="#8C8C8C" stroke-width="${sw * 1.3}"/>`;
+      }
+    }
+    // líneas de capa
+    let layers = '';
+    for (let j = 1; j < ROWS; j += 1) layers += `M${X(rows[j].mn)},${Y(rows[j].y)}L${X(rows[j].mx)},${Y(rows[j].y)}`;
+    s += `<path d="${layers}" stroke="#F2F0EB" stroke-opacity=".13" stroke-width="${sw}"/>`;
+  } else {
+    // wireframe: anillos + meridianos, parte trasera atenuada
+    const ringStep = 4, merid = 20;
+    let front = '', back = '';
+    for (let j = 0; j <= ROWS; j += ringStep) {
+      const ring = rows[j].ring;
+      for (let i = 0; i < SAMPLES; i++) {
+        const a = ring[i], b = ring[(i + 1) % SAMPLES];
+        const seg = `M${X(a[0])},${Y(a[1], a[2])}L${X(b[0])},${Y(b[1], b[2])}`;
+        if (a[2] + b[2] > 0) front += seg; else back += seg;
+      }
+    }
+    for (let m = 0; m < merid; m++) {
+      const i = Math.round((m / merid) * SAMPLES) % SAMPLES;
+      for (let j = 0; j < ROWS; j++) {
+        const a = rows[j].ring[i], b = rows[j + 1].ring[i];
+        const seg = `M${X(a[0])},${Y(a[1], a[2])}L${X(b[0])},${Y(b[1], b[2])}`;
+        if (a[2] + b[2] > 0) front += seg; else back += seg;
+      }
+    }
+    s += `<path d="${back}" stroke="#F2F0EB" stroke-opacity=".22" stroke-width="${sw}" fill="none"/>`;
+    s += `<path d="${front}" stroke="#F2F0EB" stroke-width="${sw * 1.2}" fill="none"/>`;
+    // capa activa en acento
+    const ja = Math.round(ROWS * .62), ring = rows[ja].ring;
+    let acc = ''; ring.forEach((q, i) => (acc += `${i ? 'L' : 'M'}${X(q[0])},${Y(q[1], q[2])}`));
+    s += `<path d="${acc}Z" stroke="#007CF8" stroke-width="${sw * 3}" fill="none"/>`;
+    s += `<text x="${X(-maxX)}" y="${(vbH - padY * .45).toFixed(2)}" font-family="JetBrains Mono,monospace" font-size="${(vbW / 30).toFixed(3)}" fill="#8C8C8C">WIRE · ${PWForm.code(p)} · ${(ROWS / ringStep + 1) * SAMPLES} VERTS</text>`;
+  }
+  return s + '</svg>';
+}
+function initCollection() {
+  $$('.pw-card').forEach(card => {
+    let p;
+    try { p = JSON.parse(card.dataset.form); } catch (e) { return; }
+    const img = $('.pw-card__img', card), wire = $('.pw-card__wire', card);
+    img.classList.add('pw-pat--' + (card.dataset.pattern || 'grid'));
+    img.innerHTML = formSVG(p, 'solid');
+    // El wireframe se genera al primer hover (o si no hay hover) para ahorrar trabajo inicial
+    const makeWire = () => { if (!wire.firstChild) wire.innerHTML = formSVG(p, 'wire'); };
+    card.addEventListener('pointerenter', makeWire, { once: true });
+    card.addEventListener('focusin', makeWire, { once: true });
+    $('[data-add]', card).addEventListener('click', () => emit('cart:add', { code: $('.pw-card__code', card).textContent }));
+  });
+}
+
+/* ---------- 11. MANIFIESTO: palabra a palabra con el scroll ---------- */
+function initManifesto() {
+  const sec = $('.pw-manifesto'), text = $('[data-manifesto]'); if (!sec || !text) return;
+  const raw = text.textContent.trim().split(/\s+/);
+  text.innerHTML = raw.map(w => {
+    const acc = w.startsWith('*');
+    return `<span class="pw-manifesto__w${acc ? ' is-accent' : ''}">${acc ? w.slice(1) : w}</span>`;
+  }).join(' ');
+  const words = $$('.pw-manifesto__w', text), bar = $('.pw-manifesto__bar i', sec), pct = $('[data-manifesto-pct]', sec);
+  if (PW.reduced) { words.forEach(w => w.classList.add('is-on')); bar.style.width = '100%'; pct.textContent = '100%'; return; }
+  let ticking = false, lastN = -1;
+  const update = () => {
+    ticking = false;
+    const r = sec.getBoundingClientRect();
+    const range = r.height - window.innerHeight;
+    const prog = clamp((-r.top + window.innerHeight * .25) / Math.max(1, range), 0, 1);
+    const n = Math.round(prog * words.length);
+    if (n !== lastN) {
+      words.forEach((w, i) => w.classList.toggle('is-on', i < n));
+      lastN = n;
+    }
+    bar.style.width = (prog * 100) + '%';
+    pct.textContent = pad(Math.round(prog * 100), 3) + '%';
+  };
+  const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+  let active = false;
+  watchVisible(sec, v => {
+    if (v && !active) { active = true; window.addEventListener('scroll', onScroll, { passive: true }); update(); }
+    else if (!v && active) { active = false; window.removeEventListener('scroll', onScroll); }
+  });
+}
+
+/* ---------- 12. CIFRAS: contadores animados ---------- */
+function initStats() {
+  const nums = $$('[data-count]');
+  const run = el => {
+    const target = parseFloat(el.dataset.count), dec = parseInt(el.dataset.decimals || '0', 10);
+    if (PW.reduced) { el.textContent = fmt(target, dec); return; }
+    const t0 = performance.now(), dur = 2200;
+    const tick = now => {
+      const p = clamp((now - t0) / dur, 0, 1);
+      el.textContent = fmt(target * easeOutExpo(p), dec);
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  };
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    if (!e.isIntersecting) return;
+    io.unobserve(e.target);
+    const stat = e.target.closest('.pw-stat');
+    run(e.target);
+    const m = $('[data-meter]', stat); if (m) m.style.width = (parseFloat(m.dataset.meter) * 100) + '%';
+  }), { threshold: .4 });
+  nums.forEach(n => io.observe(n));
+}
+
+/* ---------- 13. NEWSLETTER: input tipo terminal ---------- */
+function initNewsletter() {
+  const form = $('.pw-news__form'); if (!form) return;
+  const input = $('.pw-news__input', form), block = $('.pw-news__block', form), mirror = $('.pw-news__mirror', form);
+  const log = $('.pw-news__log');
+  const wrap = $('.pw-news__inputwrap', form);
+  const placeCaret = () => {
+    const pos = input.selectionStart ?? input.value.length;
+    mirror.textContent = input.value.slice(0, pos);
+    const x = Math.min(mirror.offsetWidth - input.scrollLeft, wrap.clientWidth - block.offsetWidth);
+    block.style.left = Math.max(0, x) + 'px';
+    block.style.opacity = input.value || document.activeElement === input ? 1 : .9;
+  };
+  ['input', 'keyup', 'click', 'focus', 'select'].forEach(ev => input.addEventListener(ev, placeCaret));
+  input.addEventListener('blur', placeCaret);
+  placeCaret();
+  const print = (txt, cls) => {
+    const p = document.createElement('p'); p.textContent = txt; if (cls) p.className = cls;
+    log.appendChild(p);
+    while (log.children.length > 5) log.firstChild.remove();
+  };
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const v = input.value.trim();
+    print(`$ subscribe ${v || '""'}`);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) { print('ERR: formato de email no válido. Reintenta.', 'is-err'); input.focus(); return; }
+    print('validando... conectando con lista log_mensual...');
+    setTimeout(() => {
+      print(`■ OK: suscripción registrada [ID ${pad(Math.floor(Math.random() * 99999), 5)}]. Bienvenido al log.`, 'is-ok');
+      input.value = ''; placeCaret();
+    }, PW.reduced ? 0 : 700);
+  });
+}
+
+/* ---------- 14. FOOTER: nombre a ancho completo ---------- */
+function initFooter() {
+  const brand = $('.pw-footer__brand'); if (!brand) return;
+  $$('[data-year]').forEach(e => (e.textContent = new Date().getFullYear()));
+  const fit = () => {
+    brand.style.fontSize = '100px';
+    const w = brand.getBoundingClientRect().width;
+    if (w) brand.style.fontSize = (100 * (brand.parentElement.clientWidth / w) * .985) + 'px';
+  };
+  fit();
+  window.addEventListener('resize', fit);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+}
+
+/* ---------- 15. ARRANQUE ---------- */
+function boot() {
+  initCursor();
+  initHeader();
+  initReveal();
+  initMarquee();
+  initProcess();
+  initCollection();
+  initManifesto();
+  initStats();
+  initNewsletter();
+  initFooter();
+  try { initHero(); } catch (e) { console.warn('[pw] hero', e); webglFallback($('.pw-hero__viewport')); }
+  try { initLab(); } catch (e) { console.warn('[pw] lab', e); }
+  initPreloader(() => { initScramble(); emit('ready'); });
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+else boot();
+})();
+</script>
+</body>
+</html>
