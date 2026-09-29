@@ -1139,6 +1139,7 @@ function initFooter() {
 /* ---------- 15. ARRANQUE ---------- */
 function boot() {
   const page = document.body.dataset.page || 'inicio';
+  document.body.dataset.page = page;
   injectChrome(page);
   try { makeWallTextures(); } catch (e) { /* se quedan las texturas SVG */ }
   const titles = $$('.pw-set'); titles.forEach(splitLetters);
