@@ -6,7 +6,7 @@ import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// Mantener igual que PRICING / FINISHES / COLORS en index.html
+// Mantener igual que PRICING / FINISHES / COLORS / CATALOG en assets/arko.js
 const PRICING = {
   base: { vase: 29, lamp: 59, planter: 25, tray: 22, candle: 14 },
   perCm: { vase: 1.2, lamp: 2.5, planter: 1.3, tray: 1.6, candle: 1 },

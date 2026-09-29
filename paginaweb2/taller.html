@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Taller · ARKO</title>
+<meta name="description" content="Diseña tu jarrón en el taller de ARKO: forma, altura, color y acabado. Preparación en 7 días.">
+<meta name="theme-color" content="#2A2927">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Manrope:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/arko.css">
+<script>document.documentElement.classList.add('pw-js');</script>
+</head>
+<body data-page="taller">
+<!-- Cabecera, pie, cesta y cursor los inyecta assets/arko.js -->
+<main id="contenido">
+<!-- =====================================================================
+     05. TALLER — generador paramétrico
+     ===================================================================== -->
+<section class="pw-section pw-lab" id="taller" data-section="lab">
+  <header class="pw-head">
+    <p class="pw-eyebrow">Taller · generador en vivo</p>
+    <h1 class="pw-h2 pw-reveal">Diseña<br><em>tu pieza</em></h1>
+    <p class="pw-lead pw-reveal">Elige la forma, la altura, el color y el acabado. La pieza se levanta sobre el pedestal tal como la imprimiremos. Arrastra para girarla bajo la luz.</p>
+  </header>
+  <div class="pw-lab__grid">
+    <div class="pw-lab__stage pw-board" data-cursor="Girar">
+      <div class="pw-lab__halo" aria-hidden="true"></div>
+      <div class="pw-lab__floor" aria-hidden="true"></div>
+      <canvas class="pw-lab__canvas" role="img" aria-label="Vista 3D de la pieza generada"></canvas>
+      <div class="pw-hud pw-hud--tl">Pieza <b data-lab-out="code">V—48213</b></div>
+      <div class="pw-hud pw-hud--tr">
+        <div class="pw-lab__views" role="group" aria-label="Modo de vista">
+          <button type="button" data-view="solid" aria-pressed="true">Materia</button>
+          <button type="button" data-view="wire" aria-pressed="false">Malla</button>
+          <button type="button" data-view="layers" aria-pressed="false">Capas</button>
+        </div>
+      </div>
+      <div class="pw-hud pw-hud--bl">Peso <b data-lab-out="weight">0 g</b> · Impresión <b data-lab-out="time">0 h</b><br>Vértices <b data-lab-out="verts">0</b></div>
+      <div class="pw-hud pw-hud--br"><b data-lab-out="status">Lista</b><span class="pw-lab__progress"><i data-lab-out="progress"></i></span></div>
+    </div>
+
+    <form class="pw-lab__panel" onsubmit="return false" aria-label="Parámetros de la pieza">
+      <div>
+        <span class="pw-lab__label">Tipología</span>
+        <div class="pw-lab__types" role="group" aria-label="Tipo de objeto">
+          <button type="button" data-type="vase" aria-pressed="true">Jarrón</button>
+          <button type="button" data-type="lamp" aria-pressed="false">Lámpara</button>
+          <button type="button" data-type="planter" aria-pressed="false">Maceta</button>
+          <button type="button" data-type="tray" aria-pressed="false">Bandeja</button>
+          <button type="button" data-type="candle" aria-pressed="false">Portavelas</button>
+        </div>
+      </div>
+      <div>
+        <span class="pw-lab__label">Parámetros</span>
+        <label class="pw-slider" for="pw-height"><span class="pw-slider__head"><span>Altura</span><output data-out="height">24 cm</output></span>
+          <input id="pw-height" type="range" name="height" min="6" max="40" step="1" value="24"></label>
+        <label class="pw-slider" for="pw-twist"><span class="pw-slider__head"><span>Torsión</span><output data-out="twist">90°</output></span>
+          <input id="pw-twist" type="range" name="twist" min="-360" max="360" step="1" value="90"></label>
+        <label class="pw-slider" for="pw-sides"><span class="pw-slider__head"><span>Lados</span><output data-out="sides">6</output></span>
+          <input id="pw-sides" type="range" name="sides" min="3" max="32" step="1" value="6"></label>
+        <label class="pw-slider pw-lab__slider--adv" for="pw-wave"><span class="pw-slider__head"><span>Ondulación</span><output data-out="wave">0,25</output></span>
+          <input id="pw-wave" type="range" name="wave" min="0" max="1" step="0.01" value="0.25"></label>
+        <label class="pw-slider" for="pw-seed"><span class="pw-slider__head"><span>Seed</span><output data-out="seed">48213</output></span>
+          <input id="pw-seed" type="range" name="seed" min="1" max="99999" step="1" value="48213"></label>
+      </div>
+      <div>
+        <span class="pw-lab__label">Color · <span data-out="colorName">Cal</span></span>
+        <div class="pw-swatches" role="group" aria-label="Color del filamento"></div>
+        <label class="pw-custom" for="pw-color">
+          <input id="pw-color" type="color" value="#9C5F38">
+          <span>Color a medida <small data-custom-fee>+8 €</small></span>
+        </label>
+        <p class="pw-lab__hint">Para un color a medida buscamos o mezclamos el filamento más cercano y te lo confirmamos por correo antes de imprimir.</p>
+      </div>
+      <div>
+        <span class="pw-lab__label">Acabado</span>
+        <div class="pw-lab__types" role="group" aria-label="Acabado">
+          <button type="button" data-finish="mate" aria-pressed="true">Mate</button>
+          <button type="button" data-finish="seda" aria-pressed="false">Seda +6 €</button>
+          <button type="button" data-finish="piedra" aria-pressed="false">Piedra +9 €</button>
+        </div>
+      </div>
+      <div class="pw-delivery">
+        <span class="pw-delivery__icon" aria-hidden="true"></span>
+        <p><b>7 días de preparación + envío</b><span data-delivery>Llega en unos 8–10 días</span></p>
+      </div>
+      <div class="pw-lab__actions">
+        <button class="pw-btn pw-btn--sm" type="button" data-action="randomize" data-magnetic>Randomize seed</button>
+        <button class="pw-btn pw-btn--sm pw-btn--line" type="button" data-action="mutate" data-magnetic>Mutar todo</button>
+        <button class="pw-btn pw-btn--order" type="button" data-action="order" data-magnetic><span>Añadir a la cesta</span><span data-lab-out="price">— €</span></button>
+      </div>
+      <details class="pw-lab__json" open>
+        <summary><span>Ficha · params.json</span><span class="pw-copy" data-action="copy" role="button" tabindex="0">Copiar</span></summary>
+        <pre><code data-lab-json></code></pre>
+      </details>
+    </form>
+  </div>
+</section>
+
+<!-- Siguiente sala -->
+<a class="pw-next" href="proceso.html">
+  <span class="pw-next__label">Siguiente sala</span>
+  <span class="pw-next__title">Proceso</span><span class="pw-next__arrow" aria-hidden="true">→</span>
+</a>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="assets/arko.js"></script>
+</body>
+</html>

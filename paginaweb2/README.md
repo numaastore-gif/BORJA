@@ -1,8 +1,26 @@
 # ARKO
 
 Tienda de objetos impresos en 3D con estética de brutalismo arquitectónico.
-`index.html` es la web completa (HTML + CSS + JS, Three.js desde cdnjs).
-`api/checkout.js` es la única pieza de servidor: crea el pago en Stripe.
+
+## Estructura
+| Archivo | Página |
+|---|---|
+| `index.html` | Inicio: arco con la pieza en 3D, cuatro "puertas" a las salas, destacadas y cuaderno |
+| `coleccion.html` | Colección con filtros por familia (`#jarrones`, `#lamparas`, `#macetas`, `#bandejas`, `#portavelas`) |
+| `pieza.html#v042` | Ficha de cada pieza: 3D, ficha técnica, sección constructiva y relacionadas |
+| `taller.html` | Configurador: forma, color, acabado, precio y plazo |
+| `proceso.html` | Las cuatro fases de fabricación |
+| `estudio.html` | Manifiesto, cifras y cuaderno |
+| `assets/arko.css` | Estilos compartidos (prefijo `pw-`) |
+| `assets/arko.js` | JS compartido: cabecera, pie, cesta, catálogo y módulos de cada página |
+| `api/checkout.js` | Única pieza de servidor: crea el pago en Stripe |
+
+- La cabecera, el pie, la cesta y el cursor los inyecta `arko.js`, así se editan en un solo sitio.
+- Las piezas de la colección salen de `CATALOG` en `arko.js`: para añadir una pieza, añade
+  una entrada ahí (y su código y precio en `api/checkout.js`).
+- Entre páginas hay una transición de "desencofrado" (View Transitions; en navegadores sin
+  soporte la navegación es normal).
+- "Personalizar" lleva la pieza al taller guardándola un momento en el navegador.
 
 ## Qué puede hacer el cliente
 - Diseñar su pieza en el **Taller**: tipología, altura, torsión, lados, ondulación y seed.
@@ -12,7 +30,7 @@ Tienda de objetos impresos en 3D con estética de brutalismo arquitectónico.
 - Ver el plazo: **7 días de preparación + envío (24–72 h laborables)**, con fechas.
 - Añadir a la **cesta** (se guarda en su navegador) y pagar con tarjeta.
 
-## Precios (editar en los dos sitios: `PRICING` en index.html y en api/checkout.js)
+## Precios (editar en los dos sitios: `PRICING` en assets/arko.js y en api/checkout.js)
 | Tipo       | Base | €/cm |
 |------------|------|------|
 | Jarrón     | 29   | 1,2  |

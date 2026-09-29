@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proceso · ARKO</title>
+<meta name="description" content="Cómo imprimimos cada pieza ARKO: prompt, algoritmo, laminado e impresión.">
+<meta name="theme-color" content="#2A2927">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Manrope:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/arko.css">
+<script>document.documentElement.classList.add('pw-js');</script>
+</head>
+<body data-page="proceso">
+<!-- Cabecera, pie, cesta y cursor los inyecta assets/arko.js -->
+<main id="contenido">
+<!-- =====================================================================
+     04. PROCESO
+     ===================================================================== -->
+<section class="pw-section pw-process pw-concrete pw-rake" id="proceso" data-section="process">
+  <header class="pw-head">
+    <p class="pw-eyebrow">Proceso · cuatro fases</p>
+    <h1 class="pw-h2 pw-reveal">Del prompt<br><em>a la pieza</em></h1>
+    <p class="pw-lead pw-reveal">Como en una obra: primero la idea, luego el encofrado, el vertido y el fraguado. Aquí el encofrado es un algoritmo y el vertido, filamento.</p>
+  </header>
+  <div class="pw-process__grid">
+    <article class="pw-step pw-reveal">
+      <span class="pw-step__num pw-engraved">01</span>
+      <h3 class="pw-step__title">Prompt</h3>
+      <div class="pw-niche" data-viz="prompt">
+        <p class="pw-viz-prompt"><small>Intención</small><span><span data-typer></span><span class="pw-caret" aria-hidden="true"></span></span></p>
+        <span class="pw-niche__read">Palabras <span data-typer-count>0</span></span>
+      </div>
+      <p class="pw-step__text">Describimos una intención en lenguaje natural: la forma, el uso, la luz que debe recibir.</p>
+      <span class="pw-step__tag">Entrada · texto</span>
+    </article>
+    <article class="pw-step pw-reveal">
+      <span class="pw-step__num pw-engraved">02</span>
+      <h3 class="pw-step__title">Algoritmo</h3>
+      <div class="pw-niche" data-viz="wire"><canvas></canvas><span class="pw-niche__read" data-wire-read>—</span></div>
+      <p class="pw-step__text">Una superficie de revolución con torsión y ondulación. La seed la hace única y reproducible.</p>
+      <span class="pw-step__tag">Malla · lathe + ruido</span>
+    </article>
+    <article class="pw-step pw-reveal">
+      <span class="pw-step__num pw-engraved">03</span>
+      <h3 class="pw-step__title">Laminado</h3>
+      <div class="pw-niche" data-viz="layers"><div class="pw-viz-layers__stack"></div><span class="pw-niche__read" data-layers-read>Capa 000 / 120</span></div>
+      <p class="pw-step__text">El modelo se corta en cientos de capas de dos décimas de milímetro, como tongadas de hormigón.</p>
+      <span class="pw-step__tag">Capa · 0,2 mm</span>
+    </article>
+    <article class="pw-step pw-reveal">
+      <span class="pw-step__num pw-engraved">04</span>
+      <h3 class="pw-step__title">Impresión</h3>
+      <div class="pw-niche" data-viz="print">
+        <svg viewBox="0 0 150 200" aria-hidden="true">
+          <path class="pw-print__guide"/><path class="pw-print__path"/>
+          <line class="pw-print__gantry" data-g="x" x1="0" x2="150"/><line class="pw-print__gantry" data-g="y" y1="0" y2="200"/>
+          <g class="pw-print__head"><circle r="6"/><circle r="2"/></g>
+        </svg>
+        <span class="pw-niche__read" data-print-read>X 000.0 · Y 000.0</span>
+      </div>
+      <p class="pw-step__text">La boquilla deposita el material a 215 °C. Las líneas de capa quedan a la vista, como las tablas del encofrado.</p>
+      <span class="pw-step__tag">Boquilla · 0,4 mm</span>
+    </article>
+  </div>
+</section>
+<!-- =====================================================================
+     03. FRANJA DE MATERIALES (marquee)
+     ===================================================================== -->
+<section class="pw-strip" aria-label="Materiales y técnicas" data-section="strip">
+  <div class="pw-strip__track">
+    <span class="pw-strip__item">Hormigón impreso</span><span class="pw-strip__sep">—</span>
+    <span class="pw-strip__item">PLA mineral</span><span class="pw-strip__sep">—</span>
+    <span class="pw-strip__item">Arcilla</span><span class="pw-strip__sep">—</span>
+    <span class="pw-strip__item">Filamento reciclado</span><span class="pw-strip__sep">—</span>
+    <span class="pw-strip__item">IA × impresión 3D</span><span class="pw-strip__sep">—</span>
+    <span class="pw-strip__item">Capa 0,2 mm</span><span class="pw-strip__sep">—</span>
+    <span class="pw-strip__item">Hecho a pedido en 7 días</span><span class="pw-strip__sep">—</span>
+    <span class="pw-strip__item">Tu color, tu forma</span><span class="pw-strip__sep">—</span>
+  </div>
+</section>
+
+<!-- Siguiente sala -->
+<a class="pw-next" href="estudio.html">
+  <span class="pw-next__label">Siguiente sala</span>
+  <span class="pw-next__title">Estudio</span><span class="pw-next__arrow" aria-hidden="true">→</span>
+</a>
+</main>
+<script src="assets/arko.js"></script>
+</body>
+</html>

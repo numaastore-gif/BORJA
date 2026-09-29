@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Colección · ARKO</title>
+<meta name="description" content="Colección ARKO: piezas impresas en 3D en ediciones de 50. Jarrones, lámparas, macetas, bandejas y portavelas.">
+<meta name="theme-color" content="#2A2927">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Manrope:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/arko.css">
+<script>document.documentElement.classList.add('pw-js');</script>
+</head>
+<body data-page="coleccion">
+<!-- Cabecera, pie, cesta y cursor los inyecta assets/arko.js -->
+<main id="contenido">
+
+<!-- =====================================================================
+     COLECCIÓN — se pinta desde CATALOG en assets/arko.js
+     ===================================================================== -->
+<section class="pw-section pw-collection pw-plaster pw-rake" data-section="collection">
+  <header class="pw-head">
+    <p class="pw-eyebrow">Colección · serie 04 · ediciones de 50</p>
+    <h1 class="pw-h1 pw-set" aria-label="Piezas en su hornacina">Piezas<br><em>en su hornacina</em></h1>
+    <p class="pw-lead">Cada unidad se imprime a pedido con su propia seed. Pasa el cursor para ver su sección constructiva, abre una pieza para verla en 3D o pulsa «Personalizar» para cambiarle forma y color.</p>
+  </header>
+  <div class="pw-filters-bar">
+    <div class="pw-filters" data-filters role="group" aria-label="Filtrar por familia"></div>
+    <span class="pw-filters-count" data-collection-count></span>
+  </div>
+  <div class="pw-collection__grid" data-collection></div>
+</section>
+<!-- Siguiente sala -->
+<a class="pw-next" href="taller.html">
+  <span class="pw-next__label">Siguiente sala</span>
+  <span class="pw-next__title">Taller</span><span class="pw-next__arrow" aria-hidden="true">→</span>
+</a>
+</main>
+<script src="assets/arko.js"></script>
+</body>
+</html>
