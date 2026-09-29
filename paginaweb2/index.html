@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>paginaweb2</title>
-<meta name="description" content="paginaweb2: objetos de decoración diseñados con IA e impresos en 3D, presentados con la sensibilidad del brutalismo arquitectónico: hormigón visto, arcos, luz natural.">
+<title>ARKO</title>
+<meta name="description" content="ARKO: objetos de decoración diseñados con IA e impresos en 3D, presentados con la sensibilidad del brutalismo arquitectónico: hormigón visto, arcos, luz natural.">
 <meta name="theme-color" content="#2A2927">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,7 +13,7 @@
 
 <style>
 /* =====================================================================
-   paginaweb2 — brutalismo arquitectónico
+   ARKO — brutalismo arquitectónico
    Referencia: béton brut (hormigón visto), encofrado de tablas, paneles
    con berenjenos (agujeros de los latiguillos), arcos monumentales,
    luz natural rasante y mobiliario orgánico en coñac y bouclé.
@@ -166,7 +166,7 @@ h1,h2,h3{font-weight:700;text-wrap:balance}
   padding:0 var(--pw-gutter);background:rgba(231,226,217,.94);
   -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-bottom:1px solid var(--pw-linea);
 }
-.pw-header__logo{font-family:var(--pw-display);font-weight:700;font-size:15px;letter-spacing:.28em;text-transform:uppercase}
+.pw-header__logo{font-family:var(--pw-display);font-weight:700;font-size:18px;letter-spacing:.42em;text-transform:uppercase}
 .pw-header__nav{display:flex;gap:clamp(16px,2.4vw,40px);justify-content:center}
 .pw-header__nav a,.pw-header__cart{font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;position:relative;padding:6px 0}
 .pw-header__nav a::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:currentColor;transform:scaleX(0);transform-origin:right;transition:transform .45s var(--pw-ease)}
@@ -304,6 +304,25 @@ h1,h2,h3{font-weight:700;text-wrap:balance}
 .pw-copy{font-family:var(--pw-mono);font-size:10px;letter-spacing:.18em;text-decoration:underline;text-underline-offset:3px;color:var(--pw-carbon)}
 .pw-fallback{position:absolute;inset:0;z-index:4;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font-family:var(--pw-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--pw-sombra)}
 
+/* Color, acabado y plazo del taller */
+.pw-swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:8px}
+.pw-swatch{aspect-ratio:1;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(42,41,39,.25),inset -4px -6px 10px rgba(0,0,0,.18),inset 3px 4px 8px rgba(255,255,255,.25);transition:transform .3s var(--pw-ease)}
+.pw-swatch:hover{transform:scale(1.08)}
+.pw-swatch[aria-pressed="true"]{box-shadow:0 0 0 2px var(--pw-piedra),0 0 0 3px var(--pw-carbon),inset -4px -6px 10px rgba(0,0,0,.18)}
+.pw-custom{display:flex;align-items:center;gap:12px;margin-top:14px;font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;cursor:pointer}
+.pw-custom input{width:40px;height:40px;border-radius:50%;overflow:hidden;padding:0;border:0;background:none;box-shadow:inset 0 0 0 1px var(--pw-linea)}
+.pw-custom input::-webkit-color-swatch-wrapper{padding:0}
+.pw-custom input::-webkit-color-swatch{border:0;border-radius:50%}
+.pw-custom input::-moz-color-swatch{border:0;border-radius:50%}
+.pw-custom.is-active input{box-shadow:0 0 0 2px var(--pw-piedra),0 0 0 3px var(--pw-carbon)}
+.pw-custom small{font-family:var(--pw-mono);font-weight:400;letter-spacing:.06em;color:var(--pw-sombra);margin-left:6px}
+.pw-lab__hint{font-size:13px;line-height:1.5;color:var(--pw-sombra);margin-top:10px;max-width:46ch}
+.pw-delivery{display:flex;gap:14px;align-items:flex-start;padding:16px 18px;background:rgba(214,204,189,.45)}
+.pw-delivery__icon{flex:none;width:22px;height:22px;border-radius:999px 999px 0 0;box-shadow:inset 0 0 0 1.5px var(--pw-carbon);margin-top:2px}
+.pw-delivery p{display:flex;flex-direction:column;gap:2px;font-size:14px}
+.pw-delivery b{font-weight:600}
+.pw-delivery span{color:var(--pw-sombra)}
+
 /* ---------- 11. COLECCIÓN ---------- */
 .pw-collection{background:var(--pw-piedra)}
 .pw-collection__grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:clamp(40px,4vw,64px) clamp(20px,2.4vw,40px);padding:0 var(--pw-gutter) clamp(80px,9vw,140px);align-items:start}
@@ -324,7 +343,45 @@ h1,h2,h3{font-weight:700;text-wrap:balance}
 .pw-piece__spec{display:grid;grid-template-columns:repeat(4,auto);justify-content:start;gap:4px 22px;font-family:var(--pw-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase}
 .pw-piece__spec dt{color:var(--pw-sombra)}
 .pw-piece__spec dd{color:var(--pw-carbon)}
-.pw-piece__add{align-self:flex-start}
+.pw-piece__lead{font-family:var(--pw-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--pw-sombra)}
+.pw-piece__actions{display:flex;flex-wrap:wrap;gap:8px}
+
+/* Cesta */
+.pw-cart-veil{position:fixed;inset:0;z-index:300;background:rgba(42,41,39,.45);opacity:0;transition:opacity .4s}
+.pw-cart-veil.is-open{opacity:1}
+.pw-cart{
+  position:fixed;top:0;right:0;bottom:0;z-index:310;width:min(460px,100%);display:flex;flex-direction:column;
+  background:var(--pw-piedra);box-shadow:-30px 0 60px -30px rgba(40,32,24,.5);
+  transform:translateX(102%);transition:transform .55s var(--pw-ease);
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+.pw-cart.is-open{transform:none}
+.pw-cart__head{display:flex;justify-content:space-between;align-items:center;padding:22px 24px;border-bottom:1px solid var(--pw-linea)}
+.pw-cart__title{font-family:var(--pw-display);font-size:16px;letter-spacing:.3em;text-transform:uppercase}
+.pw-cart__close{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase}
+.pw-cart__body{flex:1;overflow:auto;padding:8px 24px}
+.pw-cart__empty{padding:28px 0;color:var(--pw-sombra);font-size:15px}
+.pw-cart__list{list-style:none}
+.pw-cart__item{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:14px;padding:18px 0;border-bottom:1px solid var(--pw-linea);align-items:start}
+.pw-cart__thumb{width:56px;height:68px;border-radius:999px 999px 0 0;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;background:var(--pw-cal)}
+.pw-cart__thumb i{display:block;width:22px;height:34px;border-radius:40% 40% 10% 10%;box-shadow:inset -5px -4px 8px rgba(0,0,0,.25),inset 3px 3px 6px rgba(255,255,255,.25)}
+.pw-cart__name{font-weight:600;font-size:14px;line-height:1.35}
+.pw-cart__desc{font-family:var(--pw-mono);font-size:10px;letter-spacing:.06em;color:var(--pw-sombra);margin-top:4px;text-transform:uppercase;line-height:1.6}
+.pw-cart__qty{display:inline-flex;align-items:center;gap:4px;margin-top:10px;box-shadow:inset 0 0 0 1px var(--pw-linea)}
+.pw-cart__qty button{width:28px;height:28px;font-size:14px}
+.pw-cart__qty span{min-width:20px;text-align:center;font-family:var(--pw-mono);font-size:12px}
+.pw-cart__remove{display:block;margin-top:8px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--pw-sombra);text-decoration:underline;text-underline-offset:3px}
+.pw-cart__price{font-family:var(--pw-display);font-weight:700;font-size:14px;white-space:nowrap}
+.pw-cart__foot{padding:18px 24px 24px;border-top:1px solid var(--pw-linea);display:flex;flex-direction:column;gap:14px}
+.pw-cart__totals div{display:flex;justify-content:space-between;font-size:14px;padding:3px 0;font-variant-numeric:tabular-nums}
+.pw-cart__totals dt{color:var(--pw-sombra)}
+.pw-cart__total{border-top:1px solid var(--pw-linea);margin-top:6px;padding-top:10px !important}
+.pw-cart__total dt,.pw-cart__total dd{color:var(--pw-carbon) !important;font-weight:700}
+.pw-cart__eta{font-size:13px;line-height:1.5;color:var(--pw-sombra)}
+.pw-cart__eta b{color:var(--pw-carbon);font-weight:600}
+.pw-cart__pay{justify-content:space-between}
+.pw-cart__pay[disabled]{opacity:.4;pointer-events:none}
+.pw-cart__msg{font-size:13px;line-height:1.5;color:var(--pw-sombra)}
 
 /* ---------- 12. MANIFIESTO ---------- */
 .pw-manifesto{background:var(--pw-carbon);color:var(--pw-piedra);height:230vh;position:relative}
@@ -482,7 +539,7 @@ h1,h2,h3{font-weight:700;text-wrap:balance}
      01. HEADER
      ===================================================================== -->
 <header class="pw-header" data-section="header">
-  <a class="pw-header__logo" href="#inicio">paginaweb2</a>
+  <a class="pw-header__logo" href="#inicio" aria-label="ARKO, inicio">ARKO</a>
   <nav class="pw-header__nav" id="pw-nav" aria-label="Principal">
     <a href="#proceso">Proceso</a>
     <a href="#taller">Taller</a>
@@ -506,15 +563,15 @@ h1,h2,h3{font-weight:700;text-wrap:balance}
   <div class="pw-hero__text">
     <p class="pw-eyebrow">Objetos para habitar · diseñados con IA · impresos capa a capa</p>
     <h1 class="pw-hero__title pw-set" aria-label="Forma generada. Materia impresa.">Forma<br>generada.<br><span class="pw-thin">Materia</span><br><span class="pw-thin">impresa.</span></h1>
-    <p class="pw-lead">Jarrones, lámparas y macetas que nacen de una semilla numérica y se construyen con la paciencia del hormigón: capa sobre capa, sin moldes, sin dos iguales.</p>
+    <p class="pw-lead">Jarrones, lámparas y macetas que nacen de una semilla numérica y se construyen con la paciencia del hormigón: capa sobre capa, sin moldes, sin dos iguales. Diseña el tuyo, elige su color y lo imprimimos para ti en una semana.</p>
     <div class="pw-hero__cta">
       <a class="pw-btn" href="#coleccion" data-magnetic>Ver colección <span class="pw-btn__arrow" aria-hidden="true">→</span></a>
-      <a class="pw-link" href="#taller">Entrar al taller</a>
+      <a class="pw-link" href="#taller">Diseñar mi jarrón</a>
     </div>
     <dl class="pw-ficha">
       <div><dt>Capa</dt><dd>0,2 mm</dd></div>
       <div><dt>Material</dt><dd>PLA mineral</dd></div>
-      <div><dt>Impresión</dt><dd>14 h 32 min</dd></div>
+      <div><dt>Plazo</dt><dd>7 días + envío</dd></div>
       <div><dt>Seed</dt><dd>48213</dd></div>
     </dl>
   </div>
@@ -543,6 +600,8 @@ h1,h2,h3{font-weight:700;text-wrap:balance}
     <span class="pw-strip__item">Filamento reciclado</span><span class="pw-strip__sep">—</span>
     <span class="pw-strip__item">IA × impresión 3D</span><span class="pw-strip__sep">—</span>
     <span class="pw-strip__item">Capa 0,2 mm</span><span class="pw-strip__sep">—</span>
+    <span class="pw-strip__item">Hecho a pedido en 7 días</span><span class="pw-strip__sep">—</span>
+    <span class="pw-strip__item">Tu color, tu forma</span><span class="pw-strip__sep">—</span>
   </div>
 </section>
 
@@ -603,8 +662,8 @@ h1,h2,h3{font-weight:700;text-wrap:balance}
 <section class="pw-section pw-lab" id="taller" data-section="lab">
   <header class="pw-head">
     <p class="pw-eyebrow">Taller · generador en vivo</p>
-    <h2 class="pw-h2 pw-reveal">Modela<br><em>tu pieza</em></h2>
-    <p class="pw-lead pw-reveal">Ajusta los parámetros y observa cómo la pieza se levanta sobre el pedestal. Arrastra para girarla bajo la luz.</p>
+    <h2 class="pw-h2 pw-reveal">Diseña<br><em>tu pieza</em></h2>
+    <p class="pw-lead pw-reveal">Elige la forma, la altura, el color y el acabado. La pieza se levanta sobre el pedestal tal como la imprimiremos. Arrastra para girarla bajo la luz.</p>
   </header>
   <div class="pw-lab__grid">
     <div class="pw-lab__stage pw-board" data-cursor="Girar">
@@ -647,10 +706,31 @@ h1,h2,h3{font-weight:700;text-wrap:balance}
         <label class="pw-slider" for="pw-seed"><span class="pw-slider__head"><span>Seed</span><output data-out="seed">48213</output></span>
           <input id="pw-seed" type="range" name="seed" min="1" max="99999" step="1" value="48213"></label>
       </div>
+      <div>
+        <span class="pw-lab__label">Color · <span data-out="colorName">Cal</span></span>
+        <div class="pw-swatches" role="group" aria-label="Color del filamento"></div>
+        <label class="pw-custom" for="pw-color">
+          <input id="pw-color" type="color" value="#9C5F38">
+          <span>Color a medida <small data-custom-fee>+8 €</small></span>
+        </label>
+        <p class="pw-lab__hint">Para un color a medida buscamos o mezclamos el filamento más cercano y te lo confirmamos por correo antes de imprimir.</p>
+      </div>
+      <div>
+        <span class="pw-lab__label">Acabado</span>
+        <div class="pw-lab__types" role="group" aria-label="Acabado">
+          <button type="button" data-finish="mate" aria-pressed="true">Mate</button>
+          <button type="button" data-finish="seda" aria-pressed="false">Seda +6 €</button>
+          <button type="button" data-finish="piedra" aria-pressed="false">Piedra +9 €</button>
+        </div>
+      </div>
+      <div class="pw-delivery">
+        <span class="pw-delivery__icon" aria-hidden="true"></span>
+        <p><b>7 días de preparación + envío</b><span data-delivery>Llega en unos 8–10 días</span></p>
+      </div>
       <div class="pw-lab__actions">
         <button class="pw-btn pw-btn--sm" type="button" data-action="randomize" data-magnetic>Randomize seed</button>
         <button class="pw-btn pw-btn--sm pw-btn--line" type="button" data-action="mutate" data-magnetic>Mutar todo</button>
-        <button class="pw-btn pw-btn--order" type="button" data-action="order" data-magnetic><span>Encargar esta pieza</span><span data-lab-out="price">— €</span></button>
+        <button class="pw-btn pw-btn--order" type="button" data-action="order" data-magnetic><span>Añadir a la cesta</span><span data-lab-out="price">— €</span></button>
       </div>
       <details class="pw-lab__json" open>
         <summary><span>Ficha · params.json</span><span class="pw-copy" data-action="copy" role="button" tabindex="0">Copiar</span></summary>
@@ -669,7 +749,7 @@ h1,h2,h3{font-weight:700;text-wrap:balance}
   <header class="pw-head">
     <p class="pw-eyebrow">Colección · serie 04 · ediciones de 50</p>
     <h2 class="pw-h2 pw-reveal">Piezas<br><em>en su hornacina</em></h2>
-    <p class="pw-lead pw-reveal">Cada unidad se imprime bajo pedido con su propia seed. Pasa el cursor para ver su sección constructiva.</p>
+    <p class="pw-lead pw-reveal">Cada unidad se imprime bajo pedido con su propia seed. Pasa el cursor para ver su sección constructiva, o pulsa «Personalizar» para cambiarle la forma y el color en el taller.</p>
   </header>
   <div class="pw-collection__grid">
     <article class="pw-piece pw-reveal" style="--span:5;--ar:3/4" data-form='{"type":"vase","seed":42,"height":28,"twist":140,"sides":6,"wave":0.1,"tone":"hormigon"}'>
@@ -677,56 +757,64 @@ h1,h2,h3{font-weight:700;text-wrap:balance}
       <div class="pw-piece__row"><span class="pw-piece__code">V—042</span><span class="pw-piece__price">48 €</span></div>
       <h3 class="pw-piece__name">Jarrón torsión hexagonal</h3>
       <dl class="pw-piece__spec"><dt>Capa</dt><dd>0,2 mm</dd><dt>Impresión</dt><dd>14 h 32</dd><dt>Material</dt><dd>PLA hormigón</dd><dt>Alto</dt><dd>28 cm</dd></dl>
-      <button class="pw-btn pw-btn--sm pw-btn--line pw-piece__add" type="button" data-add data-magnetic>Añadir a la cesta</button>
+      <p class="pw-piece__lead">Preparación 7 días + envío</p>
+      <div class="pw-piece__actions"><button class="pw-btn pw-btn--sm" type="button" data-add data-magnetic>Añadir</button><button class="pw-btn pw-btn--sm pw-btn--line" type="button" data-customize data-magnetic>Personalizar</button></div>
     </article>
     <article class="pw-piece pw-reveal" style="--span:4;--ar:3/4.4" data-form='{"type":"lamp","seed":17,"height":22,"twist":40,"sides":32,"wave":0.55,"tone":"hueso"}'>
       <div class="pw-piece__niche pw-plaster" data-cursor="Sección"><div class="pw-piece__render"></div><div class="pw-piece__section"></div><span class="pw-piece__tag">Luz cálida</span></div>
       <div class="pw-piece__row"><span class="pw-piece__code">L—017</span><span class="pw-piece__price">129 €</span></div>
       <h3 class="pw-piece__name">Lámpara estrato</h3>
       <dl class="pw-piece__spec"><dt>Capa</dt><dd>0,16 mm</dd><dt>Impresión</dt><dd>21 h 08</dd><dt>Material</dt><dd>PETG ópalo</dd><dt>Alto</dt><dd>22 cm</dd></dl>
-      <button class="pw-btn pw-btn--sm pw-btn--line pw-piece__add" type="button" data-add data-magnetic>Añadir a la cesta</button>
+      <p class="pw-piece__lead">Preparación 7 días + envío</p>
+      <div class="pw-piece__actions"><button class="pw-btn pw-btn--sm" type="button" data-add data-magnetic>Añadir</button><button class="pw-btn pw-btn--sm pw-btn--line" type="button" data-customize data-magnetic>Personalizar</button></div>
     </article>
     <article class="pw-piece pw-reveal" style="--span:3;--ar:3/4.6" data-form='{"type":"candle","seed":23,"height":9,"twist":-60,"sides":5,"wave":0.2,"tone":"arcilla"}'>
       <div class="pw-piece__niche pw-plaster" data-cursor="Sección"><div class="pw-piece__render"></div><div class="pw-piece__section"></div><span class="pw-piece__tag">Set de 3</span></div>
       <div class="pw-piece__row"><span class="pw-piece__code">P—023</span><span class="pw-piece__price">24 €</span></div>
       <h3 class="pw-piece__name">Portavelas pentágono</h3>
       <dl class="pw-piece__spec"><dt>Capa</dt><dd>0,2 mm</dd><dt>Impresión</dt><dd>2 h 45</dd><dt>Material</dt><dd>PLA arcilla</dd><dt>Alto</dt><dd>9 cm</dd></dl>
-      <button class="pw-btn pw-btn--sm pw-btn--line pw-piece__add" type="button" data-add data-magnetic>Añadir a la cesta</button>
+      <p class="pw-piece__lead">Preparación 7 días + envío</p>
+      <div class="pw-piece__actions"><button class="pw-btn pw-btn--sm" type="button" data-add data-magnetic>Añadir</button><button class="pw-btn pw-btn--sm pw-btn--line" type="button" data-customize data-magnetic>Personalizar</button></div>
     </article>
     <article class="pw-piece pw-reveal" style="--span:3;--ar:3/4.6" data-form='{"type":"tray","seed":8,"height":6,"twist":0,"sides":9,"wave":0.35,"tone":"carbon"}'>
       <div class="pw-piece__niche pw-plaster" data-cursor="Sección"><div class="pw-piece__render"></div><div class="pw-piece__section"></div><span class="pw-piece__tag">Topografía</span></div>
       <div class="pw-piece__row"><span class="pw-piece__code">B—008</span><span class="pw-piece__price">36 €</span></div>
       <h3 class="pw-piece__name">Bandeja curva de nivel</h3>
       <dl class="pw-piece__spec"><dt>Capa</dt><dd>0,2 mm</dd><dt>Impresión</dt><dd>6 h 12</dd><dt>Material</dt><dd>PLA basalto</dd><dt>Ø</dt><dd>24 cm</dd></dl>
-      <button class="pw-btn pw-btn--sm pw-btn--line pw-piece__add" type="button" data-add data-magnetic>Añadir a la cesta</button>
+      <p class="pw-piece__lead">Preparación 7 días + envío</p>
+      <div class="pw-piece__actions"><button class="pw-btn pw-btn--sm" type="button" data-add data-magnetic>Añadir</button><button class="pw-btn pw-btn--sm pw-btn--line" type="button" data-customize data-magnetic>Personalizar</button></div>
     </article>
     <article class="pw-piece pw-reveal" style="--span:4;--ar:3/4" data-form='{"type":"planter","seed":31,"height":16,"twist":20,"sides":32,"wave":0.8,"tone":"arena"}'>
       <div class="pw-piece__niche pw-plaster" data-cursor="Sección"><div class="pw-piece__render"></div><div class="pw-piece__section"></div><span class="pw-piece__tag">Con drenaje</span></div>
       <div class="pw-piece__row"><span class="pw-piece__code">M—031</span><span class="pw-piece__price">42 €</span></div>
       <h3 class="pw-piece__name">Maceta onda</h3>
       <dl class="pw-piece__spec"><dt>Capa</dt><dd>0,24 mm</dd><dt>Impresión</dt><dd>11 h 50</dd><dt>Material</dt><dd>PLA arena</dd><dt>Alto</dt><dd>16 cm</dd></dl>
-      <button class="pw-btn pw-btn--sm pw-btn--line pw-piece__add" type="button" data-add data-magnetic>Añadir a la cesta</button>
+      <p class="pw-piece__lead">Preparación 7 días + envío</p>
+      <div class="pw-piece__actions"><button class="pw-btn pw-btn--sm" type="button" data-add data-magnetic>Añadir</button><button class="pw-btn pw-btn--sm pw-btn--line" type="button" data-customize data-magnetic>Personalizar</button></div>
     </article>
     <article class="pw-piece pw-reveal" style="--span:5;--ar:3/4" data-form='{"type":"vase","seed":77,"height":34,"twist":-220,"sides":4,"wave":0,"tone":"carbon"}'>
       <div class="pw-piece__niche pw-plaster" data-cursor="Sección"><div class="pw-piece__render"></div><div class="pw-piece__section"></div><span class="pw-piece__tag">Últimas 6</span></div>
       <div class="pw-piece__row"><span class="pw-piece__code">V—077</span><span class="pw-piece__price">64 €</span></div>
       <h3 class="pw-piece__name">Jarrón monolito</h3>
       <dl class="pw-piece__spec"><dt>Capa</dt><dd>0,2 mm</dd><dt>Impresión</dt><dd>18 h 04</dd><dt>Material</dt><dd>PLA basalto</dd><dt>Alto</dt><dd>34 cm</dd></dl>
-      <button class="pw-btn pw-btn--sm pw-btn--line pw-piece__add" type="button" data-add data-magnetic>Añadir a la cesta</button>
+      <p class="pw-piece__lead">Preparación 7 días + envío</p>
+      <div class="pw-piece__actions"><button class="pw-btn pw-btn--sm" type="button" data-add data-magnetic>Añadir</button><button class="pw-btn pw-btn--sm pw-btn--line" type="button" data-customize data-magnetic>Personalizar</button></div>
     </article>
     <article class="pw-piece pw-reveal" style="--span:6;--ar:4/3.6" data-form='{"type":"lamp","seed":5,"height":30,"twist":180,"sides":12,"wave":0.15,"tone":"arena"}'>
       <div class="pw-piece__niche pw-plaster" data-cursor="Sección"><div class="pw-piece__render"></div><div class="pw-piece__section"></div><span class="pw-piece__tag">E27 · LED</span></div>
       <div class="pw-piece__row"><span class="pw-piece__code">L—005</span><span class="pw-piece__price">149 €</span></div>
       <h3 class="pw-piece__name">Lámpara espiral doce</h3>
       <dl class="pw-piece__spec"><dt>Capa</dt><dd>0,16 mm</dd><dt>Impresión</dt><dd>26 h 40</dd><dt>Material</dt><dd>PETG ópalo</dd><dt>Alto</dt><dd>30 cm</dd></dl>
-      <button class="pw-btn pw-btn--sm pw-btn--line pw-piece__add" type="button" data-add data-magnetic>Añadir a la cesta</button>
+      <p class="pw-piece__lead">Preparación 7 días + envío</p>
+      <div class="pw-piece__actions"><button class="pw-btn pw-btn--sm" type="button" data-add data-magnetic>Añadir</button><button class="pw-btn pw-btn--sm pw-btn--line" type="button" data-customize data-magnetic>Personalizar</button></div>
     </article>
     <article class="pw-piece pw-reveal" style="--span:6;--ar:4/3.6" data-form='{"type":"planter","seed":12,"height":20,"twist":-30,"sides":8,"wave":0.3,"tone":"arcilla"}'>
       <div class="pw-piece__niche pw-plaster" data-cursor="Sección"><div class="pw-piece__render"></div><div class="pw-piece__section"></div><span class="pw-piece__tag">Exterior</span></div>
       <div class="pw-piece__row"><span class="pw-piece__code">M—012</span><span class="pw-piece__price">38 €</span></div>
       <h3 class="pw-piece__name">Maceta octógono</h3>
       <dl class="pw-piece__spec"><dt>Capa</dt><dd>0,28 mm</dd><dt>Impresión</dt><dd>9 h 22</dd><dt>Material</dt><dd>PLA arcilla</dd><dt>Alto</dt><dd>20 cm</dd></dl>
-      <button class="pw-btn pw-btn--sm pw-btn--line pw-piece__add" type="button" data-add data-magnetic>Añadir a la cesta</button>
+      <p class="pw-piece__lead">Preparación 7 días + envío</p>
+      <div class="pw-piece__actions"><button class="pw-btn pw-btn--sm" type="button" data-add data-magnetic>Añadir</button><button class="pw-btn pw-btn--sm pw-btn--line" type="button" data-customize data-magnetic>Personalizar</button></div>
     </article>
   </div>
 </section>
@@ -741,7 +829,7 @@ h1,h2,h3{font-weight:700;text-wrap:balance}
     <div class="pw-manifesto__body">
       <div class="pw-manifesto__head pw-eyebrow" style="color:inherit"><span>Manifiesto</span><span class="pw-manifesto__bar"><i></i></span><span data-manifesto-pct>000%</span></div>
       <p class="pw-manifesto__text" data-manifesto>Creemos en la materia sin disfraz. En el hormigón que enseña sus tablas y en la pieza que enseña sus capas. Cada objeto nace de una *semilla numérica, crece dentro de un *algoritmo y se deposita *capa a capa, dos décimas de milímetro cada vez. Sin moldes. Sin stock. Sin dos iguales. La máquina no sustituye a la mano: la extiende. Esto es artesanía escrita en *código y vaciada en *luz.</p>
-      <div class="pw-manifesto__sign"><span>Estudio paginaweb2</span><span>Barcelona · MMXXVI</span><span>Seed 48213</span></div>
+      <div class="pw-manifesto__sign"><span>Estudio ARKO</span><span>Barcelona · MMXXVI</span><span>Seed 48213</span></div>
     </div>
   </div>
 </section>
@@ -817,16 +905,41 @@ h1,h2,h3{font-weight:700;text-wrap:balance}
     <div class="pw-footer__col"><h4>Estudio</h4><ul><li><a href="#proceso">Proceso</a></li><li><a href="#taller">Taller</a></li><li><a href="#manifiesto">Manifiesto</a></li><li><a href="#cifras">Cifras</a></li></ul></div>
     <div class="pw-footer__col"><h4>Social</h4><ul><li><a href="#">Instagram</a></li><li><a href="#">Pinterest</a></li><li><a href="#">Printables</a></li></ul></div>
     <div class="pw-footer__col"><h4>Legal</h4><ul><li><a href="#">Envíos</a></li><li><a href="#">Devoluciones</a></li><li><a href="#">Privacidad</a></li></ul></div>
-    <div class="pw-footer__col pw-footer__coords"><h4>Coordenadas</h4><b>41.3874° N · 2.1686° E</b>Taller · Barcelona<br>Lunes a viernes · 10:00–19:00<br>hola@paginaweb2.studio</div>
+    <div class="pw-footer__col pw-footer__coords"><h4>Coordenadas</h4><b>41.3874° N · 2.1686° E</b>Taller · Barcelona<br>Lunes a viernes · 10:00–19:00<br>hola@arko.studio</div>
   </div>
-  <span class="pw-footer__brand" aria-hidden="true">paginaweb2</span>
-  <div class="pw-footer__base"><span>© <span data-year>2026</span> paginaweb2 · Forma generada. Materia impresa.</span><span>Hormigón, luz y filamento</span></div>
+  <span class="pw-footer__brand" aria-hidden="true">ARKO</span>
+  <div class="pw-footer__base"><span>© <span data-year>2026</span> ARKO · Forma generada. Materia impresa.</span><span>Hormigón, luz y filamento</span></div>
 </footer>
+
+<!-- =====================================================================
+     11. CESTA (panel lateral)
+     ===================================================================== -->
+<div class="pw-cart-veil" data-cart-close hidden></div>
+<aside class="pw-cart" id="pw-cart" aria-label="Cesta" aria-hidden="true" tabindex="-1">
+  <header class="pw-cart__head">
+    <h2 class="pw-cart__title">Cesta</h2>
+    <button class="pw-cart__close" type="button" data-cart-close>Cerrar</button>
+  </header>
+  <div class="pw-cart__body">
+    <p class="pw-cart__empty">Tu cesta está vacía. Diseña una pieza en el taller o elige una de la colección.</p>
+    <ul class="pw-cart__list"></ul>
+  </div>
+  <footer class="pw-cart__foot">
+    <dl class="pw-cart__totals">
+      <div><dt>Subtotal</dt><dd data-cart="subtotal">0 €</dd></div>
+      <div><dt>Envío</dt><dd data-cart="shipping">—</dd></div>
+      <div class="pw-cart__total"><dt>Total (IVA incl.)</dt><dd data-cart="total">0 €</dd></div>
+    </dl>
+    <p class="pw-cart__eta"><b>7 días de preparación + envío.</b> <span data-cart="eta"></span></p>
+    <button class="pw-btn pw-cart__pay" type="button" data-cart-pay>Pagar con tarjeta <span class="pw-btn__arrow" aria-hidden="true">→</span></button>
+    <p class="pw-cart__msg" aria-live="polite"></p>
+  </footer>
+</aside>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 /* =====================================================================
-   paginaweb2 — JS vanilla
+   ARKO — JS vanilla
    00 utilidades · 01 forma · 02 escena 3D · 03 preloader · 04 cursor ·
    05 header · 06 reveal + fraguado + luz rasante · 07 hero + franja ·
    08 proceso · 09 taller · 10 colección · 11 manifiesto · 12 cifras ·
@@ -856,6 +969,43 @@ function watchVisible(el, cb, margin = '80px') { if (!el) return; const io = new
 const bus = new EventTarget();
 const emit = (n, d) => bus.dispatchEvent(new CustomEvent(n, { detail: d }));
 const on = (n, fn) => bus.addEventListener(n, e => fn(e.detail));
+
+/* ---------- 00b. TIENDA: colores, acabados, precios y plazos ----------
+   Mantener PRICING igual que en api/checkout.js: el servidor recalcula
+   el precio y nunca se fía del que envía el navegador. */
+const COLORS = [
+  { id: 'cal', name: 'Cal', hex: '#E4DCCD' },
+  { id: 'arena', name: 'Arena', hex: '#CDBEA5' },
+  { id: 'hormigon', name: 'Hormigón', hex: '#A9A298' },
+  { id: 'salvia', name: 'Salvia', hex: '#9AA290' },
+  { id: 'oliva', name: 'Oliva', hex: '#7A7658' },
+  { id: 'arcilla', name: 'Arcilla', hex: '#B37E5A' },
+  { id: 'cognac', name: 'Coñac', hex: '#9C5F38' },
+  { id: 'pizarra', name: 'Pizarra', hex: '#5E6870' },
+  { id: 'basalto', name: 'Basalto', hex: '#4C4742' },
+  { id: 'carbon', name: 'Carbón', hex: '#262422' },
+];
+const FINISHES = { mate: { name: 'Mate', fee: 0 }, seda: { name: 'Seda', fee: 6 }, piedra: { name: 'Piedra', fee: 9 } };
+const TYPE_NAMES = { vase: 'Jarrón', lamp: 'Lámpara', planter: 'Maceta', tray: 'Bandeja', candle: 'Portavelas' };
+const PRICING = {
+  base: { vase: 29, lamp: 59, planter: 25, tray: 22, candle: 14 },   // € de partida
+  perCm: { vase: 1.2, lamp: 2.5, planter: 1.3, tray: 1.6, candle: 1 }, // € por cm de altura
+  customColor: 8,
+  shipping: 6.9, freeShippingFrom: 100,
+  prepDays: 7, shipMin: 1, shipMax: 3, // 7 días naturales + 1–3 laborables
+};
+function priceOf(p) {
+  const base = PRICING.base[p.type] ?? 29, cm = PRICING.perCm[p.type] ?? 1.2;
+  return Math.round(base + cm * p.height + (FINISHES[p.finish]?.fee || 0) + (p.colorId === 'custom' ? PRICING.customColor : 0));
+}
+const shippingOf = subtotal => (subtotal === 0 ? 0 : subtotal >= PRICING.freeShippingFrom ? 0 : PRICING.shipping);
+const money = n => (Number.isInteger(n) ? n : n.toFixed(2).replace('.', ',')) + ' €';
+function deliveryWindow(from = new Date()) {
+  const start = new Date(from); start.setDate(start.getDate() + PRICING.prepDays);
+  const add = (d, n) => { const x = new Date(d); while (n > 0) { x.setDate(x.getDate() + 1); if (x.getDay() !== 0 && x.getDay() !== 6) n--; } return x; };
+  const f = d => d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' }).replace(',', '');
+  return `Si lo pides hoy, llega entre el ${f(add(start, PRICING.shipMin))} y el ${f(add(start, PRICING.shipMax))}.`;
+}
 
 /* Texturas de muro generadas en canvas (ruido periódico = teselas sin costuras).
    Sustituyen a las SVG de :root, que algunos navegadores rasterizan con cortes. */
@@ -1049,6 +1199,11 @@ class FormStage {
     this.layers.geometry.dispose();
     const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.BufferAttribute(arr.subarray(0, k), 3)); this.layers.geometry = lg;
   }
+  setColor(hex) { this.matSolid.color.copy(lin(hex)); this.renderOnce(); }
+  setFinish(f) {
+    const F = { mate: [.95, 0, .022], seda: [.38, .16, .012], piedra: [1, 0, .05] }[f] || [.95, 0, .022];
+    this.matSolid.roughness = F[0]; this.matSolid.metalness = F[1]; this.matSolid.bumpScale = F[2]; this.renderOnce();
+  }
   setView(v) {
     this.view = v;
     this.mesh.visible = v !== 'layers';
@@ -1189,8 +1344,7 @@ function initHeader() {
   tick(); setInterval(tick, 1000);
   (function bump() { setTimeout(() => { count += 1 + Math.floor(Math.random() * 2); render(true); bump(); }, 3000 + Math.random() * 5000); })();
   on('generated', () => { count++; render(true); });
-  let n = 0;
-  on('cart:add', () => { n++; cart.textContent = n; const b = $('.pw-header__cart'); b.classList.add('is-bump'); setTimeout(() => b.classList.remove('is-bump'), 700); });
+  on('cart:count', n => { cart.textContent = n; const b = $('.pw-header__cart'); b.classList.add('is-bump'); setTimeout(() => b.classList.remove('is-bump'), 700); });
   const menu = $('.pw-header__menu');
   const setOpen = o => { header.classList.toggle('is-open', o); menu.setAttribute('aria-expanded', o); menu.textContent = o ? 'Cerrar' : 'Menú'; };
   menu.addEventListener('click', () => setOpen(!header.classList.contains('is-open')));
@@ -1360,10 +1514,15 @@ function initLab() {
   const canvas = $('.pw-lab__canvas', root), form = $('.pw-lab__panel', root), json = $('[data-lab-json]', root), details = $('.pw-lab__json', root);
   const outs = {}; $$('[data-lab-out]', root).forEach(e => (outs[e.dataset.labOut] = e));
   if (PW.isMobile()) details.open = false;
-  const p = { type: 'vase', height: 24, twist: 90, sides: 6, wave: .25, seed: 48213 };
+  const p = { type: 'vase', height: 24, twist: 90, sides: 6, wave: .25, seed: 48213, colorId: 'cal', color: '#E4DCCD', colorName: 'Cal', finish: 'mate' };
   let stage = null; const prev = {};
+  // Muestras de color
+  const sw = $('.pw-swatches', root), custom = $('.pw-custom', root), customInput = $('#pw-color');
+  sw.innerHTML = COLORS.map(c => `<button type="button" class="pw-swatch" data-color="${c.id}" style="background:${c.hex}" aria-pressed="false" aria-label="${c.name}" title="${c.name}"></button>`).join('');
+  $('[data-custom-fee]', root).textContent = `+${PRICING.customColor} €`;
+  $('[data-delivery]', root).textContent = deliveryWindow();
   if (PW.hasThree) {
-    stage = new FormStage(canvas, { params: p, tone: 0xD8CDBD, resU: PW.isMobile() ? 48 : 96, resV: PW.isMobile() ? 70 : 130, autoRotate: .2, elev: .16, key: [-2.6, 4.2, 3.6] });
+    stage = new FormStage(canvas, { params: p, tone: 0xE4DCCD, resU: PW.isMobile() ? 48 : 96, resV: PW.isMobile() ? 70 : 130, autoRotate: .2, elev: .16, key: [-2.6, 4.2, 3.6] });
     stage.plane.constant = -99;
     let drag = null;
     canvas.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY }; canvas.setPointerCapture(e.pointerId); });
@@ -1385,11 +1544,11 @@ function initLab() {
       }
     } else area = p.height / 10 * 3.4;
     const grams = area * 100 * .12 * 1.24, hours = grams / 11;
-    return { grams, hours, price: Math.round(19 + grams * .3), verts: stage ? stage.mesh.geometry.attributes.position.count : 0 };
+    return { grams, hours, price: priceOf(p), verts: stage ? stage.mesh.geometry.attributes.position.count : 0 };
   };
   const fmtTime = h => `${Math.floor(h)} h ${pad(Math.round((h % 1) * 60) % 60, 2)} min`;
   const renderJSON = est => {
-    const data = { pieza: PWForm.code(p), tipo: p.type, altura_cm: p.height, torsion_grados: p.twist, lados: p.sides >= 32 ? 'redondo' : p.sides, ondulacion: +p.wave.toFixed(2), seed: p.seed, capa_mm: .2, capas: Math.round(p.height * 10 / .2), material: 'PLA mineral', estimacion: { peso_g: +est.grams.toFixed(1), impresion: fmtTime(est.hours), precio_eur: est.price } };
+    const data = { pieza: PWForm.code(p), tipo: p.type, altura_cm: p.height, torsion_grados: p.twist, lados: p.sides >= 32 ? 'redondo' : p.sides, ondulacion: +p.wave.toFixed(2), seed: p.seed, capa_mm: .2, capas: Math.round(p.height * 10 / .2), color: p.colorId === 'custom' ? `a medida ${p.color}` : p.colorName, acabado: FINISHES[p.finish].name, estimacion: { peso_g: +est.grams.toFixed(1), impresion: fmtTime(est.hours), precio_eur: est.price, plazo: '7 días + envío' } };
     const v = (k, val) => { const s = JSON.stringify(val), ch = prev[k] !== undefined && prev[k] !== s ? ' pw-json-changed' : ''; prev[k] = s; return `<span class="pw-json-v${ch}">${s}</span>`; };
     const keys = Object.keys(data), lines = ['{'];
     keys.forEach((k, i) => {
@@ -1405,7 +1564,26 @@ function initLab() {
   const syncUI = () => {
     $$('input[type="range"]', form).forEach(inp => { inp.value = p[inp.name]; $(`[data-out="${inp.name}"]`, form).textContent = outputs[inp.name](p[inp.name]); });
     $$('[data-type]', form).forEach(b => b.setAttribute('aria-pressed', b.dataset.type === p.type));
+    $$('[data-finish]', form).forEach(b => b.setAttribute('aria-pressed', b.dataset.finish === p.finish));
+    $$('.pw-swatch', form).forEach(b => b.setAttribute('aria-pressed', b.dataset.color === p.colorId));
+    custom.classList.toggle('is-active', p.colorId === 'custom');
+    $('[data-out="colorName"]', form).textContent = p.colorId === 'custom' ? `A medida · ${p.color.toUpperCase()}` : p.colorName;
+    if (stage) { stage.setColor(p.color); stage.setFinish(p.finish); }
   };
+  const setColor = (id, hex) => {
+    const c = COLORS.find(x => x.id === id);
+    p.colorId = id; p.color = c ? c.hex : hex; p.colorName = c ? c.name : 'A medida';
+    syncUI(); update(false, false);
+  };
+  sw.addEventListener('click', e => { const b = e.target.closest('[data-color]'); if (b) setColor(b.dataset.color); });
+  customInput.addEventListener('input', () => setColor('custom', customInput.value));
+  customInput.addEventListener('click', () => setColor('custom', customInput.value));
+  $$('[data-finish]', form).forEach(b => b.addEventListener('click', () => { p.finish = b.dataset.finish; syncUI(); update(false, false); }));
+  // Cargar una pieza de la colección en el taller
+  on('lab:load', q => {
+    Object.assign(p, q); syncUI(); update(true, true);
+    root.scrollIntoView({ behavior: PW.reduced ? 'auto' : 'smooth' });
+  });
   const update = (rebuild, animate) => {
     if (stage) { Object.assign(stage.p, p); stage.regenerate(rebuild); if (animate) stage.startBuild(1600); else stage.renderOnce(); }
     const est = estimate();
@@ -1415,7 +1593,7 @@ function initLab() {
   };
   let pending = false;
   form.addEventListener('input', e => {
-    const t = e.target; if (t.type !== 'range') return;
+    const t = e.target; if (t.type !== 'range') return; // el selector de color va aparte
     p[t.name] = t.name === 'wave' ? parseFloat(t.value) : parseInt(t.value, 10);
     $(`[data-out="${t.name}"]`, form).textContent = outputs[t.name](p[t.name]);
     if (!pending) { pending = true; requestAnimationFrame(() => { pending = false; update(false, false); }); }
@@ -1435,7 +1613,14 @@ function initLab() {
     p.twist = Math.round((Math.random() * 2 - 1) * 240); p.sides = Math.random() < .3 ? 32 : 3 + Math.floor(Math.random() * 10); p.wave = +(Math.random() * .8).toFixed(2);
     syncUI(); update(true, true); emit('generated');
   });
-  $('[data-action="order"]', form).addEventListener('click', () => emit('cart:add', { code: PWForm.code(p) }));
+  $('[data-action="order"]', form).addEventListener('click', () => {
+    const q = Object.assign({}, p);
+    emit('cart:add', {
+      key: JSON.stringify(q), kind: 'custom', params: q, price: priceOf(q), color: q.color,
+      name: `${TYPE_NAMES[q.type]} ${PWForm.code(q)}`,
+      desc: `${q.height} cm · ${q.sides >= 32 ? 'redondo' : q.sides + ' lados'} · torsión ${q.twist}° · ${q.colorId === 'custom' ? 'color a medida ' + q.color.toUpperCase() : q.colorName} · ${FINISHES[q.finish].name}`,
+    });
+  });
   const copyBtn = $('[data-action="copy"]', root);
   const doCopy = e => {
     e.preventDefault(); e.stopPropagation();
@@ -1522,8 +1707,99 @@ function initCollection() {
     const secEl = $('.pw-piece__section', card);
     const make = () => { if (!secEl.firstChild) secEl.innerHTML = pieceSVG(p, 'section'); };
     card.addEventListener('pointerenter', make, { once: true }); card.addEventListener('focusin', make, { once: true });
-    $('[data-add]', card).addEventListener('click', () => emit('cart:add', { code: $('.pw-piece__code', card).textContent }));
+    const code = $('.pw-piece__code', card).textContent, name = $('.pw-piece__name', card).textContent;
+    const price = parseFloat($('.pw-piece__price', card).textContent), tone = (TONES[p.tone] || TONES.hueso)[1];
+    const toneName = { arcilla: 'Arcilla', hormigon: 'Hormigón', arena: 'Arena', carbon: 'Basalto', hueso: 'Cal' }[p.tone] || 'Cal';
+    $('[data-add]', card).addEventListener('click', () => emit('cart:add', { key: code, kind: 'catalog', code, name: `${name} ${code}`, desc: `${p.height} cm · ${toneName} · Mate`, price, color: tone }));
+    $('[data-customize]', card).addEventListener('click', () => {
+      const c = COLORS.find(x => x.name === toneName) || COLORS[0];
+      emit('lab:load', { type: p.type, height: p.height, twist: p.twist, sides: p.sides, wave: p.wave, seed: p.seed, colorId: c.id, color: c.hex, colorName: c.name, finish: 'mate' });
+    });
   });
+}
+
+/* ---------- 10b. CESTA ----------
+   Guarda la cesta en el navegador del cliente. "Pagar" envía los artículos a
+   CHECKOUT_ENDPOINT (función de servidor que crea el pago en Stripe).
+   Sin servidor, la página funciona en modo demostración. */
+const CHECKOUT_ENDPOINT = '/api/checkout';
+function initCart() {
+  const panel = $('#pw-cart'), veil = $('.pw-cart-veil'), list = $('.pw-cart__list', panel), empty = $('.pw-cart__empty', panel);
+  const out = {}; $$('[data-cart]', panel).forEach(e => (out[e.dataset.cart] = e));
+  const pay = $('[data-cart-pay]', panel), msg = $('.pw-cart__msg', panel);
+  let items = [];
+  try { items = JSON.parse(localStorage.getItem('arko-cesta') || '[]'); } catch (e) { items = []; }
+  const save = () => { try { localStorage.setItem('arko-cesta', JSON.stringify(items)); } catch (e) { /* sin almacenamiento */ } };
+  const count = () => items.reduce((n, i) => n + i.qty, 0);
+  const render = () => {
+    list.innerHTML = items.map((it, i) => `
+      <li class="pw-cart__item">
+        <span class="pw-cart__thumb"><i style="background:${it.color}"></i></span>
+        <div>
+          <p class="pw-cart__name">${it.name}</p>
+          <p class="pw-cart__desc">${it.desc}</p>
+          <span class="pw-cart__qty"><button type="button" data-q="-1" data-i="${i}" aria-label="Quitar una">−</button><span>${it.qty}</span><button type="button" data-q="1" data-i="${i}" aria-label="Añadir una">+</button></span>
+          <button type="button" class="pw-cart__remove" data-del="${i}">Eliminar</button>
+        </div>
+        <span class="pw-cart__price">${money(it.price * it.qty)}</span>
+      </li>`).join('');
+    const sub = items.reduce((n, i) => n + i.price * i.qty, 0), ship = shippingOf(sub);
+    empty.hidden = items.length > 0;
+    out.subtotal.textContent = money(sub);
+    out.shipping.textContent = sub === 0 ? '—' : ship === 0 ? 'Gratis' : money(ship);
+    out.total.textContent = money(Math.round((sub + ship) * 100) / 100);
+    out.eta.textContent = items.length ? deliveryWindow() : `Envío gratis a partir de ${PRICING.freeShippingFrom} €.`;
+    pay.disabled = !items.length;
+    $('#pw-cart-count').textContent = count();
+  };
+  let lastFocus = null;
+  const open = () => {
+    lastFocus = document.activeElement;
+    veil.hidden = false; requestAnimationFrame(() => { veil.classList.add('is-open'); panel.classList.add('is-open'); });
+    panel.setAttribute('aria-hidden', 'false'); msg.textContent = '';
+    setTimeout(() => $('.pw-cart__close', panel).focus(), 50);
+  };
+  const close = () => {
+    veil.classList.remove('is-open'); panel.classList.remove('is-open'); panel.setAttribute('aria-hidden', 'true');
+    setTimeout(() => (veil.hidden = true), 400);
+    if (lastFocus) lastFocus.focus();
+  };
+  on('cart:add', it => {
+    const found = items.find(x => x.key === it.key);
+    if (found) found.qty++; else items.push(Object.assign({ qty: 1 }, it));
+    save(); render(); emit('cart:count', count()); open();
+  });
+  list.addEventListener('click', e => {
+    const q = e.target.closest('[data-q]'), d = e.target.closest('[data-del]');
+    if (q) { const it = items[+q.dataset.i]; it.qty = Math.max(0, it.qty + +q.dataset.q); if (!it.qty) items.splice(+q.dataset.i, 1); }
+    else if (d) items.splice(+d.dataset.del, 1);
+    else return;
+    save(); render();
+  });
+  $$('[data-cart-close]').forEach(b => b.addEventListener('click', close));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && panel.classList.contains('is-open')) close(); });
+  $('.pw-header__cart').addEventListener('click', open);
+  pay.addEventListener('click', async () => {
+    msg.textContent = 'Preparando el pago seguro…';
+    try {
+      const res = await fetch(CHECKOUT_ENDPOINT, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: items.map(i => ({ kind: i.kind, code: i.code, params: i.params, qty: i.qty })) }),
+      });
+      if (!res.ok) throw new Error(res.status);
+      const { url } = await res.json();
+      if (!url) throw new Error('sin url');
+      location.href = url;
+    } catch (e) {
+      msg.textContent = 'Modo demostración: el pago con tarjeta se activa al publicar la web con su función de pago (Stripe). Tu cesta se ha guardado.';
+    }
+  });
+  render();
+  // Vuelta desde Stripe tras pagar
+  if (new URLSearchParams(location.search).get('pedido') === 'ok') {
+    items = []; save(); render(); open();
+    msg.textContent = 'Pedido recibido. Te enviaremos la confirmación por correo y empezamos a imprimir: en 7 días sale hacia tu casa.';
+  }
 }
 
 /* ---------- 11. MANIFIESTO ---------- */
@@ -1586,7 +1862,7 @@ function initFooter() {
 function boot() {
   try { makeWallTextures(); } catch (e) { /* se quedan las texturas SVG */ }
   const title = $('.pw-hero__title'); if (title) splitLetters(title);
-  initCursor(); initHeader(); initReveal(); initRakingLight(); initStrip(); initProcess(); initCollection(); initManifesto(); initStats(); initNewsletter(); initFooter();
+  initCursor(); initHeader(); initCart(); initReveal(); initRakingLight(); initStrip(); initProcess(); initCollection(); initManifesto(); initStats(); initNewsletter(); initFooter();
   try { initHero(); } catch (e) { console.warn('[pw] hero', e); webglFallback($('.pw-arch')); }
   try { initLab(); } catch (e) { console.warn('[pw] taller', e); }
   initPreloader(() => { if (title) title.classList.add('is-set'); emit('ready'); });
