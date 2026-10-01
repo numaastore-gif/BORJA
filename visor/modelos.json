@@ -167,6 +167,6 @@
     "origen": "buzon/ventanilla_buzon.stl",
     "color": "#C9A381",
     "nombreColor": "PETG Translucent Brown",
-    "notas": "Recambio de la ventanilla de plástico del buzón. Resalte de 1 mm que entra en el hueco del reborde interior (70 × 20 mm), con 0,1 mm de holgura por lado y 8 nervios de presión que aprietan 0,15 mm para que quede firme; chaflán de entrada de 0,3 mm. Pestaña de 3 mm × 0,8 mm alrededor que apoya por dentro contra el reborde. Total 76 × 26 × 1,8 mm. Imprimir plana, pestaña sobre la cama, sin soportes."
+    "notas": "Recambio de la ventanilla de plástico del buzón. Resalte de 1 mm que entra en el hueco del reborde interior (70 × 20 mm), con 0,1 mm de holgura por lado y 8 nervios finos en rampa que aprietan solo 0,08 mm junto a la pestaña: se aplastan ellos y la placa no se tensa ni se parte al encajar. Chaflán de entrada de 0,3 mm. Pestaña de 3 mm × 1,2 mm alrededor que apoya por dentro contra el reborde. Total 76 × 26 × 2,2 mm. Imprimir plana, pestaña sobre la cama, sin soportes, mejor en PETG; encajar empujando recto."
   }
 ]
