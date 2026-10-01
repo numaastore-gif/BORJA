@@ -951,6 +951,7 @@ function initLab() {
     outs.verts.textContent = stage ? fmt(stage.mesh.geometry.attributes.position.count) : '—';
     outs.weight.textContent = Math.round(est.grams) + ' g'; outs.time.textContent = fmtTime(est.hours);
     outs.price.textContent = `${priceOf(p)} €`;
+    if (outs.price2) outs.price2.textContent = `${priceOf(p)} €`;
     renderJSON(est);
   };
 
@@ -995,6 +996,23 @@ function initLab() {
     syncUI(); update(true, true);
     $('.pw-lab__grid', root).scrollIntoView({ behavior: PW.reduced ? 'auto' : 'smooth' });
   });
+  // Móvil: el modelo queda fijo arriba y las opciones se agrupan en pestañas
+  const mq = matchMedia('(max-width: 920px)'), tabBar = $('.pw-tabs', form);
+  let tab = 'modelo';
+  const applyTabs = () => {
+    form.classList.toggle('is-tabbed', mq.matches);
+    $$('[data-tab]', form).forEach(el => el.classList.toggle('is-tab-on', el.dataset.tab === tab));
+    $$('[data-tabbtn]', form).forEach(b => b.setAttribute('aria-selected', String(b.dataset.tabbtn === tab)));
+  };
+  $$('[data-tabbtn]', form).forEach(b => b.addEventListener('click', () => {
+    tab = b.dataset.tabbtn; applyTabs();
+    // vuelve al principio de la pestaña sin perder de vista el modelo
+    const stuck = parseFloat(getComputedStyle(tabBar).top) || 0, y = form.getBoundingClientRect().top + scrollY - stuck;
+    if (scrollY > y) scrollTo({ top: y, behavior: PW.reduced ? 'auto' : 'smooth' });
+  }));
+  if (mq.addEventListener) mq.addEventListener('change', applyTabs);
+  applyTabs();
+
   const copyBtn = $('[data-action="copy"]', root);
   const doCopy = e => {
     e.preventDefault(); e.stopPropagation();
@@ -1150,6 +1168,7 @@ function initPieza() {
     out.swatches.innerHTML = swatchesHTML(cur.line, cur.color);
     out.filament.innerHTML = filamentHTML(cur.color);
     out.price.textContent = priceOf(cur) + ' €';
+    if (out.price2) out.price2.textContent = priceOf(cur) + ' €';
     const changed = cur.color !== model.params.color || cur.line !== model.params.line;
     out.colornote.textContent = changed ? 'Color elegido por ti.' : 'Color de serie.';
   };
@@ -1188,7 +1207,7 @@ function initPieza() {
     paintColor(); if (stage) stage.setParams(cur, false);
   });
   addEventListener('hashchange', () => { show(); scrollTo({ top: 0, behavior: PW.reduced ? 'auto' : 'smooth' }); });
-  $('[data-p-add]', root).addEventListener('click', () => addToCart(cur, model));
+  $$('[data-p-add]', root).forEach(b => b.addEventListener('click', () => addToCart(cur, model)));
   const toTaller = e => { if (e) e.preventDefault(); openInTaller(Object.assign({}, cur, { __model: model.id })); };
   $('[data-p-custom]', root).addEventListener('click', () => toTaller());
   const link = $('[data-p-custom-link]', root); if (link) link.addEventListener('click', toTaller);

@@ -46,25 +46,32 @@
     </div>
 
     <form class="pw-lab__panel" onsubmit="return false" aria-label="Opciones de la pieza">
-      <fieldset class="pw-opt">
+      <div class="pw-tabs" role="tablist" aria-label="Opciones">
+        <button type="button" role="tab" data-tabbtn="modelo" aria-selected="true">Modelo</button>
+        <button type="button" role="tab" data-tabbtn="forma" aria-selected="false">Forma</button>
+        <button type="button" role="tab" data-tabbtn="superficie" aria-selected="false">Superficie</button>
+        <button type="button" role="tab" data-tabbtn="color" aria-selected="false">Color</button>
+        <button type="button" role="tab" data-tabbtn="extras" aria-selected="false">Extras</button>
+      </div>
+      <fieldset data-tab="modelo" class="pw-opt">
         <legend class="pw-lab__label">01 · Punto de partida</legend>
         <div class="pw-models" data-models></div>
       </fieldset>
-      <fieldset class="pw-opt">
+      <fieldset data-tab="modelo" class="pw-opt">
         <legend class="pw-lab__label">02 · Tipología</legend>
         <div class="pw-lab__types" data-types></div>
       </fieldset>
-      <fieldset class="pw-opt" data-only="vase">
+      <fieldset data-tab="forma" class="pw-opt" data-only="vase">
         <legend class="pw-lab__label">03 · Silueta</legend>
         <div class="pw-lab__types" data-shapes></div>
       </fieldset>
-      <fieldset class="pw-opt">
+      <fieldset data-tab="forma" class="pw-opt">
         <legend class="pw-lab__label">04 · Medidas</legend>
         <label class="pw-slider" for="pw-height"><span class="pw-slider__head"><span>Altura</span><output data-out="height"></output></span><input id="pw-height" type="range" name="height" min="6" max="40" step="1"></label>
         <label class="pw-slider" for="pw-width"><span class="pw-slider__head"><span>Anchura</span><output data-out="width"></output></span><input id="pw-width" type="range" name="width" min="0.7" max="1.4" step="0.01"></label>
         <label class="pw-slider" for="pw-mouth"><span class="pw-slider__head"><span>Boca</span><output data-out="mouth"></output></span><input id="pw-mouth" type="range" name="mouth" min="0.5" max="1.5" step="0.01"></label>
       </fieldset>
-      <fieldset class="pw-opt">
+      <fieldset data-tab="superficie" class="pw-opt">
         <legend class="pw-lab__label">05 · Superficie</legend>
         <div class="pw-lab__types" data-texes></div>
         <label class="pw-slider" for="pw-texamt" data-show="texAmt"><span class="pw-slider__head"><span>Intensidad</span><output data-out="texAmt"></output></span><input id="pw-texamt" type="range" name="texAmt" min="0" max="1" step="0.01"></label>
@@ -73,14 +80,14 @@
         <label class="pw-slider" for="pw-sides"><span class="pw-slider__head"><span>Lados</span><output data-out="sides"></output></span><input id="pw-sides" type="range" name="sides" min="3" max="32" step="1"></label>
         <label class="pw-slider" for="pw-seed"><span class="pw-slider__head"><span>Variación (seed)</span><output data-out="seed"></output></span><input id="pw-seed" type="range" name="seed" min="1" max="99999" step="1"></label>
       </fieldset>
-      <fieldset class="pw-opt">
+      <fieldset data-tab="color" class="pw-opt">
         <legend class="pw-lab__label">06 · Filamento Bambu Lab</legend>
         <div class="pw-lab__types pw-lines" data-lines></div>
         <p class="pw-lab__hint" data-line-note></p>
         <div class="pw-swatches" data-swatches role="group" aria-label="Color del filamento"></div>
         <p class="pw-filament" data-filament></p>
       </fieldset>
-      <fieldset class="pw-opt" data-color-mode>
+      <fieldset data-tab="color" class="pw-opt" data-color-mode>
         <legend class="pw-lab__label">07 · Color por capas</legend>
         <div class="pw-lab__types" data-modes>
           <button type="button" data-mode="solid" aria-pressed="true">Un color</button>
@@ -92,13 +99,13 @@
           <label class="pw-slider" for="pw-split"><span class="pw-slider__head"><span>Cambio de color a</span><output data-out="split"></output></span><input id="pw-split" type="range" name="split" min="0.15" max="0.85" step="0.01"></label>
         </div>
       </fieldset>
-      <fieldset class="pw-opt">
+      <fieldset data-tab="extras" class="pw-opt">
         <legend class="pw-lab__label">08 · Extras</legend>
         <label class="pw-check" for="pw-water" data-only-water><input id="pw-water" type="checkbox"><span>Interior estanco para flores frescas <small data-fee="watertight"></small></span></label>
         <label class="pw-field" for="pw-engrave"><span>Grabado en la base <small data-fee="engrave"></small></span><input id="pw-engrave" type="text" maxlength="14" placeholder="Iniciales, una fecha… (14 caracteres)" autocomplete="off"></label>
         <label class="pw-check" for="pw-lit" data-only="lamp"><input id="pw-lit" type="checkbox" checked><span>Ver la lámpara encendida</span></label>
       </fieldset>
-      <div class="pw-delivery">
+      <div data-tab="extras" class="pw-delivery">
         <span class="pw-delivery__icon" aria-hidden="true"></span>
         <p><b>7 días de preparación + envío</b><span data-delivery>Llega en unos 8–10 días</span></p>
       </div>
@@ -106,7 +113,12 @@
         <button class="pw-btn pw-btn--sm pw-btn--line" type="button" data-action="randomize" data-magnetic>Otra variación</button>
         <button class="pw-btn pw-btn--order" type="button" data-action="order" data-magnetic><span>Añadir a la cesta</span><span data-lab-out="price">— €</span></button>
       </div>
-      <details class="pw-lab__json" open>
+      <div class="pw-lab__bar">
+        <span class="pw-lab__bar-price"><b data-lab-out="price2">— €</b><small>7 días + envío</small></span>
+        <button class="pw-btn pw-btn--sm pw-btn--line" type="button" data-action="randomize" aria-label="Otra variación">↻</button>
+        <button class="pw-btn pw-btn--sm" type="button" data-action="order">Añadir</button>
+      </div>
+      <details data-tab="extras" class="pw-lab__json" open>
         <summary><span>Ficha de pedido</span><span class="pw-copy" data-action="copy" role="button" tabindex="0">Copiar</span></summary>
         <pre><code data-lab-json></code></pre>
       </details>

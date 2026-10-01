@@ -670,3 +670,42 @@ main{flex:1}
 }
 
 .pw-product .pw-arch .pw-hud--br{bottom:0;right:0;display:flex;flex-direction:column;align-items:flex-end;pointer-events:auto}
+
+/* =====================================================================
+   20. MÓVIL: EL MODELO SIEMPRE A LA VISTA
+   En el taller y en la ficha, el visor 3D queda fijo arriba mientras se
+   cambian las opciones; abajo, una barra fija con el precio y "Añadir".
+   ===================================================================== */
+.pw-tabs,.pw-lab__bar{display:none}
+@media (max-width:920px){
+  :root{--pw-viewer-h:46svh}
+  .pw-lab__stage{position:sticky;top:var(--pw-header-h);height:var(--pw-viewer-h);min-height:250px;max-height:none;z-index:6;border-bottom:1px solid var(--pw-linea)}
+  .pw-lab__halo{width:min(80%,calc(var(--pw-viewer-h) * .9))}
+  .pw-lab__stage .pw-hud--bl,.pw-lab__stage .pw-hud--tl,.pw-zoom__hint{display:none}
+  .pw-lab__stage .pw-hud{padding:10px 12px}
+  .pw-lab__views button{padding:6px 8px;font-size:9px}
+  .pw-zoom{margin-top:6px}
+  .pw-zoom button{width:34px;height:32px}
+  .pw-tabs{display:flex;position:sticky;top:calc(var(--pw-header-h) + var(--pw-viewer-h));z-index:5;background:var(--pw-piedra);margin:0 calc(var(--pw-gutter) * -1);padding:0 calc(var(--pw-gutter) - 12px);overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--pw-linea)}
+  .pw-tabs::-webkit-scrollbar{display:none}
+  .pw-tabs button{flex:none;padding:15px 12px 13px;font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--pw-sombra);border-bottom:2px solid transparent}
+  .pw-tabs button[aria-selected="true"]{color:var(--pw-carbon);border-bottom-color:var(--pw-carbon)}
+  .pw-lab__panel{padding-top:0;padding-bottom:120px;gap:26px}
+  .pw-lab__panel.is-tabbed [data-tab]:not(.is-tab-on){display:none !important}
+  .pw-lab__panel .pw-opt:first-of-type{margin-top:4px}
+  .pw-lab__actions{display:none}
+  .pw-lab__bar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:60;align-items:center;gap:8px;padding:10px var(--pw-gutter) calc(10px + env(safe-area-inset-bottom,0px));background:rgba(231,226,217,.97);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-top:1px solid var(--pw-linea)}
+  .pw-lab__bar-price{flex:1;display:flex;flex-direction:column;line-height:1.2}
+  .pw-lab__bar-price b{font-family:var(--pw-display);font-weight:700;font-size:20px}
+  .pw-lab__bar-price small{font-family:var(--pw-mono);font-size:10px;color:var(--pw-sombra);letter-spacing:.1em;text-transform:uppercase}
+  .pw-lab__bar .pw-btn{padding:15px 18px}
+  .pw-lab__bar .pw-btn--line{width:48px;justify-content:center;padding:15px 0;font-size:16px}
+  /* Ficha de modelo: el arco con la pieza también se queda arriba */
+  .pw-product{padding-top:0;gap:20px}
+  .pw-product__stage{position:sticky;top:var(--pw-header-h);z-index:4;margin:0 calc(var(--pw-gutter) * -1);padding:12px var(--pw-gutter) 0;background-color:var(--pw-cal);background-image:var(--pw-tx-grain);border-bottom:1px solid var(--pw-linea);display:flex;justify-content:center}
+  .pw-product .pw-arch-outer{width:min(100%,calc(var(--pw-viewer-h) * .78));padding:12px 12px 0}
+  .pw-product .pw-arch{height:calc(var(--pw-viewer-h) - 24px);min-height:220px}
+  .pw-product__info{padding-top:8px;padding-bottom:100px}
+  .pw-product__actions{display:none}
+}
+@media (max-width:920px) and (max-height:620px){:root{--pw-viewer-h:40svh}}
