@@ -17,19 +17,24 @@
 <main id="contenido">
 
 <!-- =====================================================================
-     COLECCIÓN — se pinta desde CATALOG en assets/arko.js
+     MODELOS — los cuatro fijos (CATALOG en tools/arko_data.py) + crea el tuyo
      ===================================================================== -->
 <section class="pw-section pw-collection pw-plaster pw-rake" data-section="collection">
   <header class="pw-head">
-    <p class="pw-eyebrow">Colección · serie 04 · ediciones de 50</p>
-    <h1 class="pw-h1 pw-set" aria-label="Piezas en su hornacina">Piezas<br><em>en su hornacina</em></h1>
-    <p class="pw-lead">Cada unidad se imprime a pedido con su propia seed. Pasa el cursor para ver su sección constructiva, abre una pieza para verla en 3D o pulsa «Personalizar» para cambiarle forma y color.</p>
+    <p class="pw-eyebrow">Modelos · serie 04 · impresos a pedido</p>
+    <h1 class="pw-h1 pw-set" aria-label="Cuatro modelos y el tuyo">Cuatro modelos<br><em>y el tuyo</em></h1>
+    <p class="pw-lead">Cuatro piezas de la casa, cada una con su color de serie en filamento Bambu Lab. Puedes pedirlas tal cual, cambiarles el color en su ficha o llevarlas al taller y transformarlas por completo.</p>
   </header>
-  <div class="pw-filters-bar">
-    <div class="pw-filters" data-filters role="group" aria-label="Filtrar por familia"></div>
-    <span class="pw-filters-count" data-collection-count></span>
-  </div>
   <div class="pw-collection__grid" data-collection></div>
+  <a class="pw-create" href="taller.html">
+    <span class="pw-create__arch pw-board" aria-hidden="true"><span class="pw-create__plus">+</span></span>
+    <span class="pw-create__text">
+      <span class="pw-eyebrow">Taller</span>
+      <span class="pw-create__title">Crea el tuyo</span>
+      <span class="pw-create__lead">5 tipologías, 6 siluetas, 5 superficies, 7 líneas de filamento y 94 colores oficiales Bambu Lab. Bicolor por capas, interior estanco y grabado en la base.</span>
+      <span class="pw-link">Abrir el taller</span>
+    </span>
+  </a>
 </section>
 <!-- Siguiente sala -->
 <a class="pw-next" href="taller.html">
@@ -37,6 +42,8 @@
   <span class="pw-next__title">Taller</span><span class="pw-next__arrow" aria-hidden="true">→</span>
 </a>
 </main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="assets/arko-data.js"></script>
 <script src="assets/arko.js"></script>
 </body>
 </html>

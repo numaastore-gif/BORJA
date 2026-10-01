@@ -1,35 +1,44 @@
 // POST /api/checkout
 // Crea una sesión de Stripe Checkout con los artículos de la cesta.
-// El precio se recalcula aquí: nunca se usa el que envía el navegador.
+// Cada artículo es una configuración completa de pieza; el precio se recalcula
+// aquí con los mismos datos que usa la web (api/_data.js, generado por
+// tools/arko_data.py). Nunca se usa el precio que envía el navegador.
 // Variables de entorno: STRIPE_SECRET_KEY, SITE_URL (p. ej. https://arko.studio)
 import Stripe from 'stripe';
+import DATA from './_data.js';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
-// Mantener igual que PRICING / FINISHES / COLORS / CATALOG en assets/arko.js
-const PRICING = {
-  base: { vase: 29, lamp: 59, planter: 25, tray: 22, candle: 14 },
-  perCm: { vase: 1.2, lamp: 2.5, planter: 1.3, tray: 1.6, candle: 1 },
-  customColor: 8,
-  shipping: 6.9, freeShippingFrom: 100,
-};
-const FINISHES = { mate: 0, seda: 6, piedra: 9 };
-const COLOR_IDS = ['cal', 'arena', 'hormigon', 'salvia', 'oliva', 'arcilla', 'cognac', 'pizarra', 'basalto', 'carbon', 'custom'];
+const { lines: LINES, pricing: PRICING, catalog: CATALOG, filaments: FILAMENTS } = DATA;
+const FIL = Object.fromEntries(FILAMENTS.map(f => [f.code, f]));
 const TYPE_NAMES = { vase: 'Jarrón', lamp: 'Lámpara', planter: 'Maceta', tray: 'Bandeja', candle: 'Portavelas' };
-// Piezas fijas de la colección (código → nombre y precio)
-const CATALOG = {
-  'V—042': ['Jarrón torsión hexagonal', 48], 'L—017': ['Lámpara estrato', 129], 'P—023': ['Portavelas pentágono', 24],
-  'B—008': ['Bandeja curva de nivel', 36], 'M—031': ['Maceta onda', 42], 'V—077': ['Jarrón monolito', 64],
-  'L—005': ['Lámpara espiral doce', 149], 'M—012': ['Maceta octógono', 38],
-};
+const SHAPES = ['organica', 'columna', 'caliz', 'bulbo', 'cono', 'reloj'];
+const TEXTURES = ['lisa', 'ondas', 'estrias', 'costillas', 'relieve'];
 
 const int = (v, min, max) => Number.isInteger(v) && v >= min && v <= max;
+const num = (v, min, max) => typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max;
 function validParams(p) {
-  return p && TYPE_NAMES[p.type] && int(p.height, 4, 40) && int(p.twist, -360, 360) && int(p.sides, 3, 32) &&
-    typeof p.wave === 'number' && p.wave >= 0 && p.wave <= 1 && int(p.seed, 1, 99999) &&
-    FINISHES[p.finish] !== undefined && COLOR_IDS.includes(p.colorId) && /^#[0-9a-f]{6}$/i.test(p.color);
+  if (!p || !TYPE_NAMES[p.type] || !SHAPES.includes(p.shape) || !TEXTURES.includes(p.tex) || !LINES[p.line]) return false;
+  if (!int(p.height, 4, 40) || !num(p.width, .7, 1.4) || !num(p.mouth, .5, 1.5) || !int(p.twist, -360, 360) || !int(p.sides, 3, 32)) return false;
+  if (!num(p.texAmt, 0, 1) || !int(p.texN, 6, 40) || !int(p.seed, 1, 99999)) return false;
+  const f1 = FIL[p.color]; if (!f1 || f1.line !== p.line) return false;
+  if (p.mode === 'bicolor') { const f2 = FIL[p.color2]; if (p.line === 'gradient' || !f2 || f2.line !== p.line || !num(p.split, .15, .85)) return false; }
+  else if (p.mode !== 'solid') return false;
+  if (typeof p.engrave !== 'string' || p.engrave.length > 14 || /[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9 .,&'·-]/.test(p.engrave)) return false;
+  if (p.watertight && !(p.type === 'vase' || p.type === 'planter')) return false;
+  return true;
 }
-const priceOf = p => Math.round(PRICING.base[p.type] + PRICING.perCm[p.type] * p.height + FINISHES[p.finish] + (p.colorId === 'custom' ? PRICING.customColor : 0));
+function priceOf(p) {
+  let pr = PRICING.base[p.type] + PRICING.perCm[p.type] * p.height * p.width + LINES[p.line].fee;
+  if (p.mode === 'bicolor') pr += PRICING.bicolor;
+  if (p.watertight) pr += PRICING.watertight;
+  if (p.engrave) pr += PRICING.engrave;
+  return Math.round(pr);
+}
+function describe(p) {
+  const f1 = FIL[p.color], f2 = FIL[p.color2];
+  return [`${p.height} cm`, `${LINES[p.line].name} ${f1.name} (${f1.code})` + (p.mode === 'bicolor' ? ` + ${f2.name} (${f2.code})` : ''),
+    p.watertight ? 'interior estanco' : '', p.engrave ? `grabado «${p.engrave}»` : ''].filter(Boolean).join(' · ');
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Usa POST' });
@@ -39,20 +48,22 @@ export default async function handler(req, res) {
   const lineItems = [];
   let subtotal = 0;
   for (const it of items) {
-    if (!int(it.qty, 1, 10)) return res.status(400).json({ error: 'Cantidad no válida' });
-    let name, price, metadata;
-    if (it.kind === 'catalog' && CATALOG[it.code]) {
-      [name, price] = CATALOG[it.code];
-      metadata = { tipo: 'coleccion', codigo: it.code };
-    } else if (it.kind === 'custom' && validParams(it.params)) {
-      const p = it.params;
-      name = `${TYPE_NAMES[p.type]} a medida · seed ${p.seed}`;
-      price = priceOf(p);
-      // La ficha completa viaja con el pedido para producción
-      metadata = { tipo: 'a_medida', params: JSON.stringify(p).slice(0, 490) };
-    } else return res.status(400).json({ error: 'Artículo no válido' });
+    if (!int(it.qty, 1, 10) || !validParams(it.params)) return res.status(400).json({ error: 'Artículo no válido' });
+    const p = it.params, model = CATALOG.find(m => m.id === it.model);
+    const price = priceOf(p);
     subtotal += price * it.qty;
-    lineItems.push({ quantity: it.qty, price_data: { currency: 'eur', unit_amount: price * 100, product_data: { name, metadata } } });
+    lineItems.push({
+      quantity: it.qty,
+      price_data: {
+        currency: 'eur', unit_amount: price * 100,
+        product_data: {
+          name: model ? `${model.name} ${model.code}` : `${TYPE_NAMES[p.type]} a medida`,
+          description: describe(p),
+          // La ficha completa viaja con el pedido para producción (Stripe admite 500 caracteres por valor)
+          metadata: { modelo: model ? model.code : 'a_medida', filamento: p.color, filamento_2: p.mode === 'bicolor' ? p.color2 : '', params: JSON.stringify(p).slice(0, 499) },
+        },
+      },
+    });
   }
 
   const shipping = subtotal >= PRICING.freeShippingFrom ? 0 : Math.round(PRICING.shipping * 100);
@@ -71,7 +82,7 @@ export default async function handler(req, res) {
       },
     }],
     success_url: `${process.env.SITE_URL}/?pedido=ok`,
-    cancel_url: `${process.env.SITE_URL}/#taller`,
+    cancel_url: `${process.env.SITE_URL}/taller.html`,
   });
   res.status(200).json({ url: session.url });
 }

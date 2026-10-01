@@ -604,3 +604,69 @@ main{flex:1}
   .pw-product__spec{grid-template-columns:1fr}
   .pw-next{grid-template-columns:1fr}
 }
+
+/* =====================================================================
+   19. TALLER AMPLIADO · COLORES BAMBU LAB · FOTOS DE PRODUCTO
+   ===================================================================== */
+.pw-opt{border:0;margin:0;padding:0;min-width:0;display:flex;flex-direction:column;gap:12px}
+.pw-opt[hidden],[data-show][hidden],[data-only][hidden],[data-only-water][hidden],[data-bicolor][hidden]{display:none !important}
+.pw-opt legend{padding:0;margin-bottom:2px}
+.pw-lab__types button small{font-family:var(--pw-mono);font-weight:400;font-size:10px;letter-spacing:.04em;opacity:.75;margin-left:4px}
+/* Punto de partida: los cuatro modelos con su foto */
+.pw-models{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.pw-model{display:flex;flex-direction:column;align-items:center;gap:6px;padding:6px 4px 8px;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;box-shadow:inset 0 0 0 1px var(--pw-linea);transition:box-shadow .3s,background .3s}
+.pw-model:hover{box-shadow:inset 0 0 0 1px var(--pw-carbon)}
+.pw-model[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--pw-carbon);background:rgba(214,204,189,.45)}
+.pw-model__img{display:flex;align-items:center;justify-content:center;width:100%;aspect-ratio:3/4;border-radius:999px 999px 0 0;background:var(--pw-cal);overflow:hidden}
+.pw-model__img img{width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity .6s}
+.pw-model__img img.is-ready{opacity:1}
+.pw-model__img--blank{font-family:var(--pw-display);font-size:28px;color:var(--pw-sombra)}
+/* Muestras: el color oficial tal cual, solo con un aro para separarlo del fondo */
+.pw-swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(30px,1fr));gap:7px}
+.pw-swatch{aspect-ratio:1;border-radius:50%;background:var(--sw);box-shadow:0 0 0 1px rgba(42,41,39,.22);transition:transform .25s var(--pw-ease)}
+.pw-swatch:hover{transform:scale(1.12)}
+.pw-swatch[aria-pressed="true"]{box-shadow:0 0 0 2px var(--pw-piedra),0 0 0 3.5px var(--pw-carbon)}
+.pw-swatch.is-translucent{background:var(--sw),repeating-conic-gradient(#fff 0 25%,#cfcac1 0 50%) 50%/10px 10px}
+.pw-filament{display:flex;flex-direction:column;gap:8px;font-size:13px;line-height:1.35;min-height:20px}
+.pw-filament:empty{display:none}
+.pw-filament i{flex:none;display:inline-block;width:22px;height:22px;border-radius:50%;box-shadow:0 0 0 1px rgba(42,41,39,.22);vertical-align:middle;margin-right:10px}
+.pw-filament span{display:inline-flex;flex-direction:column;vertical-align:middle}
+.pw-filament small{font-family:var(--pw-mono);font-size:10px;letter-spacing:.06em;color:var(--pw-sombra)}
+.pw-check{display:flex;align-items:center;gap:12px;font-size:14px;cursor:pointer}
+.pw-check input{width:18px;height:18px;accent-color:var(--pw-carbon)}
+.pw-check small,.pw-field small{font-family:var(--pw-mono);font-size:10px;color:var(--pw-sombra);margin-left:6px}
+.pw-field{display:flex;flex-direction:column;gap:8px;font-size:14px}
+.pw-field input{font-family:var(--pw-mono);font-size:14px;padding:10px 0;border-bottom:1px solid var(--pw-carbon);outline:none;background:transparent}
+.pw-field input::placeholder{color:#9A9184}
+/* Lupa */
+.pw-zoom{display:inline-flex;align-items:center;gap:2px;background:rgba(231,226,217,.85);padding:4px;margin-top:8px;pointer-events:auto}
+.pw-zoom button{width:30px;height:28px;font-size:16px}
+.pw-zoom button:hover{background:var(--pw-carbon);color:var(--pw-luz)}
+.pw-zoom span{min-width:42px;text-align:center;font-family:var(--pw-mono);font-size:11px}
+.pw-zoom__hint{font-family:var(--pw-mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;margin-top:6px;color:var(--pw-carbon);opacity:.75}
+.pw-hud--tr{display:flex;flex-direction:column;align-items:flex-end}
+.pw-product .pw-hud{color:var(--pw-carbon)}
+/* Fotos de producto renderizadas */
+.pw-piece__img,.pw-door__img{position:absolute;inset:12% 0 0 0;width:100%;height:88%;object-fit:contain;object-position:50% 100%;opacity:0;transition:opacity .8s var(--pw-ease);z-index:1}
+.pw-piece__img.is-ready,.pw-door__img.is-ready{opacity:1}
+.pw-piece__img.is-ready + svg,.pw-door__img.is-ready + svg{opacity:0}
+.pw-piece__render svg,.pw-door__visual svg{transition:opacity .6s}
+.pw-piece__desc{display:flex;align-items:center;gap:10px;font-size:13px;color:#3A3733}
+.pw-piece__desc i{flex:none;width:16px;height:16px;border-radius:50%;box-shadow:0 0 0 1px rgba(42,41,39,.22)}
+/* Tarjeta "Crea el tuyo" */
+.pw-create{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:clamp(24px,4vw,64px);align-items:center;margin:0 var(--pw-gutter) clamp(80px,9vw,140px);padding:clamp(24px,3vw,48px);background:rgba(231,226,217,.75);position:relative;z-index:1;transition:background .5s var(--pw-ease)}
+.pw-create:hover{background:var(--pw-piedra)}
+.pw-create__arch{aspect-ratio:3/4;border-radius:999px 999px 0 0;display:flex;align-items:center;justify-content:center;box-shadow:inset 18px 14px 30px -14px rgba(40,32,24,.5)}
+.pw-create__plus{font-family:var(--pw-display);font-size:clamp(48px,7vw,110px);color:rgba(42,41,39,.55);transition:transform .8s var(--pw-ease)}
+.pw-create:hover .pw-create__plus{transform:rotate(90deg)}
+.pw-create__text{display:flex;flex-direction:column;align-items:flex-start;gap:16px}
+.pw-create__title{font-family:var(--pw-display);font-weight:700;font-size:clamp(28px,4.2vw,64px);line-height:1;text-transform:uppercase}
+.pw-create__lead{font-size:clamp(15px,1.2vw,18px);line-height:1.6;max-width:52ch;color:#3A3733}
+.pw-product__colors{display:flex;flex-direction:column;gap:12px}
+@media (max-width:640px){
+  .pw-models{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .pw-create{grid-template-columns:1fr}
+  .pw-create__arch{max-width:220px}
+}
+
+.pw-product .pw-arch .pw-hud--br{bottom:0;right:0;display:flex;flex-direction:column;align-items:flex-end;pointer-events:auto}

@@ -33,33 +33,39 @@ const bus = new EventTarget();
 const emit = (n, d) => bus.dispatchEvent(new CustomEvent(n, { detail: d }));
 const on = (n, fn) => bus.addEventListener(n, e => fn(e.detail));
 
-/* ---------- 00b. TIENDA: colores, acabados, precios y plazos ----------
-   Mantener PRICING igual que en api/checkout.js: el servidor recalcula
-   el precio y nunca se fía del que envía el navegador. */
-const COLORS = [
-  { id: 'cal', name: 'Cal', hex: '#E4DCCD' },
-  { id: 'arena', name: 'Arena', hex: '#CDBEA5' },
-  { id: 'hormigon', name: 'Hormigón', hex: '#A9A298' },
-  { id: 'salvia', name: 'Salvia', hex: '#9AA290' },
-  { id: 'oliva', name: 'Oliva', hex: '#7A7658' },
-  { id: 'arcilla', name: 'Arcilla', hex: '#B37E5A' },
-  { id: 'cognac', name: 'Coñac', hex: '#9C5F38' },
-  { id: 'pizarra', name: 'Pizarra', hex: '#5E6870' },
-  { id: 'basalto', name: 'Basalto', hex: '#4C4742' },
-  { id: 'carbon', name: 'Carbón', hex: '#262422' },
-];
-const FINISHES = { mate: { name: 'Mate', fee: 0 }, seda: { name: 'Seda', fee: 6 }, piedra: { name: 'Piedra', fee: 9 } };
+/* ---------- 00b. TIENDA ----------
+   Precios, líneas de filamento, colores oficiales Bambu Lab y modelos fijos
+   vienen de assets/arko-data.js (generado por tools/arko_data.py), el mismo
+   origen que usa api/checkout.js para recalcular el precio en el servidor. */
+const DATA = window.ARKO_DATA || { lines: {}, pricing: { base: {}, perCm: {} }, catalog: [], filaments: [] };
+const LINES = DATA.lines, PRICING = DATA.pricing, CATALOG = DATA.catalog, FILAMENTS = DATA.filaments;
+const FIL = Object.fromEntries(FILAMENTS.map(f => [f.code, f]));
 const TYPE_NAMES = { vase: 'Jarrón', lamp: 'Lámpara', planter: 'Maceta', tray: 'Bandeja', candle: 'Portavelas' };
-const PRICING = {
-  base: { vase: 29, lamp: 59, planter: 25, tray: 22, candle: 14 },   // € de partida
-  perCm: { vase: 1.2, lamp: 2.5, planter: 1.3, tray: 1.6, candle: 1 }, // € por cm de altura
-  customColor: 8,
-  shipping: 6.9, freeShippingFrom: 100,
-  prepDays: 7, shipMin: 1, shipMax: 3, // 7 días naturales + 1–3 laborables
-};
+const SHAPES = { organica: 'Orgánica', columna: 'Columna', caliz: 'Cáliz', bulbo: 'Bulbo', cono: 'Cono', reloj: 'Reloj' };
+const TEXTURES = { lisa: 'Lisa', ondas: 'Ondas', estrias: 'Estrías', costillas: 'Costillas', relieve: 'Relieve' };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const cleanEngrave = s => String(s || '').replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9 .,&'·-]/g, '').slice(0, 14);
+// Rellena los campos que falten (configuraciones antiguas o incompletas)
+function normalizeParams(q) {
+  const p = Object.assign(JSON.parse(JSON.stringify(CATALOG[0] ? CATALOG[0].params : {})), q || {});
+  if (!TYPE_NAMES[p.type]) p.type = 'vase';
+  if (!SHAPES[p.shape]) p.shape = 'organica';
+  if (!TEXTURES[p.tex]) p.tex = 'lisa';
+  if (!LINES[p.line]) p.line = 'matte';
+  if (!FIL[p.color] || FIL[p.color].line !== p.line) p.color = FILAMENTS.find(f => f.line === p.line).code;
+  if (p.line === 'gradient') p.mode = 'solid';
+  if (p.mode === 'bicolor' && (!FIL[p.color2] || FIL[p.color2].line !== p.line || p.color2 === p.color)) p.color2 = FILAMENTS.find(f => f.line === p.line && f.code !== p.color).code;
+  if (p.mode !== 'bicolor') { p.mode = 'solid'; }
+  p.engrave = cleanEngrave(p.engrave);
+  if (!(p.type === 'vase' || p.type === 'planter')) p.watertight = false;
+  return p;
+}
 function priceOf(p) {
-  const base = PRICING.base[p.type] ?? 29, cm = PRICING.perCm[p.type] ?? 1.2;
-  return Math.round(base + cm * p.height + (FINISHES[p.finish]?.fee || 0) + (p.colorId === 'custom' ? PRICING.customColor : 0));
+  let pr = (PRICING.base[p.type] ?? 29) + (PRICING.perCm[p.type] ?? 1.2) * p.height * (p.width ?? 1) + (LINES[p.line] ? LINES[p.line].fee : 0);
+  if (p.mode === 'bicolor') pr += PRICING.bicolor;
+  if (p.watertight) pr += PRICING.watertight;
+  if (p.engrave) pr += PRICING.engrave;
+  return Math.round(pr);
 }
 const shippingOf = subtotal => (subtotal === 0 ? 0 : subtotal >= PRICING.freeShippingFrom ? 0 : PRICING.shipping);
 const money = n => (Number.isInteger(n) ? n : n.toFixed(2).replace('.', ',')) + ' €';
@@ -69,51 +75,32 @@ function deliveryWindow(from = new Date()) {
   const f = d => d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' }).replace(',', '');
   return `Si lo pides hoy, llega entre el ${f(add(start, PRICING.shipMin))} y el ${f(add(start, PRICING.shipMax))}.`;
 }
+// Color de muestra exactamente como lo publica Bambu Lab (degradado: de abajo arriba)
+const swatchCSS = code => { const f = FIL[code]; if (!f) return '#ccc'; return f.hex.length > 1 ? `linear-gradient(0deg, ${f.hex[0]}, ${f.hex[1]})` : f.hex[0]; };
+const filLabel = code => { const f = FIL[code]; return f ? `${LINES[f.line].name} · ${f.name} · ${f.code}` : ''; };
+function describe(p) {
+  const parts = [TYPE_NAMES[p.type] + (p.type === 'vase' ? ' ' + SHAPES[p.shape].toLowerCase() : ''), `${p.height} cm`];
+  if (p.tex !== 'lisa') parts.push(TEXTURES[p.tex].toLowerCase());
+  parts.push(`${LINES[p.line].name} ${FIL[p.color].name} (${p.color})` + (p.mode === 'bicolor' ? ` + ${FIL[p.color2].name} (${p.color2})` : ''));
+  if (p.watertight) parts.push('interior estanco');
+  if (p.engrave) parts.push(`grabado «${p.engrave}»`);
+  return parts.join(' · ');
+}
 
-/* ---------- 00c. CATÁLOGO ----------
-   Fuente única de las piezas de la colección (los códigos deben coincidir
-   con CATALOG en api/checkout.js). */
-const CATALOG = [
-  { id: 'v042', code: 'V—042', name: 'Jarrón torsión hexagonal', price: 48, tone: 'hormigon', tag: 'Nuevo · 1/50', layer: '0,2 mm', time: '14 h 32', material: 'PLA hormigón',
-    form: { type: 'vase', seed: 42, height: 28, twist: 140, sides: 6, wave: .1 },
-    desc: 'Seis caras que giran 140° de la base a la boca. La luz lateral dibuja una arista distinta a cada hora del día.' },
-  { id: 'l017', code: 'L—017', name: 'Lámpara estrato', price: 129, tone: 'hueso', tag: 'Luz cálida', layer: '0,16 mm', time: '21 h 08', material: 'PETG ópalo',
-    form: { type: 'lamp', seed: 17, height: 22, twist: 40, sides: 32, wave: .55 },
-    desc: 'Una pantalla que se abre como un arco invertido. Las ondas de la superficie tamizan la luz en franjas suaves sobre la pared.' },
-  { id: 'p023', code: 'P—023', name: 'Portavelas pentágono', price: 24, tone: 'arcilla', tag: 'Set de 3', layer: '0,2 mm', time: '2 h 45', material: 'PLA arcilla',
-    form: { type: 'candle', seed: 23, height: 9, twist: -60, sides: 5, wave: .2 },
-    desc: 'Tres piezas bajas de cinco lados, con un leve giro. Pensadas para agruparse en una mesa o repartirse por una estantería.' },
-  { id: 'b008', code: 'B—008', name: 'Bandeja curva de nivel', price: 36, tone: 'carbon', tag: 'Topografía', layer: '0,2 mm', time: '6 h 12', material: 'PLA basalto',
-    form: { type: 'tray', seed: 8, height: 6, twist: 0, sides: 9, wave: .35 },
-    desc: 'Una bandeja baja cuyo borde ondula como un mapa topográfico. Para llaves, fruta o nada en absoluto.' },
-  { id: 'm031', code: 'M—031', name: 'Maceta onda', price: 42, tone: 'arena', tag: 'Con drenaje', layer: '0,24 mm', time: '11 h 50', material: 'PLA arena',
-    form: { type: 'planter', seed: 31, height: 16, twist: 20, sides: 32, wave: .8 },
-    desc: 'Pared ondulada de arriba abajo, como un encofrado de chapa. Lleva orificio de drenaje y platillo a juego.' },
-  { id: 'v077', code: 'V—077', name: 'Jarrón monolito', price: 64, tone: 'carbon', tag: 'Últimas 6', layer: '0,2 mm', time: '18 h 04', material: 'PLA basalto',
-    form: { type: 'vase', seed: 77, height: 34, twist: -220, sides: 4, wave: 0 },
-    desc: 'Una columna de cuatro caras retorcida 220°. Pesa a la vista y se sostiene sola en el suelo o sobre un aparador.' },
-  { id: 'l005', code: 'L—005', name: 'Lámpara espiral doce', price: 149, tone: 'arena', tag: 'E27 · LED', layer: '0,16 mm', time: '26 h 40', material: 'PETG ópalo',
-    form: { type: 'lamp', seed: 5, height: 30, twist: 180, sides: 12, wave: .15 },
-    desc: 'Doce caras que dan media vuelta completa. Incluye portalámparas E27, cable textil y bombilla LED cálida.' },
-  { id: 'm012', code: 'M—012', name: 'Maceta octógono', price: 38, tone: 'arcilla', tag: 'Exterior', layer: '0,28 mm', time: '9 h 22', material: 'PLA arcilla',
-    form: { type: 'planter', seed: 12, height: 20, twist: -30, sides: 8, wave: .3 },
-    desc: 'Ocho caras escalonadas con un giro contenido. Material resistente a la intemperie para terraza o balcón.' },
-];
-const FAMILIES = { vase: 'Jarrones', lamp: 'Lámparas', planter: 'Macetas', tray: 'Bandejas', candle: 'Portavelas' };
-const TONE_NAMES = { arcilla: 'Arcilla', hormigon: 'Hormigón', arena: 'Arena', carbon: 'Basalto', hueso: 'Cal' };
+/* ---------- 00c. CATÁLOGO: los modelos fijos ---------- */
 const store = {
   get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* sin almacenamiento */ } },
   del(k) { try { localStorage.removeItem(k); } catch (e) { /* sin almacenamiento */ } },
 };
-
+const modelById = id => CATALOG.find(m => m.id === id);
 /* ---------- 00d. CROMO COMÚN: cabecera, pie, cesta y cursor ----------
    Se inyectan en cada página para no repetir el marcado. */
 const CHROME = {
   header: `
   <a class="pw-header__logo" href="index.html" aria-label="ARKO, inicio">ARKO</a>
   <nav class="pw-header__nav" id="pw-nav" aria-label="Principal">
-    <a href="coleccion.html" data-nav="coleccion">Colección</a>
+    <a href="coleccion.html" data-nav="coleccion">Modelos</a>
     <a href="taller.html" data-nav="taller">Taller</a>
     <a href="proceso.html" data-nav="proceso">Proceso</a>
     <a href="estudio.html" data-nav="estudio">Estudio</a>
@@ -126,7 +113,7 @@ const CHROME = {
   <button class="pw-header__menu" type="button" aria-expanded="false" aria-controls="pw-nav">Menú</button>`,
   footer: `
   <div class="pw-footer__cols">
-    <div class="pw-footer__col"><h4>Tienda</h4><ul><li><a href="coleccion.html#jarrones">Jarrones</a></li><li><a href="coleccion.html#lamparas">Lámparas</a></li><li><a href="coleccion.html#macetas">Macetas</a></li><li><a href="coleccion.html#bandejas">Bandejas</a></li></ul></div>
+    <div class="pw-footer__col"><h4>Tienda</h4><ul><li><a href="pieza.html#anfora">Ánfora</a></li><li><a href="pieza.html#monolito">Monolito</a></li><li><a href="pieza.html#estrato">Estrato</a></li><li><a href="pieza.html#onda">Onda</a></li><li><a href="taller.html">Crea el tuyo</a></li></ul></div>
     <div class="pw-footer__col"><h4>Estudio</h4><ul><li><a href="taller.html">Taller</a></li><li><a href="proceso.html">Proceso</a></li><li><a href="estudio.html">Manifiesto</a></li><li><a href="estudio.html#cifras">Cifras</a></li></ul></div>
     <div class="pw-footer__col"><h4>Social</h4><ul><li><a href="#">Instagram</a></li><li><a href="#">Pinterest</a></li><li><a href="#">Printables</a></li></ul></div>
     <div class="pw-footer__col"><h4>Pedidos</h4><ul><li>Preparación 7 días</li><li>Envío 24–72 h</li><li><a href="#">Devoluciones</a></li><li><a href="#">Privacidad</a></li></ul></div>
@@ -138,7 +125,7 @@ const CHROME = {
   <div class="pw-cart-veil" data-cart-close hidden></div>
   <aside class="pw-cart" id="pw-cart" aria-label="Cesta" aria-hidden="true" tabindex="-1">
     <header class="pw-cart__head"><h2 class="pw-cart__title">Cesta</h2><button class="pw-cart__close" type="button" data-cart-close>Cerrar</button></header>
-    <div class="pw-cart__body"><p class="pw-cart__empty">Tu cesta está vacía. Diseña una pieza en el taller o elige una de la colección.</p><ul class="pw-cart__list"></ul></div>
+    <div class="pw-cart__body"><p class="pw-cart__empty">Tu cesta está vacía. Elige uno de los modelos o crea el tuyo en el taller.</p><ul class="pw-cart__list"></ul></div>
     <footer class="pw-cart__foot">
       <dl class="pw-cart__totals">
         <div><dt>Subtotal</dt><dd data-cart="subtotal">0 €</dd></div>
@@ -167,17 +154,20 @@ function injectChrome(page) {
   const link = $(`[data-nav="${active}"]`, header); if (link) link.setAttribute('aria-current', 'page');
 }
 // Lleva una configuración al taller (en otra página)
+// Lleva una configuración al taller (en otra página)
 function openInTaller(params) {
   if (document.body.dataset.page === 'taller') { emit('lab:load', params); return; }
   store.set('arko-taller', params);
   location.href = 'taller.html';
 }
-function catalogParams(item) {
-  const c = COLORS.find(x => x.name === TONE_NAMES[item.tone]) || COLORS[0];
-  return Object.assign({}, item.form, { colorId: c.id, color: c.hex, colorName: c.name, finish: 'mate' });
-}
-function addCatalogItem(item) {
-  emit('cart:add', { key: item.code, kind: 'catalog', code: item.code, name: `${item.name} ${item.code}`, desc: `${item.form.height} cm · ${TONE_NAMES[item.tone]} · Mate`, price: item.price, color: TONES[item.tone][1] });
+// Añade una configuración a la cesta; el precio siempre sale de priceOf()
+function addToCart(params, model) {
+  const q = normalizeParams(params);
+  emit('cart:add', {
+    key: JSON.stringify(q), params: q, model: model ? model.id : null,
+    name: model ? `${model.name} ${model.code}` : `${TYPE_NAMES[q.type]} a medida`,
+    desc: describe(q), price: priceOf(q), swatch: swatchCSS(q.color), swatch2: q.mode === 'bicolor' ? swatchCSS(q.color2) : null,
+  });
 }
 
 /* Texturas de muro generadas en canvas (ruido periódico = teselas sin costuras).
@@ -211,43 +201,85 @@ function makeWallTextures() {
 }
 
 /* ---------- 01. NÚCLEO DE FORMA ----------
-   params: { type, height (cm), twist (°), sides (3–32; 32 = redondo), wave (0–1), seed } */
+   params: { type, shape, height (cm), width, mouth, twist (°), sides (3–32; 32 = redondo),
+             tex, texAmt (0–1), texN, seed, … }   1 unidad = 10 cm */
 const PWForm = {
   CODES: { vase: 'V', lamp: 'L', planter: 'M', tray: 'B', candle: 'P' },
   coeffs(seed) {
     const r = mulberry32((seed * 9301 + 49297) | 0);
     return { bc: .22 + r() * .32, bw: .13 + r() * .15, bulb: .26 + r() * .24, lip: r() * .16, a2: .02 + r() * .05, f2: 1 + r() * 2.6, p2: r(), wf: 3 + Math.floor(r() * 6), wp: r() * 6.283, k: r() };
   },
-  radius(type, t, c) {
+  // Perfil de revolución según tipología y silueta
+  profile(p, t, c) {
     const rip = c.a2 * Math.sin(Math.PI * 2 * (c.f2 * t + c.p2));
-    switch (type) {
+    switch (p.type) {
       case 'lamp':    return .2 + .88 * Math.pow(t, 1.15 + c.k * 1.6) + rip * .8 + .05 * smooth(.9, 1, t);
       case 'planter': return .52 + .3 * t + rip * .7 + .06 * smooth(.88, 1, t) - .05 * (1 - smooth(0, .08, t));
       case 'tray':    return .82 + .2 * smooth(0, 1, t) + rip * .25;
       case 'candle':  return .36 + .1 * Math.sin(Math.PI * t) - .06 * t + rip * .6;
-      default: { const bulb = c.bulb * Math.exp(-((t - c.bc) ** 2) / (2 * c.bw * c.bw)); return Math.max(.12, .27 + bulb + c.lip * smooth(.78, 1, t) + rip); }
+    }
+    switch (p.shape) {
+      case 'columna': return .35 - .03 * t + rip * .4;
+      case 'caliz':   return .15 + .46 * Math.pow(smooth(.08, 1, t), 1.3) + .13 * (1 - smooth(0, .1, t)) + rip * .4;
+      case 'bulbo':   return .16 + .44 * Math.exp(-((t - .33) ** 2) / (2 * .17 * .17)) + .07 * smooth(.84, 1, t) + rip * .4;
+      case 'cono':    return .5 - .29 * t + rip * .4;
+      case 'reloj':   return .44 - .23 * Math.sin(Math.PI * t) + rip * .4;
+      default: { const bulb = c.bulb * Math.exp(-((t - c.bc) ** 2) / (2 * c.bw * c.bw)); return .27 + bulb + c.lip * smooth(.78, 1, t) + rip; }
+    }
+  },
+  radius(p, t, c) {
+    let r = PWForm.profile(p, t, c) * (p.width ?? 1);
+    r *= lerp(1, p.mouth ?? 1, smooth(.55, 1, t));
+    return Math.max(.05, r);
+  },
+  // Textura de superficie (modula el radio antes de la torsión, así las estrías giran)
+  surface(p, t, phi, c) {
+    const tex = p.tex || (p.wave ? 'ondas' : 'lisa'), a = p.tex ? (p.texAmt ?? 0) : (p.wave || 0), n = p.texN || 16;
+    switch (tex) {
+      case 'ondas': return 1 + a * .14 * Math.sin(phi * c.wf + t * Math.PI * 4 + c.wp);
+      case 'estrias': { const s = Math.sin(phi * n / 2); return 1 - a * .075 * s * s; }
+      case 'costillas': return 1 + a * .07 * Math.pow(Math.abs(Math.cos(phi * n / 2)), 10);
+      case 'relieve': { const m = Math.max(2, Math.round(n * (p.height / 10) * .32)); return 1 + a * .065 * Math.max(0, Math.sin(phi * n)) * Math.max(0, Math.sin(t * Math.PI * m)); }
+      default: return 1;
     }
   },
   point(p, c, t, phi, out) {
     const H = p.height / 10;
-    let r = PWForm.radius(p.type, t, c);
+    let r = PWForm.radius(p, t, c);
     if (p.sides < 32) { const seg = (Math.PI * 2) / p.sides; const a = ((phi % seg) + seg) % seg - seg / 2; r *= Math.cos(seg / 2) / Math.cos(a); }
-    r *= 1 + p.wave * .14 * Math.sin(phi * c.wf + t * Math.PI * 4 + c.wp);
+    r *= PWForm.surface(p, t, phi, c);
     const ang = phi + (p.twist * Math.PI / 180) * t;
     out[0] = r * Math.cos(ang); out[1] = t * H; out[2] = r * Math.sin(ang);
     return out;
   },
+  // Resolución necesaria para que las texturas finas no se pierdan
+  res(p, baseU, baseV) {
+    const n = p.texN || 16;
+    let U = baseU, V = baseV;
+    if (p.tex === 'estrias' || p.tex === 'costillas') U = Math.max(U, Math.min(320, n * 8));
+    if (p.tex === 'relieve') { U = Math.max(U, Math.min(320, n * 10)); V = Math.max(V, Math.min(260, Math.round(n * (p.height / 10) * .32) * 10)); }
+    if (p.sides < 32) U = p.sides * Math.max(1, Math.ceil(U / p.sides));
+    return [U, V];
+  },
   code(p) { return `${PWForm.CODES[p.type] || 'O'}—${pad(p.seed, 5)}`; },
 };
 
-/* ---------- 02. ESCENA 3D ----------
-   Pieza sobre pedestal de hormigón, luz cálida lateral con sombra suave,
-   material mineral con líneas de capa y construcción capa a capa. */
+/* ---------- 02. ESCENA 3D REALISTA ----------
+   · Iluminación de estudio: mapa de entorno (PMREM) con softboxes + luz
+     principal con sombra suave y sombra de contacto bajo la base.
+   · Material físico por línea Bambu (mate, básico, seda, mármol, madera,
+     translúcido) y colores oficiales en espacio lineal, sin curva de tono
+     que los altere.
+   · Capas reales de 0,2 mm como normal map (visibles al acercar la lupa).
+   · Interior más oscuro (cara interna) y lámparas que se encienden. */
+const lin = hex => new THREE.Color(hex).convertSRGBToLinear();
+const UV_CM = .25; // las texturas cubren 4 × 4 cm
 function buildFormGeometry(p, resU, resV) {
-  const n = p.sides, U = n < 32 ? n * Math.max(1, Math.ceil(resU / n)) : resU, V = resV;
+  const [U, V] = PWForm.res(p, resU, resV);
   const count = U * (V + 1) + 1, geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(count * 3), 3));
   geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(count * 2), 2));
+  geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(count * 3), 3));
   const idx = [];
   for (let j = 0; j < V; j++) for (let i = 0; i < U; i++) {
     const a = j * U + i, b = j * U + ((i + 1) % U), c = (j + 1) * U + i, d = (j + 1) * U + ((i + 1) % U);
@@ -256,92 +288,160 @@ function buildFormGeometry(p, resU, resV) {
   const center = U * (V + 1);
   for (let i = 0; i < U; i++) idx.push(center, i, (i + 1) % U);
   geo.setIndex(idx);
-  geo.userData = { U, V, sides: n };
+  geo.userData = { U, V };
   fillFormPositions(geo, p);
   return geo;
 }
+// Color por altura: liso, bicolor (cambio de filamento en una capa) o degradado del propio rollo
+function colorAt(p, t, out) {
+  const f = FIL[p.color] || { hex: ['#cccccc'] };
+  if (f.hex.length > 1) { out.copy(lin(f.hex[0])).lerp(lin(f.hex[1]), smooth(.05, .95, t)); return out; }
+  if (p.mode === 'bicolor' && FIL[p.color2]) return out.copy(lin(t < (p.split ?? .5) ? f.hex[0] : FIL[p.color2].hex[0]));
+  return out.copy(lin(f.hex[0]));
+}
 function fillFormPositions(geo, p) {
   const { U, V } = geo.userData, c = PWForm.coeffs(p.seed), H = p.height / 10;
-  const pos = geo.attributes.position.array, uv = geo.attributes.uv.array, tmp = [0, 0, 0];
-  let k = 0, q = 0;
+  const pos = geo.attributes.position.array, uv = geo.attributes.uv.array, col = geo.attributes.color.array, tmp = [0, 0, 0];
+  const col3 = new THREE.Color(), R0 = .45 * (p.width ?? 1);
+  let k = 0, q = 0, m = 0;
   for (let j = 0; j <= V; j++) {
     const t = j / V;
+    colorAt(p, t, col3);
     for (let i = 0; i < U; i++) {
       PWForm.point(p, c, t, (i / U) * Math.PI * 2, tmp);
       pos[k++] = tmp[0]; pos[k++] = tmp[1] - H / 2; pos[k++] = tmp[2];
-      uv[q++] = (i / U) * 3; uv[q++] = t * H * 1.15;
+      uv[q++] = (i / U) * Math.PI * 2 * R0 * 10 * UV_CM; uv[q++] = t * H * 10 * UV_CM;   // en cm
+      col[m++] = col3.r; col[m++] = col3.g; col[m++] = col3.b;
     }
   }
-  pos[k++] = 0; pos[k++] = -H / 2; pos[k++] = 0; uv[q++] = 0; uv[q++] = 0;
-  geo.attributes.position.needsUpdate = true; geo.attributes.uv.needsUpdate = true;
+  colorAt(p, 0, col3);
+  pos[k++] = 0; pos[k++] = -H / 2; pos[k++] = 0; uv[q++] = 0; uv[q++] = 0; col[m++] = col3.r; col[m++] = col3.g; col[m++] = col3.b;
+  geo.attributes.position.needsUpdate = true; geo.attributes.uv.needsUpdate = true; geo.attributes.color.needsUpdate = true;
   geo.computeVertexNormals(); geo.computeBoundingSphere();
 }
-// Textura mineral con líneas de capa (64 capas por tesela)
-function makeClayTexture() {
-  const w = 128, h = 256, cv = document.createElement('canvas'); cv.width = w; cv.height = h;
-  const ctx = cv.getContext('2d'), img = ctx.createImageData(w, h), d = img.data, rnd = mulberry32(7);
+// Normal map de capas: 200 cordones de 0,2 mm en una tesela de 4 cm
+const TEX = {};
+function layerNormalMap() {
+  if (TEX.layers) return TEX.layers;
+  const w = 8, per = 8, h = 200 * per, cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  const ctx = cv.getContext('2d'), img = ctx.createImageData(w, h), d = img.data;
   for (let y = 0; y < h; y++) {
-    const layer = y % 4 === 0 ? -18 : y % 4 === 1 ? 7 : 0, band = Math.sin(y * .07) * 3;
-    for (let x = 0; x < w; x++) { const v = clamp(228 + layer + band + (rnd() - .5) * 20, 0, 255), i = (y * w + x) * 4; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255; }
+    const s = ((y % per) + .5) / per, dh = Math.cos(Math.PI * s) * Math.PI;      // pendiente del cordón
+    let ny = -dh * .32, nz = 1; const l = Math.hypot(ny, nz); ny /= l; nz /= l;
+    for (let x = 0; x < w; x++) { const i = (y * w + x) * 4; d[i] = 128; d[i + 1] = Math.round((ny * .5 + .5) * 255); d[i + 2] = Math.round((nz * .5 + .5) * 255); d[i + 3] = 255; }
   }
   ctx.putImageData(img, 0, 0);
-  const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.encoding = THREE.sRGBEncoding; return t;
+  const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return (TEX.layers = t);
 }
-// Hormigón del pedestal: grano + poros
+// Mármol: moteado mineral; Madera: fibras cortas en la dirección de la capa
+function speckleMap(kind) {
+  if (TEX[kind]) return TEX[kind];
+  const s = 512, cv = document.createElement('canvas'); cv.width = cv.height = s;
+  const ctx = cv.getContext('2d'), r = mulberry32(kind === 'marble' ? 3 : 9);
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, s, s);
+  if (kind === 'marble') {
+    for (let i = 0; i < 1400; i++) { const g = 40 + r() * 110; ctx.fillStyle = `rgba(${g},${g},${g},${.35 + r() * .55})`; ctx.beginPath(); ctx.ellipse(r() * s, r() * s, .5 + r() * 1.8, .5 + r() * 1.4, r() * 3, 0, 6.3); ctx.fill(); }
+  } else {
+    for (let i = 0; i < 900; i++) { const g = 150 + r() * 70; ctx.fillStyle = `rgba(${g * .85},${g * .7},${g * .5},${.25 + r() * .4})`; ctx.fillRect(r() * s, r() * s, 3 + r() * 14, .6 + r() * 1.2); }
+  }
+  const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.encoding = THREE.sRGBEncoding;
+  return (TEX[kind] = t);
+}
+function contactShadowMap() {
+  if (TEX.contact) return TEX.contact;
+  const s = 128, cv = document.createElement('canvas'); cv.width = cv.height = s;
+  const ctx = cv.getContext('2d'), g = ctx.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+  g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(.45, 'rgba(0,0,0,.55)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, s, s);
+  return (TEX.contact = new THREE.CanvasTexture(cv));
+}
+// Hormigón del pedestal
 function makeConcreteTexture() {
+  if (TEX.concrete) return TEX.concrete;
   const s = 256, cv = document.createElement('canvas'); cv.width = cv.height = s;
   const ctx = cv.getContext('2d'), img = ctx.createImageData(s, s), d = img.data, rnd = mulberry32(11);
   for (let i = 0; i < s * s; i++) { const v = 222 + (rnd() - .5) * 26; d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = v; d[i * 4 + 3] = 255; }
   ctx.putImageData(img, 0, 0);
   for (let i = 0; i < 90; i++) { ctx.fillStyle = `rgba(90,80,70,${.25 + rnd() * .4})`; ctx.beginPath(); ctx.ellipse(rnd() * s, rnd() * s, .6 + rnd() * 2, .6 + rnd() * 1.6, 0, 0, 6.3); ctx.fill(); }
-  const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(3, 1); t.encoding = THREE.sRGBEncoding; return t;
+  const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(3, 1); t.encoding = THREE.sRGBEncoding;
+  return (TEX.concrete = t);
 }
-const lin = hex => new THREE.Color(hex).convertSRGBToLinear();
+// Entorno de estudio: cúpula neutra con softboxes, convertido a PMREM
+function studioEnvironment(renderer) {
+  const pm = new THREE.PMREMGenerator(renderer), sc = new THREE.Scene();
+  const geo = new THREE.SphereGeometry(10, 48, 24), cols = [], P = geo.attributes.position;
+  for (let i = 0; i < P.count; i++) { const y = P.getY(i) / 10, v = y > 0 ? lerp(.78, 1, y) : lerp(.78, .3, -y); cols.push(v, v * .99, v * .97); }
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+  sc.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide })));
+  const box = (w, h, x, y, z, k) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(k, k, k), side: THREE.DoubleSide })); m.position.set(x, y, z); m.lookAt(0, 0, 0); sc.add(m); };
+  box(5, 6, -6.5, 4, 4, 5);    // softbox principal (izquierda)
+  box(4, 5, 7, 2.5, 3, 1.8);   // relleno
+  box(9, 2.5, 0, 9, -1, 2.5);  // cenital
+  box(3, 7, 2, 3, -8, 1.6);    // contraluz
+  const tex = pm.fromScene(sc, .03).texture; pm.dispose();
+  return tex;
+}
+// Propiedades físicas por línea de filamento
+const LOOK = {
+  matte:       { rough: .9,  metal: 0,   clear: 0,   ns: .55 },
+  basic:       { rough: .42, metal: 0,   clear: .3,  ns: .45 },
+  gradient:    { rough: .42, metal: 0,   clear: .3,  ns: .45 },
+  silk:        { rough: .3,  metal: .55, clear: .35, ns: .35 },
+  marble:      { rough: .72, metal: 0,   clear: 0,   ns: .5, map: 'marble' },
+  wood:        { rough: .86, metal: 0,   clear: 0,   ns: .65, map: 'wood' },
+  translucent: { rough: .25, metal: 0,   clear: .4,  ns: .3, opacity: .7 },
+};
 
 class FormStage {
   constructor(canvas, opts) {
     this.canvas = canvas;
-    this.o = Object.assign({ tone: 0xC9BBA6, line: 0x2A2927, accent: 0x9C5F38, plinth: 0xBDB5A9, resU: 96, resV: 120, autoRotate: .16, elev: .14, plinthH: .9, key: [-3.4, 4.8, 3.4] }, opts);
-    this.p = Object.assign({}, opts.params);
-    this.running = false; this.visible = false; this.view = 'solid';
+    this.o = Object.assign({ resU: 96, resV: 120, autoRotate: .16, elev: .14, plinthH: .9, ratio: 2 }, opts);
+    this.p = normalizeParams(opts.params);
+    this.running = false; this.visible = false; this.view = 'solid'; this.zoom = 1;
     this.rotY = .5; this.rotVel = 0; this.elev = this.o.elev; this.targetElev = this.o.elev;
     this.build = null; this.onFrame = null; this.target = new THREE.Vector3();
 
     const r = this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-    r.setPixelRatio(Math.min(devicePixelRatio || 1, PW.isMobile() ? 1.5 : 2));
+    r.setPixelRatio(Math.min(devicePixelRatio || 1, PW.isMobile() ? 1.5 : this.o.ratio));
     r.setClearColor(0x000000, 0);
     r.outputEncoding = THREE.sRGBEncoding;
-    r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.08;
+    r.toneMapping = THREE.NoToneMapping;           // sin curva de tono: el color del filamento no se desplaza
     r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
     r.localClippingEnabled = true;
+    this.maxAniso = r.capabilities.getMaxAnisotropy();
 
     this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(28, 1, .1, 100);
-    this.scene.add(new THREE.HemisphereLight(lin(0xFFF3E2), lin(0x6A5E52), .75));
-    const key = this.key = new THREE.DirectionalLight(lin(0xFFDDB6), 2.7);
-    key.position.set(...this.o.key); key.castShadow = true;
-    key.shadow.mapSize.set(1024, 1024); key.shadow.bias = -.0006; key.shadow.normalBias = .02; key.shadow.radius = 6;
+    this.scene.environment = studioEnvironment(r);
+    this.camera = new THREE.PerspectiveCamera(28, 1, .02, 100);
+    const key = this.key = new THREE.DirectionalLight(0xffffff, .78);   // calibrado: la cara frontal reproduce el hex del filamento
+    key.position.set(-3.4, 4.6, 2.8); key.castShadow = true;
+    key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -.0004; key.shadow.normalBias = .015; key.shadow.radius = 5;
     this.scene.add(key);
-    const fill = new THREE.DirectionalLight(lin(0xDCE2E8), .4); fill.position.set(4, 1.5, 2.5); this.scene.add(fill);
 
     this.plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 999);
-    const clay = makeClayTexture();
-    this.matSolid = new THREE.MeshStandardMaterial({ color: lin(this.o.tone), map: clay, bumpMap: clay, bumpScale: .022, roughness: .95, metalness: 0, side: THREE.DoubleSide, clippingPlanes: [this.plane] });
-    this.matWire = new THREE.MeshBasicMaterial({ color: lin(this.o.line), wireframe: true, transparent: true, opacity: .5, clippingPlanes: [this.plane] });
-    this.matLayers = new THREE.LineBasicMaterial({ color: lin(this.o.line), transparent: true, opacity: .75, clippingPlanes: [this.plane] });
+    const layers = layerNormalMap(); layers.anisotropy = this.maxAniso;
+    this.matOuter = new THREE.MeshPhysicalMaterial({ vertexColors: true, normalMap: layers, side: THREE.FrontSide, clippingPlanes: [this.plane], envMapIntensity: .68 });
+    this.matInner = new THREE.MeshPhysicalMaterial({ vertexColors: true, normalMap: layers, side: THREE.BackSide, clippingPlanes: [this.plane], envMapIntensity: .22 });
+    this.matWire = new THREE.MeshBasicMaterial({ color: lin('#2A2927'), wireframe: true, transparent: true, opacity: .5, clippingPlanes: [this.plane] });
+    this.matLayers = new THREE.LineBasicMaterial({ color: lin('#2A2927'), transparent: true, opacity: .75, clippingPlanes: [this.plane] });
 
     this.group = new THREE.Group(); this.scene.add(this.group);
-    this.mesh = new THREE.Mesh(undefined, this.matSolid); this.mesh.castShadow = true; this.mesh.receiveShadow = true; this.group.add(this.mesh);
+    this.mesh = new THREE.Mesh(undefined, this.matOuter); this.mesh.castShadow = true; this.mesh.receiveShadow = true; this.group.add(this.mesh);
+    this.inner = new THREE.Mesh(undefined, this.matInner); this.inner.receiveShadow = true; this.group.add(this.inner);
     this.layers = new THREE.LineSegments(new THREE.BufferGeometry(), this.matLayers); this.layers.visible = false; this.group.add(this.layers);
-    this.ring = new THREE.LineLoop(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: lin(this.o.accent) })); this.ring.visible = false; this.group.add(this.ring);
+    this.ring = new THREE.LineLoop(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: lin('#9C5F38') })); this.ring.visible = false; this.group.add(this.ring);
+    this.bulb = new THREE.PointLight(lin('#FFC27A'), 0, 4, 2); this.group.add(this.bulb);
 
     const conc = makeConcreteTexture();
-    this.plinth = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 72, 1), new THREE.MeshStandardMaterial({ color: lin(this.o.plinth), map: conc, bumpMap: conc, bumpScale: .012, roughness: 1 }));
+    this.plinth = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 96, 1), new THREE.MeshStandardMaterial({ color: lin('#C9C2B6'), map: conc, roughness: .95 }));
     this.plinth.castShadow = true; this.plinth.receiveShadow = true; this.scene.add(this.plinth);
-    this.floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.ShadowMaterial({ opacity: .2 }));
+    this.contact = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: 0x000000, alphaMap: contactShadowMap(), transparent: true, opacity: .55, depthWrite: false }));
+    this.contact.rotation.x = -Math.PI / 2; this.contact.position.y = .002; this.scene.add(this.contact);
+    this.floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.ShadowMaterial({ opacity: .18 }));
     this.floor.rotation.x = -Math.PI / 2; this.floor.receiveShadow = true; this.scene.add(this.floor);
 
-    this.regenerate(true);
+    this.regenerate(true); this.applyLook();
     this.loop = this.loop.bind(this);
     this.resize();
     if ('ResizeObserver' in window) new ResizeObserver(() => this.resize()).observe(canvas.parentElement);
@@ -349,17 +449,34 @@ class FormStage {
     watchVisible(canvas.parentElement, v => { this.visible = v; this.sync(); }, '0px');
     document.addEventListener('visibilitychange', () => this.sync());
   }
+  setParams(q, rebuild) { this.p = normalizeParams(Object.assign({}, this.p, q)); this.regenerate(rebuild); this.applyLook(); }
   regenerate(rebuild) {
-    const g0 = this.mesh.geometry;
-    if (rebuild || !g0 || g0.userData.sides !== this.p.sides) {
+    const g0 = this.mesh.geometry, [U, V] = PWForm.res(this.p, this.o.resU, this.o.resV);
+    if (rebuild || !g0 || g0.userData.U !== U || g0.userData.V !== V) {
       if (g0) g0.dispose();
       const g = buildFormGeometry(this.p, this.o.resU, this.o.resV);
-      this.mesh.geometry = g;
+      this.mesh.geometry = g; this.inner.geometry = g;
       const rg = new THREE.BufferGeometry(); rg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(g.userData.U * 3), 3));
       this.ring.geometry.dispose(); this.ring.geometry = rg;
     } else fillFormPositions(g0, this.p);
     if (this.view === 'layers') this.buildLayerLines();
     this.fit();
+  }
+  // Material según la línea Bambu elegida
+  applyLook() {
+    const L = LOOK[this.p.line] || LOOK.matte, lit = this.p.type === 'lamp' && this.p.lit;
+    [this.matOuter, this.matInner].forEach((m, i) => {
+      m.roughness = L.rough; m.metalness = L.metal; m.clearcoat = L.clear; m.clearcoatRoughness = .35;
+      m.normalScale.set(L.ns, L.ns);
+      m.map = L.map ? speckleMap(L.map) : null;
+      m.transparent = !!L.opacity; m.opacity = L.opacity || 1; m.depthWrite = !L.opacity;
+      m.color.setScalar(i ? .62 : 1);                             // la cara interna recibe menos luz
+      m.emissive.copy(lin(lit ? '#FFB868' : '#000000'));
+      m.emissiveIntensity = lit ? (i ? .9 : (L.opacity ? .55 : .12)) : 0;
+      m.needsUpdate = true;
+    });
+    this.bulb.intensity = lit ? 2.2 : 0;
+    this.renderOnce();
   }
   buildLayerLines() {
     const g = this.mesh.geometry, { U, V } = g.userData, src = g.attributes.position.array;
@@ -372,35 +489,34 @@ class FormStage {
     this.layers.geometry.dispose();
     const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.BufferAttribute(arr.subarray(0, k), 3)); this.layers.geometry = lg;
   }
-  setColor(hex) { this.matSolid.color.copy(lin(hex)); this.renderOnce(); }
-  setFinish(f) {
-    const F = { mate: [.95, 0, .022], seda: [.38, .16, .012], piedra: [1, 0, .05] }[f] || [.95, 0, .022];
-    this.matSolid.roughness = F[0]; this.matSolid.metalness = F[1]; this.matSolid.bumpScale = F[2]; this.renderOnce();
-  }
   setView(v) {
     this.view = v;
-    this.mesh.visible = v !== 'layers';
-    this.mesh.material = v === 'wire' ? this.matWire : this.matSolid;
+    this.mesh.visible = v !== 'layers'; this.inner.visible = v === 'solid';
+    this.mesh.material = v === 'wire' ? this.matWire : this.matOuter;
     this.mesh.castShadow = v === 'solid';
     this.layers.visible = v === 'layers';
     if (v === 'layers') this.buildLayerLines();
     this.renderOnce();
   }
+  setZoom(z) { this.zoom = clamp(z, 1, 7); this.fit(); this.sync(); this.renderOnce(); }
   fit() {
     const pos = this.mesh.geometry.attributes.position.array;
     let m = 0; for (let i = 0; i < pos.length; i += 3) m = Math.max(m, pos[i] * pos[i] + pos[i + 2] * pos[i + 2]);
-    const maxR = Math.sqrt(m), H = this.H = this.p.height / 10, ph = this.o.plinthH;
+    const maxR = this.maxR = Math.sqrt(m), H = this.H = this.p.height / 10, ph = this.o.plinthH;
     const pr = maxR * 1.16 + .06;
     this.group.position.y = H / 2;
+    this.bulb.position.set(0, -H / 2 + H * .38, 0);
     this.plinth.scale.set(pr, ph, pr); this.plinth.position.y = -ph / 2;
+    this.contact.scale.set(maxR * 2.5, maxR * 2.5, 1);
     this.floor.position.y = -ph;
     const sc = this.key.shadow.camera, ext = Math.max(pr * 2.4, H * 1.2, 2.5);
     sc.left = -ext; sc.right = ext; sc.top = ext; sc.bottom = -ext; sc.near = .5; sc.far = 30; sc.updateProjectionMatrix();
-    const total = H + ph;
-    this.target.set(0, (H - ph) / 2 + total * .03, 0);
+    const total = H + ph, z = this.zoom;
+    // Al acercar, el encuadre sube hacia el tercio alto de la pieza (donde mejor se ven las capas)
+    this.target.set(0, lerp((H - ph) / 2 + total * .03, H * .62, smooth(1, 2.5, z)), 0);
     const tan = Math.tan((this.camera.fov * Math.PI) / 360), aspect = this.camera.aspect || 1;
     const needV = (total / 2) * 1.24 / tan, needH = pr * 1.55 / (tan * aspect);
-    this.targetDist = Math.max(needV, needH) + pr;
+    this.targetDist = (Math.max(needV, needH) + pr) / z;
     if (!this.dist) this.dist = this.targetDist;
   }
   resize() {
@@ -443,7 +559,7 @@ class FormStage {
     const dt = Math.min(.05, (now - this.lastT) / 1000); this.lastT = now;
     if (this.onFrame) this.onFrame(dt, now);
     this.updateBuild(now);
-    this.rotY += (PW.reduced ? 0 : this.o.autoRotate) * dt + this.rotVel * dt;
+    this.rotY += (PW.reduced || this.zoom > 1.2 ? 0 : this.o.autoRotate) * dt + this.rotVel * dt;
     this.rotVel *= Math.pow(.05, dt);
     this.elev = lerp(this.elev, this.targetElev, 1 - Math.pow(.002, dt));
     this.dist = lerp(this.dist, this.targetDist, 1 - Math.pow(.01, dt));
@@ -451,6 +567,43 @@ class FormStage {
   }
 }
 function webglFallback(host) { const d = document.createElement('div'); d.className = 'pw-fallback'; d.textContent = 'La vista 3D no está disponible en este navegador.'; host.appendChild(d); }
+// Arrastrar para girar, rueda/pellizco/botones para acercar
+function orbitControls(stage, el) {
+  let drag = null, pinch = null;
+  const pts = new Map();
+  el.addEventListener('pointerdown', e => { pts.set(e.pointerId, e); el.setPointerCapture(e.pointerId); drag = { x: e.clientX, y: e.clientY }; });
+  el.addEventListener('pointermove', e => {
+    if (!pts.has(e.pointerId)) return;
+    pts.set(e.pointerId, e);
+    if (pts.size === 2) {
+      const [a, b] = [...pts.values()], d = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+      if (pinch) stage.setZoom(stage.zoom * d / pinch); pinch = d; return;
+    }
+    if (!drag) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag = { x: e.clientX, y: e.clientY };
+    stage.rotY += dx * .01; stage.rotVel = dx * .5; stage.targetElev = clamp(stage.targetElev + dy * .004, -.1, .9);
+  });
+  const end = e => { pts.delete(e.pointerId); pinch = null; if (!pts.size) drag = null; };
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+  el.addEventListener('wheel', e => { if (!e.ctrlKey && Math.abs(e.deltaY) < 40 && stage.zoom === 1) return; e.preventDefault(); stage.setZoom(stage.zoom * (e.deltaY < 0 ? 1.15 : 1 / 1.15)); }, { passive: false });
+}
+// Imagen fija de una configuración (tarjetas de la colección): mismo motor, mismo material
+let snapStage = null;
+function snapshot(params, opts = {}) {
+  if (!PW.hasThree) return null;
+  try {
+    if (!snapStage) {
+      const host = document.createElement('div');
+      host.style.cssText = 'position:fixed;left:-10000px;top:0;width:520px;height:680px;pointer-events:none';
+      const cv = document.createElement('canvas'); host.append(cv); document.body.append(host);
+      snapStage = new FormStage(cv, { params, resU: 128, resV: 170, ratio: 1.5, elev: .13 });
+    }
+    snapStage.setParams(Object.assign({}, params, { lit: opts.lit ?? params.type === 'lamp' }), true);
+    snapStage.rotY = opts.rotY ?? .55; snapStage.dist = snapStage.targetDist;
+    snapStage.renderOnce();
+    return snapStage.renderer.domElement.toDataURL('image/webp', .9);
+  } catch (e) { return null; }
+}
 
 /* ---------- 03. PRELOADER: secuencia de obra ---------- */
 function initPreloader(done) {
@@ -571,22 +724,24 @@ function initRakingLight() {
 function initHero() {
   const canvas = $('.pw-hero__canvas'); if (!canvas) return;
   if (!PW.hasThree) return webglFallback(canvas.parentElement);
-  const base = { type: 'vase', height: 26, twist: 70, sides: 7, wave: .12, seed: 48213 };
-  const stage = new FormStage(canvas, { params: base, tone: 0xC4B39C, resU: PW.isMobile() ? 56 : 84, resV: PW.isMobile() ? 80 : 120, autoRotate: .14, elev: .12, key: [-3.6, 4.4, 2.6] });
-  const twistOut = $('[data-hero-twist]'), diamOut = $('[data-hero-diam]');
-  diamOut.textContent = Math.round(stage.plinth.scale.x / 1.16 * 20);
+  const model = CATALOG[0];
+  const base = Object.assign({}, model.params, { tex: 'ondas', texAmt: .1 });
+  const stage = new FormStage(canvas, { params: base, resU: PW.isMobile() ? 64 : 96, resV: PW.isMobile() ? 90 : 140, autoRotate: .14, elev: .12 });
+  const twistOut = $('[data-hero-twist]'), diamOut = $('[data-hero-diam]'), filOut = $('[data-hero-fil]');
+  if (diamOut) diamOut.textContent = Math.round(stage.maxR * 20);
+  if (filOut) filOut.textContent = `${LINES[base.line].name} ${FIL[base.color].name}`;
   let mx = 0, my = 0, frame = 0;
   if (PW.fine) addEventListener('pointermove', e => { mx = e.clientX / innerWidth * 2 - 1; my = e.clientY / innerHeight * 2 - 1; }, { passive: true });
-  const cur = { twist: base.twist, wave: base.wave };
+  const cur = { twist: base.twist, amt: base.texAmt };
   stage.onFrame = (dt, now) => {
     if (PW.reduced) return;
-    // El puntero modela la pieza con suavidad: X → torsión, Y → ondulación
+    // El puntero modela la pieza: X → torsión, Y → ondulación
     const auto = PW.fine ? 0 : Math.sin(now / 2600);
-    const tT = base.twist + (mx + auto) * 90, tW = clamp(base.wave + (PW.fine ? (1 - (my + 1) / 2) : .5 + .5 * Math.sin(now / 3100)) * .35, 0, 1);
-    const k = 1 - Math.pow(.05, dt), nt = lerp(cur.twist, tT, k), nw = lerp(cur.wave, tW, k);
-    if (Math.abs(nt - cur.twist) > .05 || Math.abs(nw - cur.wave) > .0008) { cur.twist = nt; cur.wave = nw; stage.p.twist = nt; stage.p.wave = nw; fillFormPositions(stage.mesh.geometry, stage.p); }
+    const tT = base.twist + (mx + auto) * 90, tA = clamp((PW.fine ? (1 - (my + 1) / 2) : .5 + .5 * Math.sin(now / 3100)) * .45, 0, 1);
+    const k = 1 - Math.pow(.05, dt), nt = lerp(cur.twist, tT, k), na = lerp(cur.amt, tA, k);
+    if (Math.abs(nt - cur.twist) > .05 || Math.abs(na - cur.amt) > .001) { cur.twist = nt; cur.amt = na; stage.p.twist = nt; stage.p.texAmt = na; fillFormPositions(stage.mesh.geometry, stage.p); }
     stage.targetElev = .12 + my * .06;
-    if (++frame % 10 === 0) twistOut.textContent = Math.round(cur.twist);
+    if (twistOut && ++frame % 10 === 0) twistOut.textContent = Math.round(cur.twist);
   };
   stage.plane.constant = -99; stage.renderOnce();
   on('ready', () => stage.startBuild(3000));
@@ -691,49 +846,93 @@ function initProcess() {
   })();
 }
 
-/* ---------- 09. TALLER ---------- */
+/* ---------- 09. TALLER: el cliente crea su pieza ---------- */
+// Muestras de color: el hex oficial de Bambu Lab, sin sombreados encima
+function swatchesHTML(line, selected, exclude) {
+  return FILAMENTS.filter(f => f.line === line && f.code !== exclude).map(f =>
+    `<button type="button" class="pw-swatch${f.hex.length > 1 ? ' is-gradient' : ''}${line === 'translucent' ? ' is-translucent' : ''}" data-code="${f.code}" style="--sw:${line === 'translucent' ? translucentCSS(f.hex[0]) : swatchCSS(f.code)}" aria-pressed="${f.code === selected}" aria-label="${esc(f.name)} · ${f.code}" title="${esc(f.name)} · ${f.code}"></button>`).join('');
+}
+// Translúcido: Bambu publica estos colores con 50 % de opacidad (#RRGGBB80)
+const translucentCSS = hex => { const [r, g, b] = hexRGB(hex); return `linear-gradient(rgba(${r},${g},${b},.5),rgba(${r},${g},${b},.5))`; };
+const filamentHTML = code => `<i style="background:${swatchCSS(code)}"></i><span>${esc(filLabel(code))}<small>${FIL[code].hex.join(' → ')}</small></span>`;
+function estimateOf(geo, p) {
+  let area = 0;
+  if (geo) {
+    const P = geo.attributes.position.array, I = geo.index.array;
+    for (let i = 0; i < I.length; i += 3) {
+      const a = I[i] * 3, b = I[i + 1] * 3, c = I[i + 2] * 3;
+      const ux = P[b] - P[a], uy = P[b + 1] - P[a + 1], uz = P[b + 2] - P[a + 2], vx = P[c] - P[a], vy = P[c + 1] - P[a + 1], vz = P[c + 2] - P[a + 2];
+      const cx = uy * vz - uz * vy, cy = uz * vx - ux * vz, cz = ux * vy - uy * vx; area += Math.sqrt(cx * cx + cy * cy + cz * cz) / 2;
+    }
+  } else area = p.height / 10 * 3.4;
+  const grams = area * 100 * (p.watertight ? .16 : .12) * 1.24, hours = grams / 11;
+  return { grams, hours };
+}
+const fmtTime = h => `${Math.floor(h)} h ${pad(Math.round((h % 1) * 60) % 60, 2)} min`;
+
 function initLab() {
   const root = $('.pw-lab'); if (!root) return;
   const canvas = $('.pw-lab__canvas', root), form = $('.pw-lab__panel', root), json = $('[data-lab-json]', root), details = $('.pw-lab__json', root);
   const outs = {}; $$('[data-lab-out]', root).forEach(e => (outs[e.dataset.labOut] = e));
   if (PW.isMobile()) details.open = false;
-  const p = { type: 'vase', height: 24, twist: 90, sides: 6, wave: .25, seed: 48213, colorId: 'cal', color: '#E4DCCD', colorName: 'Cal', finish: 'mate' };
-  const incoming = store.get('arko-taller'); if (incoming) { Object.assign(p, incoming); store.del('arko-taller'); }
+  let model = CATALOG[0], p = normalizeParams(Object.assign({}, model.params, { lit: true }));
+  const incoming = store.get('arko-taller');
+  if (incoming) { model = modelById(incoming.__model) || null; delete incoming.__model; p = normalizeParams(Object.assign({ lit: true }, incoming)); store.del('arko-taller'); }
   let stage = null; const prev = {};
-  // Muestras de color
-  const sw = $('.pw-swatches', root), custom = $('.pw-custom', root), customInput = $('#pw-color');
-  sw.innerHTML = COLORS.map(c => `<button type="button" class="pw-swatch" data-color="${c.id}" style="background:${c.hex}" aria-pressed="false" aria-label="${c.name}" title="${c.name}"></button>`).join('');
-  $('[data-custom-fee]', root).textContent = `+${PRICING.customColor} €`;
+
+  // Controles generados desde los datos
+  const chips = (sel, obj, attr) => { $(sel, form).innerHTML = Object.entries(obj).map(([k, v]) => `<button type="button" data-${attr}="${k}" aria-pressed="false">${v}</button>`).join(''); };
+  chips('[data-types]', TYPE_NAMES, 'type'); chips('[data-shapes]', SHAPES, 'shape'); chips('[data-texes]', TEXTURES, 'tex');
+  $('[data-lines]', form).innerHTML = Object.entries(LINES).map(([k, l]) => `<button type="button" data-line="${k}" aria-pressed="false">${l.short}${l.fee ? ` <small>+${l.fee} €</small>` : ''}</button>`).join('');
+  $('[data-models]', form).innerHTML = CATALOG.map(m => `<button type="button" class="pw-model" data-model="${m.id}" aria-pressed="false"><span class="pw-model__img"><img alt="" data-snap="${m.id}"></span><span>${esc(m.name)}</span></button>`).join('')
+    + `<button type="button" class="pw-model" data-model="cero" aria-pressed="false"><span class="pw-model__img pw-model__img--blank">+</span><span>Desde cero</span></button>`;
+  $$('[data-snap]', form).forEach(img => { const m = modelById(img.dataset.snap); snapInto(img, m.id, m.params); });
   $('[data-delivery]', root).textContent = deliveryWindow();
+  $$('[data-fee]', form).forEach(e => (e.textContent = `+${PRICING[e.dataset.fee]} €`));
+
   if (PW.hasThree) {
-    stage = new FormStage(canvas, { params: p, tone: p.color, resU: PW.isMobile() ? 48 : 96, resV: PW.isMobile() ? 70 : 130, autoRotate: .2, elev: .16, key: [-2.6, 4.2, 3.6] });
+    stage = new FormStage(canvas, { params: p, resU: PW.isMobile() ? 64 : 112, resV: PW.isMobile() ? 90 : 150, autoRotate: .2, elev: .16 });
     stage.plane.constant = -99;
-    let drag = null;
-    canvas.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY }; canvas.setPointerCapture(e.pointerId); });
-    canvas.addEventListener('pointermove', e => { if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag = { x: e.clientX, y: e.clientY }; stage.rotY += dx * .01; stage.rotVel = dx * .5; stage.targetElev = clamp(stage.targetElev + dy * .004, -.05, .9); });
-    const end = () => (drag = null); canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
+    orbitControls(stage, canvas);
     let built = false;
     watchVisible(canvas.parentElement, v => { if (v && !built) { built = true; stage.startBuild(2800); } }, '-15% 0px');
     stage.onFrame = () => { const pr = stage.build ? stage.buildProgress || 0 : 1; outs.progress.style.width = (pr * 100) + '%'; outs.status.textContent = pr < 1 ? `Imprimiendo ${Math.round(pr * 100)}%` : 'Lista'; };
+    const zoomOut = $('[data-zoom-val]', root);
+    $$('[data-zoom]', root).forEach(b => b.addEventListener('click', () => { stage.setZoom(stage.zoom * (b.dataset.zoom === 'in' ? 1.7 : 1 / 1.7)); zoomOut.textContent = stage.zoom.toFixed(1).replace('.', ',') + '×'; }));
+    $$('[data-view]', root).forEach(b => b.addEventListener('click', () => { $$('[data-view]', root).forEach(x => x.setAttribute('aria-pressed', x === b)); stage.setView(b.dataset.view); }));
   } else webglFallback(canvas.parentElement);
 
-  const estimate = () => {
-    let area = 0;
-    if (stage) {
-      const g = stage.mesh.geometry, P = g.attributes.position.array, I = g.index.array;
-      for (let i = 0; i < I.length; i += 3) {
-        const a = I[i] * 3, b = I[i + 1] * 3, c = I[i + 2] * 3;
-        const ux = P[b] - P[a], uy = P[b + 1] - P[a + 1], uz = P[b + 2] - P[a + 2], vx = P[c] - P[a], vy = P[c + 1] - P[a + 1], vz = P[c + 2] - P[a + 2];
-        const cx = uy * vz - uz * vy, cy = uz * vx - ux * vz, cz = ux * vy - uy * vx; area += Math.sqrt(cx * cx + cy * cy + cz * cz) / 2;
-      }
-    } else area = p.height / 10 * 3.4;
-    const grams = area * 100 * .12 * 1.24, hours = grams / 11;
-    return { grams, hours, price: priceOf(p), verts: stage ? stage.mesh.geometry.attributes.position.count : 0 };
+  const OUT = {
+    height: v => `${v} cm`, width: v => `${Math.round(v * 100)} %`, mouth: v => `${Math.round(v * 100)} %`, texAmt: v => `${Math.round(v * 100)} %`,
+    texN: v => v, twist: v => `${v}°`, sides: v => (v >= 32 ? 'redondo' : v), seed: v => pad(v, 5), split: v => `${Math.round(v * 100)} %`,
   };
-  const fmtTime = h => `${Math.floor(h)} h ${pad(Math.round((h % 1) * 60) % 60, 2)} min`;
+  const press = (attr, val) => $$(`[data-${attr}]`, form).forEach(b => b.setAttribute('aria-pressed', String(b.dataset[attr] === String(val))));
+  const show = (sel, ok) => $$(sel, form).forEach(e => (e.hidden = !ok));
+  const syncUI = () => {
+    $$('input[type="range"]', form).forEach(inp => { inp.value = p[inp.name]; const o = $(`[data-out="${inp.name}"]`, form); if (o) o.textContent = OUT[inp.name](p[inp.name]); });
+    press('type', p.type); press('shape', p.shape); press('tex', p.tex); press('line', p.line); press('mode', p.mode); press('model', model ? model.id : '');
+    show('[data-only="vase"]', p.type === 'vase'); show('[data-only="lamp"]', p.type === 'lamp'); show('[data-only-water]', p.type === 'vase' || p.type === 'planter');
+    show('[data-show="texAmt"]', p.tex !== 'lisa'); show('[data-show="texN"]', ['estrias', 'costillas', 'relieve'].includes(p.tex));
+    show('[data-color-mode]', p.line !== 'gradient'); show('[data-bicolor]', p.mode === 'bicolor');
+    $('[data-swatches]', form).innerHTML = swatchesHTML(p.line, p.color);
+    $('[data-swatches2]', form).innerHTML = p.mode === 'bicolor' ? swatchesHTML(p.line, p.color2, p.color) : '';
+    $('[data-line-note]', form).textContent = LINES[p.line].note;
+    $('[data-filament]', form).innerHTML = filamentHTML(p.color) + (p.mode === 'bicolor' ? filamentHTML(p.color2) : '');
+    $('#pw-water').checked = !!p.watertight; $('#pw-lit').checked = !!p.lit;
+    const eng = $('#pw-engrave'); if (document.activeElement !== eng) eng.value = p.engrave;
+  };
   const renderJSON = est => {
-    const data = { pieza: PWForm.code(p), tipo: p.type, altura_cm: p.height, torsion_grados: p.twist, lados: p.sides >= 32 ? 'redondo' : p.sides, ondulacion: +p.wave.toFixed(2), seed: p.seed, capa_mm: .2, capas: Math.round(p.height * 10 / .2), color: p.colorId === 'custom' ? `a medida ${p.color}` : p.colorName, acabado: FINISHES[p.finish].name, estimacion: { peso_g: +est.grams.toFixed(1), impresion: fmtTime(est.hours), precio_eur: est.price, plazo: '7 días + envío' } };
-    const v = (k, val) => { const s = JSON.stringify(val), ch = prev[k] !== undefined && prev[k] !== s ? ' pw-json-changed' : ''; prev[k] = s; return `<span class="pw-json-v${ch}">${s}</span>`; };
+    const f1 = FIL[p.color], f2 = FIL[p.color2];
+    const data = {
+      modelo: model ? `${model.code} ${model.name}` : 'A medida', tipo: TYPE_NAMES[p.type], silueta: p.type === 'vase' ? SHAPES[p.shape] : '—',
+      alto_cm: p.height, anchura: OUT.width(p.width), boca: OUT.mouth(p.mouth), torsion: p.twist, lados: p.sides >= 32 ? 'redondo' : p.sides,
+      superficie: TEXTURES[p.tex] + (p.tex !== 'lisa' ? ` ${OUT.texAmt(p.texAmt)}` : ''), seed: p.seed,
+      filamento: `${LINES[p.line].name} ${f1.name} (${f1.code})`,
+      ...(p.mode === 'bicolor' ? { filamento_2: `${f2.name} (${f2.code})`, cambio_en_capa: Math.round(p.split * p.height * 50) } : {}),
+      capas: Math.round(p.height * 50), interior_estanco: !!p.watertight, grabado: p.engrave || '—',
+      estimacion: { peso_g: Math.round(est.grams), impresion: fmtTime(est.hours), precio_eur: priceOf(p), plazo: '7 días + envío' },
+    };
+    const v = (k, val) => { const s = JSON.stringify(val), ch = prev[k] !== undefined && prev[k] !== s ? ' pw-json-changed' : ''; prev[k] = s; return `<span class="pw-json-v${ch}">${esc(s)}</span>`; };
     const keys = Object.keys(data), lines = ['{'];
     keys.forEach((k, i) => {
       const comma = i < keys.length - 1 ? ',' : '';
@@ -744,71 +943,62 @@ function initLab() {
     clearTimeout(renderJSON.t); renderJSON.t = setTimeout(() => $$('.pw-json-changed', json).forEach(e => e.classList.remove('pw-json-changed')), 700);
     return data;
   };
-  const outputs = { height: v => `${v} cm`, twist: v => `${v}°`, sides: v => (v >= 32 ? 'redondo' : v), wave: v => (+v).toFixed(2).replace('.', ','), seed: v => pad(v, 5) };
-  const syncUI = () => {
-    $$('input[type="range"]', form).forEach(inp => { inp.value = p[inp.name]; $(`[data-out="${inp.name}"]`, form).textContent = outputs[inp.name](p[inp.name]); });
-    $$('[data-type]', form).forEach(b => b.setAttribute('aria-pressed', b.dataset.type === p.type));
-    $$('[data-finish]', form).forEach(b => b.setAttribute('aria-pressed', b.dataset.finish === p.finish));
-    $$('.pw-swatch', form).forEach(b => b.setAttribute('aria-pressed', b.dataset.color === p.colorId));
-    custom.classList.toggle('is-active', p.colorId === 'custom');
-    $('[data-out="colorName"]', form).textContent = p.colorId === 'custom' ? `A medida · ${p.color.toUpperCase()}` : p.colorName;
-    if (stage) { stage.setColor(p.color); stage.setFinish(p.finish); }
-  };
-  const setColor = (id, hex) => {
-    const c = COLORS.find(x => x.id === id);
-    p.colorId = id; p.color = c ? c.hex : hex; p.colorName = c ? c.name : 'A medida';
-    syncUI(); update(false, false);
-  };
-  sw.addEventListener('click', e => { const b = e.target.closest('[data-color]'); if (b) setColor(b.dataset.color); });
-  customInput.addEventListener('input', () => setColor('custom', customInput.value));
-  customInput.addEventListener('click', () => setColor('custom', customInput.value));
-  $$('[data-finish]', form).forEach(b => b.addEventListener('click', () => { p.finish = b.dataset.finish; syncUI(); update(false, false); }));
-  // Cargar una pieza de la colección en el taller
-  on('lab:load', q => {
-    Object.assign(p, q); syncUI(); update(true, true);
-    $('.pw-lab__grid', root).scrollIntoView({ behavior: PW.reduced ? 'auto' : 'smooth' });
-  });
   const update = (rebuild, animate) => {
-    if (stage) { Object.assign(stage.p, p); stage.regenerate(rebuild); if (animate) stage.startBuild(1600); else stage.renderOnce(); }
-    const est = estimate();
-    outs.code.textContent = PWForm.code(p); outs.verts.textContent = fmt(est.verts);
-    outs.weight.textContent = Math.round(est.grams) + ' g'; outs.time.textContent = fmtTime(est.hours); outs.price.textContent = `${est.price} €`;
+    p = normalizeParams(p);
+    if (stage) { stage.setParams(p, rebuild); if (animate) stage.startBuild(1500); }
+    const est = estimateOf(stage && stage.mesh.geometry, p);
+    outs.code.textContent = model ? `${model.code} ${model.name}${JSON.stringify(normalizeParams(model.params)) === JSON.stringify(Object.assign({}, p, { lit: undefined })) ? '' : ' · personalizado'}` : 'A medida';
+    outs.verts.textContent = stage ? fmt(stage.mesh.geometry.attributes.position.count) : '—';
+    outs.weight.textContent = Math.round(est.grams) + ' g'; outs.time.textContent = fmtTime(est.hours);
+    outs.price.textContent = `${priceOf(p)} €`;
     renderJSON(est);
   };
-  let pending = false;
+
   form.addEventListener('input', e => {
-    const t = e.target; if (t.type !== 'range') return; // el selector de color va aparte
-    p[t.name] = t.name === 'wave' ? parseFloat(t.value) : parseInt(t.value, 10);
-    $(`[data-out="${t.name}"]`, form).textContent = outputs[t.name](p[t.name]);
-    if (!pending) { pending = true; requestAnimationFrame(() => { pending = false; update(false, false); }); }
+    const t = e.target;
+    if (t.type === 'range') {
+      p[t.name] = ['width', 'mouth', 'texAmt', 'split'].includes(t.name) ? parseFloat(t.value) : parseInt(t.value, 10);
+      $(`[data-out="${t.name}"]`, form).textContent = OUT[t.name](p[t.name]);
+      if (t.name === 'split') { update(false, false); return; }
+      if (!update.raf) update.raf = requestAnimationFrame(() => { update.raf = 0; update(false, false); });
+    } else if (t.id === 'pw-engrave') { p.engrave = cleanEngrave(t.value); if (t.value !== p.engrave) t.value = p.engrave; update(false, false); }
   });
-  $$('[data-type]', form).forEach(b => b.addEventListener('click', () => {
-    p.type = b.dataset.type;
-    if (p.type === 'tray' && p.height > 12) p.height = 6;
-    if (p.type === 'candle' && p.height > 16) p.height = 10;
-    if ((p.type === 'vase' || p.type === 'lamp') && p.height < 14) p.height = 24;
-    syncUI(); update(true, true); emit('generated');
-  }));
-  $$('[data-view]', root).forEach(b => b.addEventListener('click', () => { $$('[data-view]', root).forEach(x => x.setAttribute('aria-pressed', x === b)); if (stage) stage.setView(b.dataset.view); }));
-  $('[data-action="randomize"]', form).addEventListener('click', () => { p.seed = 1 + Math.floor(Math.random() * 99999); syncUI(); update(true, true); emit('generated'); });
-  $('[data-action="mutate"]', form).addEventListener('click', () => {
-    const types = ['vase', 'lamp', 'planter', 'tray', 'candle']; p.type = types[Math.floor(Math.random() * types.length)]; p.seed = 1 + Math.floor(Math.random() * 99999);
-    p.height = p.type === 'tray' ? 4 + Math.floor(Math.random() * 6) : p.type === 'candle' ? 7 + Math.floor(Math.random() * 7) : 14 + Math.floor(Math.random() * 24);
-    p.twist = Math.round((Math.random() * 2 - 1) * 240); p.sides = Math.random() < .3 ? 32 : 3 + Math.floor(Math.random() * 10); p.wave = +(Math.random() * .8).toFixed(2);
-    syncUI(); update(true, true); emit('generated');
+  form.addEventListener('change', e => {
+    if (e.target.id === 'pw-water') { p.watertight = e.target.checked; update(false, false); }
+    if (e.target.id === 'pw-lit') { p.lit = e.target.checked; update(false, false); }
   });
-  $('[data-action="order"]', form).addEventListener('click', () => {
-    const q = Object.assign({}, p);
-    emit('cart:add', {
-      key: JSON.stringify(q), kind: 'custom', params: q, price: priceOf(q), color: q.color,
-      name: `${TYPE_NAMES[q.type]} ${PWForm.code(q)}`,
-      desc: `${q.height} cm · ${q.sides >= 32 ? 'redondo' : q.sides + ' lados'} · torsión ${q.twist}° · ${q.colorId === 'custom' ? 'color a medida ' + q.color.toUpperCase() : q.colorName} · ${FINISHES[q.finish].name}`,
-    });
+  form.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b || !form.contains(b)) return;
+    const d = b.dataset;
+    if (d.model) {
+      if (d.model === 'cero') { model = null; p = normalizeParams({ type: 'vase', shape: 'organica', height: 24, width: 1, mouth: 1, twist: 0, sides: 32, tex: 'lisa', texAmt: .5, texN: 16, seed: 1 + Math.floor(Math.random() * 99999), line: p.line, color: p.color, mode: 'solid', lit: true }); }
+      else { model = modelById(d.model); p = normalizeParams(Object.assign({}, model.params, { lit: true })); }
+      syncUI(); update(true, true); emit('generated'); return;
+    }
+    if (d.type) {
+      p.type = d.type;
+      if (p.type === 'tray' && p.height > 12) p.height = 6;
+      if (p.type === 'candle' && p.height > 16) p.height = 10;
+      if ((p.type === 'vase' || p.type === 'lamp') && p.height < 14) p.height = 24;
+      syncUI(); update(true, true); emit('generated'); return;
+    }
+    if (d.shape) { p.shape = d.shape; syncUI(); update(false, false); return; }
+    if (d.tex) { p.tex = d.tex; if (p.tex !== 'lisa' && p.texAmt < .2) p.texAmt = .6; syncUI(); update(false, false); return; }
+    if (d.line) { p.line = d.line; p = normalizeParams(p); syncUI(); update(false, false); return; }
+    if (d.mode) { p.mode = d.mode; p = normalizeParams(p); syncUI(); update(false, false); return; }
+    if (d.code) { if (b.closest('[data-swatches2]')) p.color2 = d.code; else p.color = d.code; p = normalizeParams(p); syncUI(); update(false, false); return; }
+    if (d.action === 'randomize') { p.seed = 1 + Math.floor(Math.random() * 99999); syncUI(); update(true, true); emit('generated'); return; }
+    if (d.action === 'order') { addToCart(p, model); return; }
+  });
+  on('lab:load', q => {
+    model = modelById(q.__model) || null; p = normalizeParams(Object.assign({ lit: true }, q));
+    syncUI(); update(true, true);
+    $('.pw-lab__grid', root).scrollIntoView({ behavior: PW.reduced ? 'auto' : 'smooth' });
   });
   const copyBtn = $('[data-action="copy"]', root);
   const doCopy = e => {
     e.preventDefault(); e.stopPropagation();
-    const txt = JSON.stringify(renderJSON(estimate()), null, 2);
+    const txt = JSON.stringify(renderJSON(estimateOf(stage && stage.mesh.geometry, p)), null, 2);
     const ok = () => { copyBtn.textContent = 'Copiado'; setTimeout(() => (copyBtn.textContent = 'Copiar'), 1500); };
     const fallback = () => { const r = document.createRange(); r.selectNodeContents(json); const s = getSelection(); s.removeAllRanges(); s.addRange(r); };
     try { navigator.clipboard.writeText(txt).then(ok, fallback); } catch (err) { fallback(); }
@@ -818,14 +1008,9 @@ function initLab() {
   syncUI(); update(false, false);
 }
 
-/* ---------- 10. COLECCIÓN: render sombreado + sección constructiva ---------- */
-const TONES = {
-  arcilla: ['#6E4630', '#B37E5A', '#DDB596'],
-  hormigon: ['#5E5852', '#A9A298', '#D4CEC4'],
-  arena: ['#85765F', '#CDBEA5', '#EEE4D3'],
-  carbon: ['#1E1C1A', '#4C4742', '#80786F'],
-  hueso: ['#948876', '#DDD3C3', '#F7F1E7'],
-};
+/* ---------- 10. DIBUJOS: render plano (reserva) y sección constructiva ---------- */
+const hexRGB = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const mixHex = (a, b, t) => '#' + hexRGB(a).map((v, i) => Math.round(v + (hexRGB(b)[i] - v) * t).toString(16).padStart(2, '0')).join('');
 let svgUid = 0;
 function pieceSVG(p, mode) {
   const uid = 'pw' + (svgUid++), c = PWForm.coeffs(p.seed), H = p.height / 10, ROWS = 70, SAMPLES = 72, tmp = [0, 0, 0], rows = [];
@@ -844,7 +1029,7 @@ function pieceSVG(p, mode) {
   let s = `<svg viewBox="0 0 ${vbW.toFixed(3)} ${vbH.toFixed(3)}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">`;
   const outline = () => { let d = `M${X(rows[0].mn)},${Y(0)}`; rows.forEach(r => (d += ` L${X(r.mn)},${Y(r.y)}`)); for (let j = ROWS; j >= 0; j--) d += ` L${X(rows[j].mx)},${Y(rows[j].y)}`; return d + 'Z'; };
   if (!sec) {
-    const [dk, md, lt] = TONES[p.tone] || TONES.hueso;
+    const base = (FIL[p.color] || { hex: ['#C9C2B6'] }).hex[0], md = base, dk = mixHex(base, '#000000', .45), lt = mixHex(base, '#ffffff', .35);
     s += `<defs><linearGradient id="${uid}g" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="${dk}"/><stop offset=".2" stop-color="${md}"/><stop offset=".4" stop-color="${lt}"/><stop offset=".66" stop-color="${md}"/><stop offset="1" stop-color="${dk}"/></linearGradient>`;
     s += `<filter id="${uid}b" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${(maxX * .09).toFixed(3)}"/></filter></defs>`;
     // sombra arrojada hacia la derecha (luz desde la izquierda)
@@ -884,116 +1069,129 @@ function pieceSVG(p, mode) {
   }
   return s + '</svg>';
 }
-const AR = { 3: '3/4.6', 4: '3/4.4', 5: '3/4', 6: '4/3.6' };
-function cardHTML(item, span) {
-  return `<article class="pw-piece" style="--span:${span};--ar:${AR[span]}" data-id="${item.id}">
-    <a class="pw-piece__niche pw-plaster" href="pieza.html#${item.id}" data-cursor="Ver" aria-label="${item.name}">
-      <div class="pw-piece__render">${pieceSVG(Object.assign({ tone: item.tone }, item.form), 'render')}</div><div class="pw-piece__section"></div>
-      <span class="pw-piece__tag">${item.tag}</span>
+/* ---------- 10b. FOTOS DE PRODUCTO Y TARJETAS ----------
+   Las tarjetas muestran una imagen renderizada con el mismo motor 3D y el
+   mismo material que el taller (se guarda en la sesión para no repetirla). */
+const snapCache = {}, snapJobs = [];
+let snapBusy = false;
+function snapInto(img, key, params, opts) {
+  if (!PW.hasThree || !img) return;
+  const ck = 'arko-snap-v2-' + key + '-' + JSON.stringify(params).length;
+  const apply = url => { if (url) { img.src = url; img.classList.add('is-ready'); } };
+  try { const c = snapCache[ck] || sessionStorage.getItem(ck); if (c) { snapCache[ck] = c; return apply(c); } } catch (e) { /* sin almacenamiento */ }
+  snapJobs.push(() => { const url = snapshot(params, opts); snapCache[ck] = url; try { if (url) sessionStorage.setItem(ck, url); } catch (e) { /* cuota llena */ } apply(url); });
+  if (snapBusy) return;
+  snapBusy = true;
+  const step = () => { const job = snapJobs.shift(); if (!job) { snapBusy = false; return; } job(); setTimeout(step, 30); };
+  setTimeout(step, 80);
+}
+function modelCardHTML(m, span) {
+  const p = m.params, f = FIL[p.color];
+  return `<article class="pw-piece" style="--span:${span};--ar:${span >= 6 ? '1/1' : '3/4.2'}" data-id="${m.id}">
+    <a class="pw-piece__niche pw-plaster" href="pieza.html#${m.id}" data-cursor="Ver" aria-label="${esc(m.name)}">
+      <div class="pw-piece__render"><img class="pw-piece__img" alt="${esc(m.name)} en ${esc(LINES[p.line].name)} ${esc(f.name)}" data-snap="${m.id}">${pieceSVG(p, 'render')}</div>
+      <div class="pw-piece__section"></div>
+      <span class="pw-piece__tag">${esc(m.tag)}</span>
     </a>
-    <div class="pw-piece__row"><span class="pw-piece__code">${item.code}</span><span class="pw-piece__price">${item.price} €</span></div>
-    <h3 class="pw-piece__name"><a href="pieza.html#${item.id}">${item.name}</a></h3>
-    <dl class="pw-piece__spec"><dt>Capa</dt><dd>${item.layer}</dd><dt>Impresión</dt><dd>${item.time}</dd><dt>Material</dt><dd>${item.material}</dd><dt>Alto</dt><dd>${item.form.height} cm</dd></dl>
+    <div class="pw-piece__row"><span class="pw-piece__code">${m.code}</span><span class="pw-piece__price">${priceOf(p)} €</span></div>
+    <h3 class="pw-piece__name"><a href="pieza.html#${m.id}">${esc(m.name)}</a></h3>
+    <p class="pw-piece__desc"><i style="background:${swatchCSS(p.color)}"></i>${TYPE_NAMES[p.type]} · ${p.height} cm · ${esc(LINES[p.line].name)} ${esc(f.name)}</p>
     <p class="pw-piece__lead">Preparación 7 días + envío</p>
     <div class="pw-piece__actions"><button class="pw-btn pw-btn--sm" type="button" data-add data-magnetic>Añadir</button><button class="pw-btn pw-btn--sm pw-btn--line" type="button" data-customize data-magnetic>Personalizar</button></div>
   </article>`;
 }
-// Rejilla de tarjetas con acciones delegadas (colección, destacadas, relacionadas)
-function renderCards(grid, items, spans) {
-  const pattern = spans || (items.length <= 2 ? [6, 6] : [5, 4, 3, 3, 4, 5, 6, 6]);
-  grid.innerHTML = items.map((it, i) => cardHTML(it, pattern[i % pattern.length])).join('');
+function renderCards(grid, models, spans) {
+  grid.innerHTML = models.map((m, i) => modelCardHTML(m, spans[i % spans.length])).join('');
   const cards = $$('.pw-piece', grid);
-  cards.forEach((c, i) => { c.classList.add('pw-enter'); c.style.setProperty('--d', i * 70 + 'ms'); });
+  cards.forEach((c, i) => { c.classList.add('pw-enter'); c.style.setProperty('--d', i * 80 + 'ms'); });
   requestAnimationFrame(() => requestAnimationFrame(() => cards.forEach(c => c.classList.add('is-in'))));
+  $$('[data-snap]', grid).forEach(img => { const m = modelById(img.dataset.snap); snapInto(img, m.id, m.params); });
   if (grid._pwBound) return;
   grid._pwBound = true;
-  const itemOf = el => CATALOG.find(x => x.id === el.closest('.pw-piece').dataset.id);
+  const modelOf = el => modelById(el.closest('.pw-piece').dataset.id);
   grid.addEventListener('click', e => {
-    if (e.target.closest('[data-add]')) addCatalogItem(itemOf(e.target));
-    else if (e.target.closest('[data-customize]')) openInTaller(catalogParams(itemOf(e.target)));
+    if (e.target.closest('[data-add]')) { const m = modelOf(e.target); addToCart(m.params, m); }
+    else if (e.target.closest('[data-customize]')) { const m = modelOf(e.target); openInTaller(Object.assign({}, m.params, { __model: m.id })); }
   });
   const makeSection = e => {
     const card = e.target.closest && e.target.closest('.pw-piece'); if (!card) return;
     const sec = $('.pw-piece__section', card);
-    if (!sec.firstChild) { const it = itemOf(card); sec.innerHTML = pieceSVG(Object.assign({ tone: it.tone }, it.form), 'section'); }
+    if (!sec.firstChild) sec.innerHTML = pieceSVG(modelOf(card).params, 'section');
   };
   grid.addEventListener('pointerover', makeSection); grid.addEventListener('focusin', makeSection);
 }
-// Página Colección: filtros por familia (#jarrones, #lamparas…)
 function initCollection() {
   const grid = $('[data-collection]'); if (!grid) return;
-  const bar = $('[data-filters]');
-  const slug = { vase: 'jarrones', lamp: 'lamparas', planter: 'macetas', tray: 'bandejas', candle: 'portavelas' };
-  const types = Object.keys(FAMILIES).filter(t => CATALOG.some(i => i.form.type === t));
-  bar.innerHTML = `<button type="button" data-f="todo">Todo <sup>${CATALOG.length}</sup></button>` +
-    types.map(t => `<button type="button" data-f="${t}">${FAMILIES[t]} <sup>${CATALOG.filter(i => i.form.type === t).length}</sup></button>`).join('');
-  const count = $('[data-collection-count]');
-  const apply = f => {
-    const items = f === 'todo' ? CATALOG : CATALOG.filter(i => i.form.type === f);
-    $$('[data-f]', bar).forEach(b => b.setAttribute('aria-pressed', b.dataset.f === f));
-    renderCards(grid, items);
-    if (count) count.textContent = `${items.length} ${items.length === 1 ? 'pieza' : 'piezas'}`;
-  };
-  bar.addEventListener('click', e => {
-    const b = e.target.closest('[data-f]'); if (!b) return;
-    apply(b.dataset.f);
-    try { history.replaceState(null, '', b.dataset.f === 'todo' ? location.pathname : '#' + slug[b.dataset.f]); } catch (err) { /* sin historial */ }
-  });
-  const fromHash = () => { const h = location.hash.slice(1), t = Object.keys(slug).find(k => slug[k] === h); apply(t || 'todo'); };
-  addEventListener('hashchange', fromHash);
-  fromHash();
+  renderCards(grid, CATALOG, [6, 6, 6, 6]);
 }
-// Portada: piezas destacadas
 function initFeatured() {
   const grid = $('[data-featured]'); if (!grid) return;
-  renderCards(grid, ['v042', 'l017', 'm031'].map(id => CATALOG.find(i => i.id === id)), [4, 4, 4]);
+  renderCards(grid, CATALOG, [3, 3, 3, 3]);
 }
-// Portada: visuales de las cuatro puertas
 function initDoors() {
-  const col = $('[data-door="coleccion"]'); if (!col) return;
-  const it = CATALOG.find(i => i.id === 'v077');
-  col.innerHTML = pieceSVG(Object.assign({ tone: 'arcilla' }, it.form, { twist: -160 }), 'render');
+  const col = $('[data-door="coleccion"]');
+  if (col) { const m = modelById('monolito') || CATALOG[0]; col.innerHTML = `<img class="pw-door__img" alt="">${pieceSVG(m.params, 'render')}`; snapInto($('img', col), m.id, m.params); }
   const dots = $('[data-door="taller"]');
-  if (dots) dots.innerHTML = `<span class="pw-door__dots">${COLORS.map(c => `<i style="background:${c.hex}"></i>`).join('')}</span>`;
+  if (dots) dots.innerHTML = `<span class="pw-door__dots">${FILAMENTS.filter(f => f.line === 'matte').slice(0, 15).map(f => `<i style="background:${f.hex[0]}" title="${esc(f.name)}"></i>`).join('')}</span>`;
 }
-// Página de pieza: pieza.html#v042
+function maxDiameterCm(p) {
+  const c = PWForm.coeffs(p.seed), tmp = [0, 0, 0]; let m = 0;
+  for (let j = 0; j <= 40; j++) for (let i = 0; i < 64; i++) { PWForm.point(p, c, j / 40, i / 64 * Math.PI * 2, tmp); m = Math.max(m, Math.hypot(tmp[0], tmp[2])); }
+  return Math.round(m * 20);
+}
+// Página de pieza: pieza.html#anfora — el cliente puede cambiarle el color aquí mismo
 function initPieza() {
   const root = $('[data-pieza]'); if (!root) return;
   const canvas = $('.pw-product__canvas', root), out = {};
   $$('[data-p]').forEach(e => (out[e.dataset.p] = e)); // la sección constructiva está fuera de root
-  let stage = null, item = null;
+  let stage = null, model = null, cur = null;
+  const paintColor = () => {
+    out.lines.innerHTML = Object.entries(LINES).map(([k, l]) => `<button type="button" data-line="${k}" aria-pressed="${k === cur.line}">${l.short}${l.fee ? ` <small>+${l.fee} €</small>` : ''}</button>`).join('');
+    out.swatches.innerHTML = swatchesHTML(cur.line, cur.color);
+    out.filament.innerHTML = filamentHTML(cur.color);
+    out.price.textContent = priceOf(cur) + ' €';
+    const changed = cur.color !== model.params.color || cur.line !== model.params.line;
+    out.colornote.textContent = changed ? 'Color elegido por ti.' : 'Color de serie.';
+  };
   const show = () => {
-    item = CATALOG.find(i => i.id === location.hash.slice(1)) || CATALOG[0];
-    const tone = TONES[item.tone][1];
-    document.title = `${item.name} · ARKO`;
-    out.family.textContent = `Colección · ${FAMILIES[item.form.type]}`;
-    out.family.href = 'coleccion.html#' + { vase: 'jarrones', lamp: 'lamparas', planter: 'macetas', tray: 'bandejas', candle: 'portavelas' }[item.form.type];
-    out.name.textContent = item.name; out.code.textContent = item.code; out.price.textContent = item.price + ' €';
-    out.desc.textContent = item.desc; out.tag.textContent = item.tag;
-    out.spec.innerHTML = [['Alto', item.form.height + ' cm'], ['Lados', item.form.sides >= 32 ? 'Redondo' : item.form.sides], ['Torsión', item.form.twist + '°'], ['Capa', item.layer], ['Impresión', item.time], ['Material', item.material], ['Color', TONE_NAMES[item.tone]], ['Seed', pad(item.form.seed, 5)]]
+    model = modelById(location.hash.slice(1)) || CATALOG[0];
+    cur = normalizeParams(Object.assign({}, model.params, { lit: true }));
+    document.title = `${model.name} · ARKO`;
+    out.family.textContent = `Modelos · ${model.code}`;
+    out.name.textContent = model.name; out.code.textContent = model.code; out.tag.textContent = model.tag; out.desc.textContent = model.desc;
+    const p = model.params;
+    out.spec.innerHTML = [['Tipo', TYPE_NAMES[p.type] + (p.type === 'vase' ? ' · ' + SHAPES[p.shape] : '')], ['Alto', p.height + ' cm'], ['Ø máximo', maxDiameterCm(p) + ' cm'], ['Superficie', TEXTURES[p.tex]],
+      ['Torsión', p.twist + '°'], ['Lados', p.sides >= 32 ? 'Redondo' : p.sides], ['Capa', '0,2 mm · ' + Math.round(p.height * 50) + ' capas'], ['Seed', pad(p.seed, 5)]]
       .map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
-    out.swatch.style.background = tone;
     out.delivery.textContent = deliveryWindow();
-    out.section.innerHTML = pieceSVG(Object.assign({ tone: item.tone }, item.form), 'section');
-    renderCards($('[data-related]'), CATALOG.filter(i => i.id !== item.id && i.form.type === item.form.type).concat(CATALOG.filter(i => i.id !== item.id && i.form.type !== item.form.type)).slice(0, 3), [4, 4, 4]);
-    if (stage) { Object.assign(stage.p, item.form); stage.regenerate(true); stage.setColor(tone); stage.startBuild(1800); }
+    out.section.innerHTML = pieceSVG(p, 'section');
+    paintColor();
+    renderCards($('[data-related]'), CATALOG.filter(m => m.id !== model.id), [4, 4, 4]);
+    if (stage) { stage.setParams(cur, true); stage.startBuild(1800); }
   };
   show();
   if (PW.hasThree && canvas) {
     try {
-      stage = new FormStage(canvas, { params: Object.assign({}, item.form), tone: TONES[item.tone][1], resU: PW.isMobile() ? 56 : 96, resV: PW.isMobile() ? 80 : 130, autoRotate: .18, elev: .14, key: [-3.4, 4.6, 2.8] });
+      stage = new FormStage(canvas, { params: cur, resU: PW.isMobile() ? 64 : 112, resV: PW.isMobile() ? 90 : 160, autoRotate: .18, elev: .14 });
       stage.plane.constant = -99; stage.renderOnce();
       on('ready', () => stage.startBuild(2600));
-      let drag = null;
-      canvas.addEventListener('pointerdown', e => { drag = e.clientX; canvas.setPointerCapture(e.pointerId); });
-      canvas.addEventListener('pointermove', e => { if (drag === null) return; stage.rotY += (e.clientX - drag) * .01; stage.rotVel = (e.clientX - drag) * .5; drag = e.clientX; });
-      const end = () => (drag = null); canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
+      orbitControls(stage, canvas);
+      const zoomOut = $('[data-zoom-val]', root);
+      $$('[data-zoom]', root).forEach(b => b.addEventListener('click', () => { stage.setZoom(stage.zoom * (b.dataset.zoom === 'in' ? 1.7 : 1 / 1.7)); zoomOut.textContent = stage.zoom.toFixed(1).replace('.', ',') + '×'; }));
     } catch (e) { webglFallback(canvas.parentElement); }
   } else if (canvas) webglFallback(canvas.parentElement);
+  root.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.line) { cur.line = b.dataset.line; cur = normalizeParams(cur); }
+    else if (b.dataset.code) { cur.color = b.dataset.code; cur = normalizeParams(cur); }
+    else return;
+    paintColor(); if (stage) stage.setParams(cur, false);
+  });
   addEventListener('hashchange', () => { show(); scrollTo({ top: 0, behavior: PW.reduced ? 'auto' : 'smooth' }); });
-  $('[data-p-add]', root).addEventListener('click', () => addCatalogItem(item));
-  $('[data-p-custom]', root).addEventListener('click', () => openInTaller(catalogParams(item)));
-  const link = $('[data-p-custom-link]', root); if (link) link.addEventListener('click', e => { e.preventDefault(); openInTaller(catalogParams(item)); });
+  $('[data-p-add]', root).addEventListener('click', () => addToCart(cur, model));
+  const toTaller = e => { if (e) e.preventDefault(); openInTaller(Object.assign({}, cur, { __model: model.id })); };
+  $('[data-p-custom]', root).addEventListener('click', () => toTaller());
+  const link = $('[data-p-custom-link]', root); if (link) link.addEventListener('click', toTaller);
 }
 
 /* ---------- 10b. CESTA ----------
@@ -1007,15 +1205,17 @@ function initCart() {
   const pay = $('[data-cart-pay]', panel), msg = $('.pw-cart__msg', panel);
   let items = [];
   try { items = JSON.parse(localStorage.getItem('arko-cesta') || '[]'); } catch (e) { items = []; }
+  // Solo configuraciones con el formato actual (filamento Bambu); precio siempre recalculado
+  items = (Array.isArray(items) ? items : []).filter(i => i && i.params && i.params.line && FIL[i.params.color]).map(i => Object.assign(i, { price: priceOf(normalizeParams(i.params)) }));
   const save = () => { try { localStorage.setItem('arko-cesta', JSON.stringify(items)); } catch (e) { /* sin almacenamiento */ } };
   const count = () => items.reduce((n, i) => n + i.qty, 0);
   const render = () => {
     list.innerHTML = items.map((it, i) => `
       <li class="pw-cart__item">
-        <span class="pw-cart__thumb"><i style="background:${it.color}"></i></span>
+        <span class="pw-cart__thumb"><i style="background:${it.swatch2 ? `linear-gradient(0deg, ${it.swatch} 0 50%, ${it.swatch2} 50% 100%)` : it.swatch}"></i></span>
         <div>
-          <p class="pw-cart__name">${it.name}</p>
-          <p class="pw-cart__desc">${it.desc}</p>
+          <p class="pw-cart__name">${esc(it.name)}</p>
+          <p class="pw-cart__desc">${esc(it.desc)}</p>
           <span class="pw-cart__qty"><button type="button" data-q="-1" data-i="${i}" aria-label="Quitar una">−</button><span>${it.qty}</span><button type="button" data-q="1" data-i="${i}" aria-label="Añadir una">+</button></span>
           <button type="button" class="pw-cart__remove" data-del="${i}">Eliminar</button>
         </div>
@@ -1062,7 +1262,7 @@ function initCart() {
     try {
       const res = await fetch(CHECKOUT_ENDPOINT, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: items.map(i => ({ kind: i.kind, code: i.code, params: i.params, qty: i.qty })) }),
+        body: JSON.stringify({ items: items.map(i => ({ model: i.model, params: i.params, qty: i.qty })) }),
       });
       if (!res.ok) throw new Error(res.status);
       const { url } = await res.json();

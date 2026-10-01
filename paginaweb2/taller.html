@@ -20,79 +20,94 @@
      ===================================================================== -->
 <section class="pw-section pw-lab" id="taller" data-section="lab">
   <header class="pw-head">
-    <p class="pw-eyebrow">Taller · generador en vivo</p>
+    <p class="pw-eyebrow">Taller · crea tu propia pieza</p>
     <h1 class="pw-h2 pw-reveal">Diseña<br><em>tu pieza</em></h1>
-    <p class="pw-lead pw-reveal">Elige la forma, la altura, el color y el acabado. La pieza se levanta sobre el pedestal tal como la imprimiremos. Arrastra para girarla bajo la luz.</p>
+    <p class="pw-lead pw-reveal">Parte de uno de nuestros cuatro modelos o empieza desde cero. Elige la silueta, la superficie y el filamento Bambu Lab exacto con el que la imprimiremos. Lo que ves es lo que recibes: mismos colores, mismas capas de 0,2 mm.</p>
   </header>
   <div class="pw-lab__grid">
     <div class="pw-lab__stage pw-board" data-cursor="Girar">
       <div class="pw-lab__halo" aria-hidden="true"></div>
       <div class="pw-lab__floor" aria-hidden="true"></div>
-      <canvas class="pw-lab__canvas" role="img" aria-label="Vista 3D de la pieza generada"></canvas>
-      <div class="pw-hud pw-hud--tl">Pieza <b data-lab-out="code">V—48213</b></div>
+      <canvas class="pw-lab__canvas" role="img" aria-label="Vista 3D de la pieza que estás diseñando"></canvas>
+      <div class="pw-hud pw-hud--tl">Pieza <b data-lab-out="code">—</b></div>
       <div class="pw-hud pw-hud--tr">
         <div class="pw-lab__views" role="group" aria-label="Modo de vista">
           <button type="button" data-view="solid" aria-pressed="true">Materia</button>
           <button type="button" data-view="wire" aria-pressed="false">Malla</button>
           <button type="button" data-view="layers" aria-pressed="false">Capas</button>
         </div>
+        <div class="pw-zoom" role="group" aria-label="Lupa">
+          <button type="button" data-zoom="out" aria-label="Alejar">−</button><span data-zoom-val>1,0×</span><button type="button" data-zoom="in" aria-label="Acercar">+</button>
+        </div>
+        <p class="pw-zoom__hint">Acerca la lupa para ver las capas</p>
       </div>
       <div class="pw-hud pw-hud--bl">Peso <b data-lab-out="weight">0 g</b> · Impresión <b data-lab-out="time">0 h</b><br>Vértices <b data-lab-out="verts">0</b></div>
       <div class="pw-hud pw-hud--br"><b data-lab-out="status">Lista</b><span class="pw-lab__progress"><i data-lab-out="progress"></i></span></div>
     </div>
 
-    <form class="pw-lab__panel" onsubmit="return false" aria-label="Parámetros de la pieza">
-      <div>
-        <span class="pw-lab__label">Tipología</span>
-        <div class="pw-lab__types" role="group" aria-label="Tipo de objeto">
-          <button type="button" data-type="vase" aria-pressed="true">Jarrón</button>
-          <button type="button" data-type="lamp" aria-pressed="false">Lámpara</button>
-          <button type="button" data-type="planter" aria-pressed="false">Maceta</button>
-          <button type="button" data-type="tray" aria-pressed="false">Bandeja</button>
-          <button type="button" data-type="candle" aria-pressed="false">Portavelas</button>
+    <form class="pw-lab__panel" onsubmit="return false" aria-label="Opciones de la pieza">
+      <fieldset class="pw-opt">
+        <legend class="pw-lab__label">01 · Punto de partida</legend>
+        <div class="pw-models" data-models></div>
+      </fieldset>
+      <fieldset class="pw-opt">
+        <legend class="pw-lab__label">02 · Tipología</legend>
+        <div class="pw-lab__types" data-types></div>
+      </fieldset>
+      <fieldset class="pw-opt" data-only="vase">
+        <legend class="pw-lab__label">03 · Silueta</legend>
+        <div class="pw-lab__types" data-shapes></div>
+      </fieldset>
+      <fieldset class="pw-opt">
+        <legend class="pw-lab__label">04 · Medidas</legend>
+        <label class="pw-slider" for="pw-height"><span class="pw-slider__head"><span>Altura</span><output data-out="height"></output></span><input id="pw-height" type="range" name="height" min="6" max="40" step="1"></label>
+        <label class="pw-slider" for="pw-width"><span class="pw-slider__head"><span>Anchura</span><output data-out="width"></output></span><input id="pw-width" type="range" name="width" min="0.7" max="1.4" step="0.01"></label>
+        <label class="pw-slider" for="pw-mouth"><span class="pw-slider__head"><span>Boca</span><output data-out="mouth"></output></span><input id="pw-mouth" type="range" name="mouth" min="0.5" max="1.5" step="0.01"></label>
+      </fieldset>
+      <fieldset class="pw-opt">
+        <legend class="pw-lab__label">05 · Superficie</legend>
+        <div class="pw-lab__types" data-texes></div>
+        <label class="pw-slider" for="pw-texamt" data-show="texAmt"><span class="pw-slider__head"><span>Intensidad</span><output data-out="texAmt"></output></span><input id="pw-texamt" type="range" name="texAmt" min="0" max="1" step="0.01"></label>
+        <label class="pw-slider" for="pw-texn" data-show="texN"><span class="pw-slider__head"><span>Densidad</span><output data-out="texN"></output></span><input id="pw-texn" type="range" name="texN" min="6" max="40" step="1"></label>
+        <label class="pw-slider" for="pw-twist"><span class="pw-slider__head"><span>Torsión</span><output data-out="twist"></output></span><input id="pw-twist" type="range" name="twist" min="-360" max="360" step="1"></label>
+        <label class="pw-slider" for="pw-sides"><span class="pw-slider__head"><span>Lados</span><output data-out="sides"></output></span><input id="pw-sides" type="range" name="sides" min="3" max="32" step="1"></label>
+        <label class="pw-slider" for="pw-seed"><span class="pw-slider__head"><span>Variación (seed)</span><output data-out="seed"></output></span><input id="pw-seed" type="range" name="seed" min="1" max="99999" step="1"></label>
+      </fieldset>
+      <fieldset class="pw-opt">
+        <legend class="pw-lab__label">06 · Filamento Bambu Lab</legend>
+        <div class="pw-lab__types pw-lines" data-lines></div>
+        <p class="pw-lab__hint" data-line-note></p>
+        <div class="pw-swatches" data-swatches role="group" aria-label="Color del filamento"></div>
+        <p class="pw-filament" data-filament></p>
+      </fieldset>
+      <fieldset class="pw-opt" data-color-mode>
+        <legend class="pw-lab__label">07 · Color por capas</legend>
+        <div class="pw-lab__types" data-modes>
+          <button type="button" data-mode="solid" aria-pressed="true">Un color</button>
+          <button type="button" data-mode="bicolor" aria-pressed="false">Bicolor <small data-fee="bicolor"></small></button>
         </div>
-      </div>
-      <div>
-        <span class="pw-lab__label">Parámetros</span>
-        <label class="pw-slider" for="pw-height"><span class="pw-slider__head"><span>Altura</span><output data-out="height">24 cm</output></span>
-          <input id="pw-height" type="range" name="height" min="6" max="40" step="1" value="24"></label>
-        <label class="pw-slider" for="pw-twist"><span class="pw-slider__head"><span>Torsión</span><output data-out="twist">90°</output></span>
-          <input id="pw-twist" type="range" name="twist" min="-360" max="360" step="1" value="90"></label>
-        <label class="pw-slider" for="pw-sides"><span class="pw-slider__head"><span>Lados</span><output data-out="sides">6</output></span>
-          <input id="pw-sides" type="range" name="sides" min="3" max="32" step="1" value="6"></label>
-        <label class="pw-slider pw-lab__slider--adv" for="pw-wave"><span class="pw-slider__head"><span>Ondulación</span><output data-out="wave">0,25</output></span>
-          <input id="pw-wave" type="range" name="wave" min="0" max="1" step="0.01" value="0.25"></label>
-        <label class="pw-slider" for="pw-seed"><span class="pw-slider__head"><span>Seed</span><output data-out="seed">48213</output></span>
-          <input id="pw-seed" type="range" name="seed" min="1" max="99999" step="1" value="48213"></label>
-      </div>
-      <div>
-        <span class="pw-lab__label">Color · <span data-out="colorName">Cal</span></span>
-        <div class="pw-swatches" role="group" aria-label="Color del filamento"></div>
-        <label class="pw-custom" for="pw-color">
-          <input id="pw-color" type="color" value="#9C5F38">
-          <span>Color a medida <small data-custom-fee>+8 €</small></span>
-        </label>
-        <p class="pw-lab__hint">Para un color a medida buscamos o mezclamos el filamento más cercano y te lo confirmamos por correo antes de imprimir.</p>
-      </div>
-      <div>
-        <span class="pw-lab__label">Acabado</span>
-        <div class="pw-lab__types" role="group" aria-label="Acabado">
-          <button type="button" data-finish="mate" aria-pressed="true">Mate</button>
-          <button type="button" data-finish="seda" aria-pressed="false">Seda +6 €</button>
-          <button type="button" data-finish="piedra" aria-pressed="false">Piedra +9 €</button>
+        <div data-bicolor hidden>
+          <p class="pw-lab__hint">Con el AMS de Bambu Lab cambiamos de filamento en una capa exacta: la pieza sale con dos colores, sin pintar.</p>
+          <div class="pw-swatches" data-swatches2 role="group" aria-label="Segundo color"></div>
+          <label class="pw-slider" for="pw-split"><span class="pw-slider__head"><span>Cambio de color a</span><output data-out="split"></output></span><input id="pw-split" type="range" name="split" min="0.15" max="0.85" step="0.01"></label>
         </div>
-      </div>
+      </fieldset>
+      <fieldset class="pw-opt">
+        <legend class="pw-lab__label">08 · Extras</legend>
+        <label class="pw-check" for="pw-water" data-only-water><input id="pw-water" type="checkbox"><span>Interior estanco para flores frescas <small data-fee="watertight"></small></span></label>
+        <label class="pw-field" for="pw-engrave"><span>Grabado en la base <small data-fee="engrave"></small></span><input id="pw-engrave" type="text" maxlength="14" placeholder="Iniciales, una fecha… (14 caracteres)" autocomplete="off"></label>
+        <label class="pw-check" for="pw-lit" data-only="lamp"><input id="pw-lit" type="checkbox" checked><span>Ver la lámpara encendida</span></label>
+      </fieldset>
       <div class="pw-delivery">
         <span class="pw-delivery__icon" aria-hidden="true"></span>
         <p><b>7 días de preparación + envío</b><span data-delivery>Llega en unos 8–10 días</span></p>
       </div>
       <div class="pw-lab__actions">
-        <button class="pw-btn pw-btn--sm" type="button" data-action="randomize" data-magnetic>Randomize seed</button>
-        <button class="pw-btn pw-btn--sm pw-btn--line" type="button" data-action="mutate" data-magnetic>Mutar todo</button>
+        <button class="pw-btn pw-btn--sm pw-btn--line" type="button" data-action="randomize" data-magnetic>Otra variación</button>
         <button class="pw-btn pw-btn--order" type="button" data-action="order" data-magnetic><span>Añadir a la cesta</span><span data-lab-out="price">— €</span></button>
       </div>
       <details class="pw-lab__json" open>
-        <summary><span>Ficha · params.json</span><span class="pw-copy" data-action="copy" role="button" tabindex="0">Copiar</span></summary>
+        <summary><span>Ficha de pedido</span><span class="pw-copy" data-action="copy" role="button" tabindex="0">Copiar</span></summary>
         <pre><code data-lab-json></code></pre>
       </details>
     </form>
@@ -106,6 +121,7 @@
 </a>
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="assets/arko-data.js"></script>
 <script src="assets/arko.js"></script>
 </body>
 </html>

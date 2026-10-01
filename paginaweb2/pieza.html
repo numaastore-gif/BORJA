@@ -25,6 +25,7 @@
       <div class="pw-arch" data-cursor="Girar">
         <div class="pw-arch__floor"></div>
         <canvas class="pw-product__canvas" role="img" aria-label="Vista 3D de la pieza"></canvas>
+        <div class="pw-hud pw-hud--br"><div class="pw-zoom" role="group" aria-label="Lupa"><button type="button" data-zoom="out" aria-label="Alejar">−</button><span data-zoom-val>1,0×</span><button type="button" data-zoom="in" aria-label="Acercar">+</button></div><p class="pw-zoom__hint">Acerca para ver las capas</p></div>
         <div class="pw-arch__beam" aria-hidden="true"></div>
       </div>
     </div>
@@ -34,7 +35,13 @@
     <h1 class="pw-product__name" data-p="name">Pieza</h1>
     <div class="pw-product__row"><span class="pw-piece__code" data-p="code"></span><span class="pw-product__tag" data-p="tag"></span><span class="pw-product__price" data-p="price"></span></div>
     <p class="pw-lead" data-p="desc"></p>
-    <p class="pw-product__color"><span class="pw-product__swatch" data-p="swatch"></span><span>Color de serie. ¿Otro color? <a href="#" data-p-custom-link>Elígelo en el taller</a>.</span></p>
+    <div class="pw-product__colors">
+      <p class="pw-lab__label"><span data-p="colornote">Color de serie.</span> Elige otro filamento Bambu Lab:</p>
+      <div class="pw-lab__types pw-lines" data-p="lines"></div>
+      <div class="pw-swatches" data-p="swatches" role="group" aria-label="Color del filamento"></div>
+      <p class="pw-filament" data-p="filament"></p>
+      <p class="pw-lab__hint">¿Quieres cambiar también la forma o hacerla bicolor? <a href="#" data-p-custom-link>Llévala al taller</a>.</p>
+    </div>
     <dl class="pw-product__spec" data-p="spec"></dl>
     <div class="pw-delivery"><span class="pw-delivery__icon" aria-hidden="true"></span><p><b>7 días de preparación + envío</b><span data-p="delivery"></span></p></div>
     <div class="pw-product__actions">
@@ -62,6 +69,7 @@
 </section>
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="assets/arko-data.js"></script>
 <script src="assets/arko.js"></script>
 </body>
 </html>
