@@ -158,5 +158,15 @@
     "color": "#8A6440",
     "nombreColor": "Madera",
     "notas": "Una rodaja tal como se imprime (≈96.000 triángulos, un punto cada 0,25 mm), para ver de cerca la textura de corteza copiada de la referencia y los entrantes en V."
+  },
+  {
+    "id": "ventanilla_buzon",
+    "nombre": "Ventanilla del buzón",
+    "fecha": "2026-10-01",
+    "archivo": "modelos/ventanilla_buzon.txt",
+    "origen": "buzon/ventanilla_buzon.stl",
+    "color": "#C9A381",
+    "nombreColor": "PETG Translucent Brown",
+    "notas": "Recambio de la ventanilla de plástico del buzón. Resalte de 1 mm que entra en el hueco del reborde interior (70 × 20 mm), con 0,1 mm de holgura por lado y 8 nervios de presión que aprietan 0,15 mm para que quede firme; chaflán de entrada de 0,3 mm. Pestaña de 3 mm × 0,8 mm alrededor que apoya por dentro contra el reborde. Total 76 × 26 × 1,8 mm. Imprimir plana, pestaña sobre la cama, sin soportes."
   }
 ]
