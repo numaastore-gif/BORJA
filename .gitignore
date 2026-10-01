@@ -14,3 +14,6 @@ __pycache__/
 .pytest_cache/
 .venv/
 venv/
+
+# Documentación generada a partir de programas de cliente: se entrega, no se versiona.
+analisis_plc/**/*.xlsx

@@ -1,0 +1,11 @@
+{"maquina": "C600 — Langhammer (paletizado / transporte de cajas y palets, estación Pal_GebTrapo)",
+ "cliente": "No indicado (planta C600)",
+ "proyecto": "C600_LA (archivado C600_LANGHAMMER_31082026.zip)",
+ "cpu": "C600_LANGHAMMER — CPU 317-2 DP (6ES7 317-2AJ10-0AB0), rack 0 slot 2",
+ "programa": "S7-Program (ombstx/offline/0000000B, tabla de símbolos YDBs/24849)",
+ "version": "Último cambio de código: 31/08/2026 08:47 (FB80 «Line 603»); archivado 31/08/2026",
+ "software": "STEP 7 Classic V5.6 (último guardado); bloques en AWL, FUP y KOP",
+ "fecha": "01/10/2026",
+ "archivos": "C600_LANGHAMMER_31082026.zip (proyecto STEP 7 completo: 3 CPU). Analizada la CPU C600_LANGHAMMER.",
+ "faltan": "Plano eléctrico (PDF), plano mecánico/neumático (PDF), exportación de HW Config (.cfg). No adjuntos en esta conversación.",
+ "pdf": "plano_electrico_C600_Langhammer.pdf"}
