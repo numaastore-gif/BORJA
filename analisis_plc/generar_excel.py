@@ -363,10 +363,10 @@ def main(pkl, cfgpath, dst):
     for c in D['CALLS']:
         if c['callee']:
             calls_of[c['caller']].add(c['callee'] + (f', {c["inst"]}' if c['inst'] else ''))
-    wsb = sheet(wb, 'Bloques', ['Bloque', 'Símbolo', 'Tipo', 'Lenguaje', 'Título / comentario', 'Familia', 'Autor',
+    wsb = sheet(wb, 'Bloques', ['Bloque', 'Símbolo', 'Tipo', 'Lenguaje', 'Título (español)', 'Familia', 'Autor',
                                 'Versión', 'Último cambio código', 'Segmentos', 'Llamado desde', 'Llama a',
-                                'Instancia de', 'Observaciones'],
-                [10, 26, 7, 9, 48, 12, 12, 8, 17, 10, 40, 40, 12, 40], wrap_cols=(5, 11, 12, 14))
+                                'Instancia de', 'Observaciones', 'Título original'],
+                [10, 26, 7, 9, 48, 12, 12, 8, 17, 10, 40, 40, 12, 40, 40], wrap_cols=(5, 11, 12, 14, 15))
     order = {'OB': 0, 'FB': 1, 'FC': 2, 'DB': 3, 'UDT': 4, 'SFB': 5, 'SFC': 6, 'VAT': 7}
     lang_es = {'AWL': 'AWL/STL', 'FUP': 'FUP/FBD', 'KOP': 'KOP/LAD', 'SCL': 'SCL', 'GRAPH': 'GRAPH', 'unkown': '—'}
     blist = sorted(blocks.values(), key=lambda b: (order.get(b['Type'], 9), int(re.sub(r'\D', '', b['Name']) or 0)))
@@ -381,11 +381,11 @@ def main(pkl, cfgpath, dst):
             obs.append('Contiene direccionamiento indirecto / listas de salto: referencias cruzadas posiblemente incompletas')
         inst_of = f'FB{b["FB"]}' if b['Type'] == 'DB' and b.get('IsInstance') else ''
         wsb.append([n, b.get('Symbol') or '', b['Type'], lang_es.get(b.get('Lang'), b.get('Lang')),
-                    b.get('Title') or b.get('SymComment') or '', b.get('Family') or '', b.get('Author') or '',
+                    tr_es(b.get('Title') or b.get('SymComment') or ''), b.get('Family') or '', b.get('Author') or '',
                     b.get('Version') or '', b.get('LastCodeChange') or '', len(b.get('Networks') or []) or '',
                     ', '.join(sorted(callers.get(n, []))), ', '.join(sorted(calls_of.get(n, []))), inst_of,
-                    '; '.join(obs)])
-    finish(wsb, 14)
+                    '; '.join(obs), b.get('Title') or b.get('SymComment') or ''])
+    finish(wsb, 15)
 
     # ===================================================== Referencias cruzadas (primero, para anclas)
     wsx = sheet(wb, 'Referencias cruzadas', ['Variable', 'Símbolo', 'Bloque', 'Símbolo bloque', 'Segmento (NW)',
@@ -505,7 +505,7 @@ def main(pkl, cfgpath, dst):
         if not uso:
             obs.append('Sin uso en el programa')
             if s:
-                aviso('Sin uso', 'Entrada declarada sin uso', o, f'{s.get("Symbol")} — {s.get("Comment")}')
+                aviso('Sin uso', 'Entrada declarada sin uso', o, f'{s.get("Symbol")} — {tr_es(s.get("Comment"))}')
         else:
             if com.strip() in ('RESERVE', 'RESERVA', 'RESERVE.') or (s.get('Symbol') or '').upper().startswith('RESERVE'):
                 obs.append('DISCREPANCIA: el símbolo/comentario dice RESERVA pero la entrada se usa en el programa')
@@ -603,7 +603,7 @@ def main(pkl, cfgpath, dst):
         if not ws_o:
             if s:
                 obs.append('Sin escritura en el programa' + (' ni lectura' if not bloques_uso(o) else ''))
-                aviso('Sin uso', 'Salida declarada sin escritura', o, f'{s.get("Symbol")} — {s.get("Comment")}',
+                aviso('Sin uso', 'Salida declarada sin escritura', o, f'{s.get("Symbol")} — {tr_es(s.get("Comment"))}',
                       bloques_uso(o))
         if not s:
             obs.append('AVISO: usada sin declarar en la tabla de símbolos')
@@ -671,7 +671,7 @@ def main(pkl, cfgpath, dst):
         if not uso and not ws_o:
             obs.append('Sin uso en el programa')
             if s:
-                aviso('Sin uso', 'Marca declarada sin uso', o, f'{s.get("Symbol")} — {s.get("Comment")}')
+                aviso('Sin uso', 'Marca declarada sin uso', o, f'{s.get("Symbol")} — {tr_es(s.get("Comment"))}')
         elif ws_o and not reads_by.get(o) and not inv.get(o) and RE_BIT.match(o):
             obs.append('Se escribe pero no se lee en el programa (posible señal para HMI/SCADA)')
         if not s and (ws_o or uso):
@@ -687,10 +687,10 @@ def main(pkl, cfgpath, dst):
     finish(wsm, 12)
 
     # ===================================================== Temporizadores y contadores
-    wst = sheet(wb, 'Temporizadores y contadores', ['Dirección / instancia', 'Símbolo', 'Comentario', 'Tipo',
+    wst = sheet(wb, 'Temporizadores y contadores', ['Dirección / instancia', 'Símbolo', 'Comentario (español)', 'Tipo',
                                                     'Preselección', 'Condición de arranque', 'Uso (dónde se consulta)',
-                                                    'Bloque/Segmento', 'Observaciones'],
-                [16, 22, 30, 30, 18, 70, 45, 45, 40], wrap_cols=(3, 4, 6, 7, 8, 9))
+                                                    'Bloque/Segmento', 'Observaciones', 'Comentario original'],
+                [16, 22, 30, 30, 18, 70, 45, 45, 40, 30], wrap_cols=(3, 4, 6, 7, 8, 9, 10))
     TT = {'SE': 'SE — S_EVERZ retardo a la conexión (≈TON)', 'SA': 'SA — S_AVERZ retardo a la desconexión (≈TOF)',
           'SI': 'SI — S_IMPULS impulso (≈TP)', 'SV': 'SV — S_VIMP impulso prolongado',
           'SS': 'SS — S_SEVERZ retardo a la conexión con memoria', 'ZV': 'ZV — contador ascendente',
@@ -716,28 +716,28 @@ def main(pkl, cfgpath, dst):
             obs.append('Preselecciones distintas según el sitio de arranque')
         if not evs and not uso and s:
             obs.append('Sin uso en el programa')
-            aviso('Sin uso', 'Temporizador/contador declarado sin uso', o, f'{s.get("Symbol")} — {s.get("Comment")}')
+            aviso('Sin uso', 'Temporizador/contador declarado sin uso', o, f'{s.get("Symbol")} — {tr_es(s.get("Comment"))}')
         if not evs and uso:
             obs.append('Se consulta pero no se arranca en el código analizado')
         r = wst.max_row + 1
-        wst.append([None, s.get('Symbol', ''), s.get('Comment', ''), '\n'.join(tipos) or ('Contador' if o.startswith('Z') else 'S5'),
+        wst.append([None, s.get('Symbol', ''), tr_es(s.get('Comment', '')), '\n'.join(tipos) or ('Contador' if o.startswith('Z') else 'S5'),
                     ', '.join(pres), cut('\n'.join(conds)), cut(', '.join(uso)),
-                    cut('\n'.join(sorted({ubicacion(e) for e in evs}))), '; '.join(obs)])
+                    cut('\n'.join(sorted({ubicacion(e) for e in evs}))), '; '.join(obs), s.get('Comment', '')])
         link_addr(wst, r, 1, o)
     # IEC (SFB) y temporizadores por software dentro de FB (INT en décimas)
     for c in D['CALLS']:
         if c['callee'] in ('SFB4', 'SFB5', 'SFB3', 'SFB0', 'SFB1', 'SFB2'):
             wst.append([f'{c["callee"]} {c["inst"] or ""}', '', '', c['callee'], c['params'].get('PT') or c['params'].get('PV') or '',
                         f'IN := {c["params"].get("IN") or c["params"].get("CU")}', '', f'{c["caller"]} NW{c["nw"]}', 'Temporizador IEC'])
-    finish(wst, 9)
+    finish(wst, 10)
 
     # ===================================================== DB y analógicas
     wsd = sheet(wb, 'DB y analógicas', ['DB / variable', 'Símbolo DB', 'Variable', 'Tipo', 'Dirección', 'Valor inicial',
-                                        'Comentario', 'Escalado', 'Rango', 'Uso'],
-                [16, 24, 34, 14, 9, 12, 40, 26, 16, 50], wrap_cols=(7, 8, 10))
+                                        'Comentario (español)', 'Escalado', 'Rango', 'Uso', 'Comentario original'],
+                [16, 24, 34, 14, 9, 12, 40, 26, 16, 50, 40], wrap_cols=(7, 8, 10, 11))
     # analógicas / periferia
     ana = sorted({x[0] for x in XR if re.match(r'^(PEW|PAW|PED|PAD|PEB|PAB|EW|AW|ED|AD)\d+', x[0])}, key=addr_key)
-    wsd.append(['— PERIFERIA / PALABRAS DE E/S —'] + [''] * 9)
+    wsd.append(['— PERIFERIA / PALABRAS DE E/S —'] + [''] * 10)
     wsd.cell(row=wsd.max_row, column=1).fill = F_SUB
     for o in ana:
         s = SYM.get(o, {})
@@ -748,8 +748,8 @@ def main(pkl, cfgpath, dst):
         elif o.startswith(('EW13', 'EW14', 'EW15')):
             esc = 'Lectura de báscula / palabra de entrada (FB40…FB90): ver bloque'
         r = wsd.max_row + 1
-        wsd.append([None, '', s.get('Symbol', ''), s.get('DataType', '') or 'WORD', o, '', s.get('Comment', ''), esc,
-                    'No localizado', uso])
+        wsd.append([None, '', s.get('Symbol', ''), s.get('DataType', '') or 'WORD', o, '', tr_es(s.get('Comment', '')), esc,
+                    'No localizado', uso, s.get('Comment', '')])
         link_addr(wsd, r, 1, o)
     db_uso = defaultdict(set)
     for x in XR:
@@ -764,19 +764,19 @@ def main(pkl, cfgpath, dst):
     for b in dbs:
         n = b['Name']
         tipo = f'DB de instancia de FB{b["FB"]}' if b.get('IsInstance') else 'DB global'
-        wsd.append([f'— {n} —', b.get('Symbol') or '', '', tipo, '', '', b.get('Title') or '', '', '',
+        wsd.append([f'— {n} —', b.get('Symbol') or '', '', tipo, '', '', tr_es(b.get('Title') or ''), '', '',
                     cut(', '.join(sorted(db_uso.get(n, [])))[:1500])])
-        for c in range(1, 11):
+        for c in range(1, 12):
             wsd.cell(row=wsd.max_row, column=c).fill = F_SUB
         for path, typ, addr, com, sv in D['dbvars'].get(n, [])[:400]:
             nrows += 1
             acc = sorted({f'{x[1]} NW{x[2]}' for x in XR if x[0] == f'{n}.{path}' or
                           D['abs2sym'].get(x[0]) == f'{n}.{path}'}) if not b.get('IsInstance') else []
             wsd.append([f'{n}.{path}', b.get('Symbol') or '', path, typ, addr, '' if sv in (None, 'None') else str(sv),
-                        com, '', '', ', '.join(acc[:30])])
+                        tr_es(com), '', '', ', '.join(acc[:30]), com])
         if len(D['dbvars'].get(n, [])) > 400:
-            wsd.append([f'{n}', '', f'… {len(D["dbvars"][n]) - 400} variables más (recortado)', '', '', '', '', '', '', ''])
-    finish(wsd, 10)
+            wsd.append([f'{n}', '', f'… {len(D["dbvars"][n]) - 400} variables más (recortado)', '', '', '', '', '', '', '', ''])
+    finish(wsd, 11)
 
     # ===================================================== Matriz causa-efecto
     cols = outputs_written
@@ -1050,7 +1050,7 @@ def main(pkl, cfgpath, dst):
                   f'El símbolo «{s["Symbol"]}» parece otra dirección ({m.group(1)}{m.group(2)}.{m.group(3)}) y está asignado a {o}')
     for n in D['no_llamados']:
         b = blocks[n]
-        aviso('Info', 'Bloque no llamado', n, f'{b.get("Symbol") or ""} — {b.get("Title") or ""}: no se llama desde ningún OB')
+        aviso('Info', 'Bloque no llamado', n, f'{b.get("Symbol") or ""} — {tr_es(b.get("Title") or "")}: no se llama desde ningún OB')
     ind_blocks = sorted({e[2] for t in [D['tpl']] for n, tp in t.items() for e in [(None, None, n)] if tp['indirect']})
     for n in ind_blocks:
         aviso('Info', 'Direccionamiento indirecto', n, 'El bloque usa punteros, listas de salto (SPL) o accesos indexados: '
@@ -1166,7 +1166,7 @@ def main(pkl, cfgpath, dst):
     wb.move_sheet('Referencias cruzadas', offset=wb.sheetnames.index('Avisos y discrepancias') -
                   wb.sheetnames.index('Referencias cruzadas'))
     # ===================================================== Traducciones
-    wtr = sheet(wb, 'Traducciones', ['Texto original (alemán)', 'Traducción (español)', 'Dónde aparece',
+    wtr = sheet(wb, 'Traducciones', ['Texto original (alemán / inglés)', 'Traducción (español)', 'Dónde aparece',
                                      'Veces en tabla de símbolos'], [60, 60, 40, 12], wrap_cols=(1, 2, 3))
     cnt_sym = defaultdict(int)
     for s_ in SYM.values():
@@ -1207,7 +1207,7 @@ def main(pkl, cfgpath, dst):
                                  'una dirección de cualquier hoja vienes aquí.'),
         ('Avisos y discrepancias', 'Dobles asignaciones, entradas escritas por programa, reservas usadas, variables '
                                    'sin uso… Rojo = aviso, naranja = discrepancia, gris = sin uso.'),
-        ('Traducciones', 'Todos los comentarios del programa en alemán con su traducción al español.'),
+        ('Traducciones', 'Todos los comentarios del programa (alemán e inglés) con su traducción al español.'),
         ('Portada', 'Datos de la máquina, resumen, nombre del PDF del plano y método de análisis.'),
     ]
     r = 5
