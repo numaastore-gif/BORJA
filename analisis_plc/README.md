@@ -31,8 +31,8 @@ lista qué entradas activan / permiten / bloquean esa salida).
    esté en él se traduce de forma orientativa con `glosario.py`).
 
 El libro empieza por la hoja **Inicio** (índice con enlaces). Para averías se usan
-**Buscar salida** (motor que no arranca → qué entradas deben estar a 1 o a 0) y
-**Buscar entrada** (sensor → a qué salidas afecta). Ambas usan fórmulas
+**Buscar salida** (motor que no arranca → qué entradas, marcas, variables de DB y temporizadores deben estar a 1 o a 0, y cómo se activa cada una) y
+**Buscar señal** (entrada, marca, variable de DB o temporizador → a qué salidas afecta). Ambas usan fórmulas
 INDEX/SMALL sobre la hoja **Dependencias**, así que funcionan en cualquier Excel
 y en LibreOffice.
 

@@ -821,29 +821,78 @@ def main(pkl, cfgpath, dst):
 
     # ===================================================== Dependencias + Consulta
     def origenes(dst_, maxd=6):
-        """Entradas que influyen en dst_: directo o a través de marcas/DB/temporizadores."""
+        """Señales que influyen en dst_: entradas, marcas, DB, temporizadores y otras salidas."""
         res = {}
         frontier = [(dst_, 0, '')]
         seen = {dst_}
         while frontier:
             n, d, via = frontier.pop(0)
             for src, roles in deps.get(n, {}).items():
-                if src in seen or src.startswith('~') or src.startswith('?'):
+                if src in seen or src.startswith('~') or src.startswith('?') or not es_global(src):
                     continue
                 seen.add(src)
-                if src.startswith('E') and RE_BIT.match(src):
-                    res[src] = (d + 1, roles, via)
-                elif d + 1 < maxd and not (src.startswith('A') and RE_BIT.match(src)):
+                res[src] = (d + 1, roles, via)
+                es_fin = (src.startswith('E') and RE_BIT.match(src)) or (src.startswith('A') and RE_BIT.match(src))
+                if d + 1 < maxd and not es_fin:
                     frontier.append((src, d + 1, via or src))
         return res
 
+    def tipo_senal(op):
+        if RE_BIT.match(op):
+            return {'E': 'Entrada física', 'A': 'Salida', 'M': 'Marca'}.get(op[0], 'Periferia')
+        if op.startswith('T'):
+            return 'Temporizador'
+        if op.startswith('Z'):
+            return 'Contador'
+        m = re.match(r'^(DB\d+)', op)
+        if m:
+            b_ = blocks.get(m.group(1), {})
+            if b_.get('IsInstance'):
+                return f'Variable interna de FB{b_.get("FB")} ({m.group(1)})'
+            return f'Variable de DB ({m.group(1)} «{db_sym(m.group(1))}»)'
+        if RE_BYTE.match(op):
+            return 'Byte/palabra ' + {'E': 'de entradas', 'A': 'de salidas', 'M': 'de marcas'}.get(op[0], 'de periferia')
+        return 'Otra'
+
+    TORD = {'Entrada física': 0, 'Marca': 1, 'Temporizador': 3, 'Contador': 3, 'Salida': 4}
+    como_cache = {}
+
+    def como_se_activa(op):
+        if op in como_cache:
+            return como_cache[op]
+        if op.startswith('E') and RE_BIT.match(op):
+            txt = 'Entrada física: comprobar el elemento en campo'
+        elif RE_TZ.match(op) and op.startswith('T'):
+            evs = tm_by.get(op, [])
+            txt = '\n'.join(f'{e["type"]} {e["preset"] or ""}: arranca si {render(e["cond"], False)[:200]} '
+                            f'({e["block"]} NW{e["nw"]})' for e in evs[:3]) or 'No se arranca en el código analizado'
+        else:
+            ws_ = writes.get(op, [])
+            if not ws_:
+                txt = ('No se escribe directamente en el código analizado: puede venir del HMI/PCS, de una '
+                       'comunicación o de una copia de bloque (SFC20/SFC14)') if op.startswith('DB') else \
+                    'No se escribe en el código analizado'
+            else:
+                partes = []
+                for w in ws_[:4]:
+                    k = KIND_TXT.get(w['kind'], w['kind'])
+                    partes.append(f'[{k}] {render(w["expr"], False)[:220]}' +
+                                  (f' | camino: {render(w["pc"], False)[:120]}' if w['pc'] != ('c', True) else '') +
+                                  f' ({w["block"]} NW{w["nw"]})')
+                if len(ws_) > 4:
+                    partes.append(f'… y {len(ws_) - 4} escrituras más (ver hoja Marcas / Referencias cruzadas)')
+                txt = '\n'.join(partes)
+        como_cache[op] = txt
+        return txt
+
     ROL = {'A': 'Activa', 'P': 'Permite', 'B': 'Bloquea'}
-    QS, QE = "'Buscar salida'!$C$5", "'Buscar entrada'!$C$5"
-    wsdep = sheet(wb, 'Dependencias', ['Salida', 'Símbolo salida', 'Descripción salida', 'Entrada', 'Símbolo entrada',
-                                       'Descripción entrada', 'Qué hace la entrada', 'Estado necesario de la entrada',
-                                       'Relación', 'A través de', 'clave salida', 'fila salida', 'clave entrada',
-                                       'fila entrada'],
-                  [10, 18, 34, 10, 18, 34, 18, 30, 16, 24, 6, 6, 6, 6], wrap_cols=(3, 6, 8))
+    QS, QE = "'Buscar salida'!$C$5", "'Buscar señal'!$C$5"
+    wsdep = sheet(wb, 'Dependencias', ['Salida', 'Símbolo salida', 'Descripción salida', 'Señal', 'Tipo de señal',
+                                       'Símbolo señal', 'Descripción señal', 'Qué hace la señal',
+                                       'Estado necesario de la señal', 'Relación', 'A través de',
+                                       'Cómo se activa esta señal', 'clave salida', 'fila salida', 'clave señal',
+                                       'fila señal'],
+                  [10, 18, 34, 16, 22, 18, 34, 18, 30, 16, 24, 60, 6, 6, 6, 6], wrap_cols=(3, 5, 7, 9, 12))
 
     def estado(d, roles, via):
         if d == 1:
@@ -858,35 +907,46 @@ def main(pkl, cfgpath, dst):
 
     for t in outputs_written:
         st = SYM.get(t, {})
-        srcs = sorted(origenes(t).items(), key=lambda kv: (kv[1][0], addr_key(kv[0])))
+        srcs = sorted(origenes(t).items(),
+                      key=lambda kv: (kv[1][0], TORD.get(tipo_senal(kv[0]), 2), addr_key(kv[0])))
         if not srcs:
             srcs = [('—', (0, set(), ''))]
         for src, (d, roles, via) in srcs:
             ss = SYM.get(src, {})
             if src == '—':
-                rol, est, rel = 'Sin entradas físicas', 'Depende solo de marcas/DB/HMI/comunicación', '—'
+                rol, est, rel, tip, como = 'Sin condiciones', 'Asignación fija', '—', '—', ''
             else:
                 rol = ' / '.join(ROL[x] for x in ('A', 'P', 'B') if x in roles) if d == 1 else \
                     ('Bloquea (indirecto)' if roles == {'B'} else 'Condiciona (indirecto)')
                 est = estado(d, roles, via)
                 rel = 'Directa' if d == 1 else f'Indirecta ({d} niveles)'
+                tip = tipo_senal(src)
+                como = cut(como_se_activa(src), 1200)
+            com_ = (ss.get('Comment') or '').strip()
+            if ss and com_ and com_.upper() not in ('0', '.', 'RESERVE', 'RESERVA'):
+                desc = tr_es(com_)
+            elif ss:
+                desc = ss.get('Symbol', '') + (f' (comentario: «{com_}»)' if com_ else '')
+            else:
+                desc = descr(src) if src != '—' else ''
             r = wsdep.max_row + 1
-            wsdep.append([t, st.get('Symbol', ''), tr_es(st.get('Comment', '')), src, ss.get('Symbol', ''),
-                          tr_es(ss.get('Comment', '')), rol, est, rel, nombre(via) if via else '—',
+            wsdep.append([t, st.get('Symbol', ''), tr_es(st.get('Comment', '')), src, tip, ss.get('Symbol', ''),
+                          desc, rol, est, rel, nombre(via) if via else '—', como,
                           f'=A{r}&" "&B{r}&" "&C{r}&" "&SUBSTITUTE(A{r},"A","Q")',
-                          f'=IF({QS}="","",IF(ISNUMBER(SEARCH({QS},K{r})),ROW(),""))',
-                          f'=D{r}&" "&E{r}&" "&F{r}&" "&SUBSTITUTE(D{r},"E","I")',
-                          f'=IF({QE}="","",IF(ISNUMBER(SEARCH({QE},M{r})),ROW(),""))'])
-    finish(wsdep, 14)
-    for col in 'KLMN':
+                          f'=IF({QS}="","",IF(ISNUMBER(SEARCH({QS},M{r})),ROW(),""))',
+                          f'=D{r}&" "&F{r}&" "&G{r}&" "&SUBSTITUTE(SUBSTITUTE(D{r},"E","I"),"A","Q")',
+                          f'=IF({QE}="","",IF(ISNUMBER(SEARCH({QE},O{r})),ROW(),""))'])
+    finish(wsdep, 16)
+    for col in 'MNOP':
         wsdep.column_dimensions[col].hidden = True
 
-    def hoja_busqueda(titulo, nombre_hoja, pregunta, ejemplo, ayuda, fila_col, ficha, cols, cols_hdr, color_col):
+    def hoja_busqueda(titulo, nombre_hoja, pregunta, ejemplo, ayuda, fila_col, ficha, cols, cols_hdr, color_col,
+                      anchos=(12, 36, 12, 36, 18, 34, 16, 26)):
         ws = wb.create_sheet(nombre_hoja, 1 if 'salida' in nombre_hoja else 2)
         ws.sheet_properties.tabColor = 'E0A800'
         ws.column_dimensions['A'].width = 2
         ws.column_dimensions['B'].width = 26
-        for col, w_ in zip('CDEFGHIJ', (12, 36, 12, 36, 18, 34, 16, 26)):
+        for col, w_ in zip('CDEFGHIJK', anchos):
             ws.column_dimensions[col].width = w_
         ws['B2'] = titulo
         ws['B2'].font = Font(bold=True, size=16, color=C_HEAD)
@@ -941,37 +1001,39 @@ def main(pkl, cfgpath, dst):
         ws.freeze_panes = 'A8'
         return ws
 
-    p1 = 'INDEX(Dependencias!A:A,SMALL(Dependencias!L:L,1))'
+    p1 = 'INDEX(Dependencias!A:A,SMALL(Dependencias!N:N,1))'
     m1 = f'MATCH({p1},Salidas!A:A,0)'
     hoja_busqueda(
         '¿Por qué no se activa esta salida / motor?', 'Buscar salida',
         '¿Qué salida, motor o válvula está fallando?', 'A22.3',
         'Vale la dirección (A22.3 o Q22.3), el símbolo (422KM22.3), el motor (46M2), la posición (POSICIÓN 400) o '
-        'cualquier palabra de la descripción (empujador, línea 603…). No distingue mayúsculas.',
-        'L',
+        'cualquier palabra de la descripción (empujador, línea 603…). Salen las entradas, marcas, variables de DB y '
+        'temporizadores que la condicionan.',
+        'N',
         [('Salida', f'=IFERROR({p1}&"  —  "&INDEX(Salidas!D:D,{m1}),"")', 20),
          ('Se ACTIVA cuando…', f'=IFERROR(INDEX(Salidas!K:K,{m1}),"")', 150),
          ('Se DESACTIVA cuando…', f'=IFERROR(INDEX(Salidas!M:M,{m1}),"")', 70),
          ('Seguridades / enclavamientos', f'=IFERROR(INDEX(Salidas!N:N,{m1}),"")', 70),
          ('Dónde se escribe (bloque)', f'=IFERROR(INDEX(Salidas!P:P,{m1}),"")', 45),
          ('Hoja del plano', f'=IFERROR(INDEX(Salidas!F:F,{m1}),"")', 18)],
-        list('ACDFGHIJ'), ['Salida', 'Descripción salida', 'Entrada a comprobar', 'Descripción entrada',
-                           'Qué hace la entrada', 'Estado necesario de la entrada', 'Relación', 'A través de'], 'G')
-    p2 = 'INDEX(Dependencias!D:D,SMALL(Dependencias!N:N,1))'
+        list('ADEGHIJKL'), ['Salida', 'Señal a comprobar', 'Tipo de señal', 'Descripción señal', 'Qué hace',
+                            'Estado necesario', 'Relación', 'A través de', 'Cómo se activa esa señal (marcas, DB, T)'],
+        'F', anchos=(14, 22, 36, 16, 26, 14, 22, 70, 10))
+    p2 = 'INDEX(Dependencias!D:D,SMALL(Dependencias!P:P,1))'
     m2 = f'MATCH({p2},Entradas!A:A,0)'
     hoja_busqueda(
-        '¿Qué hace esta entrada (sensor, pulsador, seta…)?', 'Buscar entrada',
-        '¿Qué entrada quieres consultar?', 'E30.1',
-        'Vale la dirección (E30.1 o I30.1), el símbolo (230B30.1), el motor (46M1), la posición o una palabra '
-        '(fotocélula, pulsador, emergencia…). Muestra todas las salidas a las que afecta.',
-        'N',
-        [('Entrada', f'=IFERROR({p2}&"  —  "&INDEX(Entradas!D:D,{m2}),"")', 20),
-         ('Elemento de campo', f'=IFERROR(INDEX(Entradas!G:G,{m2}),"")', 18),
-         ('ACTIVA / PERMITE', f'=IFERROR(INDEX(Entradas!M:M,{m2}),"")', 120),
-         ('BLOQUEA', f'=IFERROR(INDEX(Entradas!N:N,{m2}),"")', 60),
-         ('Hoja del plano', f'=IFERROR(INDEX(Entradas!H:H,{m2}),"")', 18)],
-        list('DFACGIJ'), ['Entrada', 'Descripción entrada', 'Salida afectada', 'Descripción salida',
-                          'Qué hace la entrada', 'Relación', 'A través de'], 'F')
+        '¿A qué afecta esta entrada, marca o variable de DB?', 'Buscar señal',
+        '¿Qué señal quieres consultar?', 'E30.1',
+        'Vale una entrada (E30.1 o I30.1), una marca (M135.0), una variable de DB (DB20.PZM_DUS), un temporizador '
+        '(T43) o una palabra (fotocélula, emergencia…). Muestra todas las salidas a las que afecta.',
+        'P',
+        [('Señal', f'=IFERROR({p2}&"  —  "&INDEX(Dependencias!G:G,SMALL(Dependencias!P:P,1)),"")', 20),
+         ('Tipo', '=IFERROR(INDEX(Dependencias!E:E,SMALL(Dependencias!P:P,1)),"")', 18),
+         ('Cómo se activa', '=IFERROR(INDEX(Dependencias!L:L,SMALL(Dependencias!P:P,1)),"")', 70),
+         ('Elemento de campo (si es entrada)', f'=IFERROR(INDEX(Entradas!G:G,{m2}),"—")', 18),
+         ('Hoja del plano (si es entrada)', f'=IFERROR(INDEX(Entradas!H:H,{m2}),"—")', 18)],
+        list('DGACHJK'), ['Señal', 'Descripción señal', 'Salida afectada', 'Descripción salida',
+                          'Qué hace la señal', 'Relación', 'A través de'], 'F')
 
     # ===================================================== símbolos sin uso / sin declarar (otros)
     for o, s in SYM.items():
@@ -1127,8 +1189,9 @@ def main(pkl, cfgpath, dst):
     guia = [
         ('PARA AVERÍAS', None),
         ('Buscar salida', 'Tengo un motor/válvula/piloto que no funciona: escribe la salida o el motor (A22.3, 46M2…) y '
-                          'te dice qué entradas tienen que estar a 1 o a 0 y por qué.'),
-        ('Buscar entrada', 'Tengo un sensor/pulsador/seta: escribe la entrada (E30.1…) y te dice a qué salidas afecta.'),
+                          'te dice qué entradas, marcas, variables de DB y temporizadores tienen que estar a 1 o a 0, '
+                          'y cómo se activa cada marca o variable.'),
+        ('Buscar señal', 'Tengo un sensor/pulsador/seta, una marca o una variable de DB: escribe la señal (E30.1, M135.0…) y te dice a qué salidas afecta.'),
         ('DETALLE', None),
         ('Salidas', 'Una fila por salida: cuándo se activa y se desactiva (en lenguaje claro y en booleano), '
                     'seguridades, bloque donde se escribe.'),
