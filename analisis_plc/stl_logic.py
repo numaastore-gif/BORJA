@@ -437,15 +437,18 @@ def analizar_bloque(blk, temps=frozenset(), nombres=frozenset()):
                 val = lg.cur()
                 ev.append(('timer', par, TIMER_OPS[cmd], acc1, AND(pc, val), nn, r.get('Txt', '').strip()))
                 ev.append(('write', par, 'timer_start', val, pc, nn, r.get('Txt', '').strip()))
+                lg.set_value(val)       # SE/SA/SI/SV/SS cierran la cadena lógica (/ER = 0)
                 continue
             if cmd in ('ZV', 'ZR'):
                 val = lg.cur()
                 ev.append(('counter', par, cmd, None, AND(pc, val), nn, r.get('Txt', '').strip()))
                 ev.append(('write', par, 'count_' + ('up' if cmd == 'ZV' else 'down'), val, pc, nn,
                            r.get('Txt', '').strip()))
+                lg.set_value(val)       # ZV/ZR cierran la cadena lógica
                 continue
             if cmd == 'FR':
                 rd(par, cmd)
+                lg.set_value(lg.cur())
                 continue
             if cmd in ('L', 'LC', 'LAR1', 'LAR2', 'L DBLG', 'L DBNO'):
                 if par:
