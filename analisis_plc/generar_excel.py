@@ -14,6 +14,17 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
 from glosario import traducir
+TR = {}
+
+
+def tr_es(txt):
+    t = (txt or '').strip()
+    if not t:
+        return ''
+    if t in TR:
+        return TR[t]['es']
+    return traducir(t)
+
 from stl_logic import literals, size, RE_BIT, RE_BYTE, RE_TZ, bits_de, es_global
 
 # ------------------------------------------------------------------ estilo
@@ -116,14 +127,14 @@ def descr(op):
     if s:
         com = s['Comment'].strip()
         if com and com.upper() not in ('RESERVE', '.', 'RESERVA'):
-            return f'{traducir(com)} ({op})'
+            return f'{tr_es(com)} ({op})'
         return f'{s["Symbol"]} ({op})'
     info = D['sympath_info'].get(op)
     m = re.match(r'^(DB\d+)\.(.*)$', op)
     if m:
         base = f'"{db_sym(m.group(1))}".{m.group(2)}'
         if info and info[2]:
-            return f'{traducir(info[2])} ({base})'
+            return f'{tr_es(info[2])} ({base})'
         return base
     return op
 
@@ -269,6 +280,7 @@ def main(pkl, cfgpath, dst):
     CFG = json.load(open(cfgpath, encoding='utf-8'))
     CFG['_cell_pdf'], CFG['_cell_off'] = 16, 17     # filas fijas en Portada (ver rows0)
     SYM = D['sym']
+    TR.update(json.load(open(CFG['traducciones'], encoding='utf-8')))
     blocks = D['blocks']
     W, RD, TM, XR = D['W'], D['RD'], D['TM'], D['xref']
 
@@ -503,7 +515,7 @@ def main(pkl, cfgpath, dst):
             aviso('Aviso', 'Usada sin declarar', o, 'Operando sin entrada en la tabla de símbolos', uso)
         obs.append('Plano no disponible: descripción, módulo, borne y cable sin verificar')
         r = wse.max_row + 1
-        wse.append([None, s.get('Symbol', ''), s.get('Comment', ''), traducir(s.get('Comment', '')),
+        wse.append([None, s.get('Symbol', ''), s.get('Comment', ''), tr_es(s.get('Comment', '')),
                     'No localizado', tipo, elemento_campo(o), bm[2] if bm else 'No localizado',
                     'No localizado', 'No localizado', None, posicion_mecanica(o), cut(act_s), cut(blq_s), uso,
                     '; '.join(obs)])
@@ -613,7 +625,7 @@ def main(pkl, cfgpath, dst):
         obs.append('Plano no disponible: actuador, módulo y borne sin verificar')
         rd = sorted({f'{r["block"]} NW{r["nw"]}' for r in reads_by.get(o, [])})
         r = wss.max_row + 1
-        wss.append([None, s.get('Symbol', ''), s.get('Comment', ''), traducir(s.get('Comment', '')), elemento_campo(o),
+        wss.append([None, s.get('Symbol', ''), s.get('Comment', ''), tr_es(s.get('Comment', '')), elemento_campo(o),
                     bm[2] if bm else 'No localizado', 'No localizado', 'No localizado', None, posicion_mecanica(o),
                     cut('\n'.join(act_t)) or 'No se escribe en el programa', cut('\n'.join(act_b)), cut('\n'.join(des)),
                     cut('\n'.join(encl[:40])), '\n'.join(tm_txt), cut('\n'.join(sorted(set(locs)))),
@@ -669,7 +681,7 @@ def main(pkl, cfgpath, dst):
         rb_ = sorted({f'{r["block"]} NW{r["nw"]}' for r in reads_by.get(o, [])})
         r = wsm.max_row + 1
         wsm.append([None, s.get('Symbol', ''), s.get('DataType', '') or ('BOOL' if RE_BIT.match(o) else ''),
-                    s.get('Comment', ''), traducir(s.get('Comment', '')), cut('\n'.join(act)), cut('\n'.join(des)),
+                    s.get('Comment', ''), tr_es(s.get('Comment', '')), cut('\n'.join(act)), cut('\n'.join(des)),
                     cut('\n'.join(tgt[:40])), rem, cut(', '.join(wb_)), cut(', '.join(rb_)), '; '.join(obs)])
         link_addr(wsm, r, 1, o)
     finish(wsm, 12)
@@ -826,80 +838,140 @@ def main(pkl, cfgpath, dst):
         return res
 
     ROL = {'A': 'Activa', 'P': 'Permite', 'B': 'Bloquea'}
+    QS, QE = "'Buscar salida'!$C$5", "'Buscar entrada'!$C$5"
     wsdep = sheet(wb, 'Dependencias', ['Salida', 'Símbolo salida', 'Descripción salida', 'Entrada', 'Símbolo entrada',
-                                       'Descripción entrada', 'Rol', 'Relación', 'A través de', 'Clave búsqueda',
-                                       'Fila coincidente'],
-                  [10, 18, 34, 10, 18, 34, 18, 12, 22, 10, 10], wrap_cols=(3, 6))
-    dep_rows = 0
+                                       'Descripción entrada', 'Qué hace la entrada', 'Estado necesario de la entrada',
+                                       'Relación', 'A través de', 'clave salida', 'fila salida', 'clave entrada',
+                                       'fila entrada'],
+                  [10, 18, 34, 10, 18, 34, 18, 30, 16, 24, 6, 6, 6, 6], wrap_cols=(3, 6, 8))
+
+    def estado(d, roles, via):
+        if d == 1:
+            if roles <= {'A', 'P'}:
+                return '1 — debe estar activa'
+            if roles == {'B'}:
+                return '0 — no debe estar activa'
+            return 'Según la rama (ver condición en «Salidas»)'
+        if roles == {'B'}:
+            return f'0 (influye a través de {via})'
+        return f'Influye a través de {via}'
+
     for t in outputs_written:
         st = SYM.get(t, {})
-        for src, (d, roles, via) in sorted(origenes(t).items(), key=lambda kv: (kv[1][0], addr_key(kv[0]))):
+        srcs = sorted(origenes(t).items(), key=lambda kv: (kv[1][0], addr_key(kv[0])))
+        if not srcs:
+            srcs = [('—', (0, set(), ''))]
+        for src, (d, roles, via) in srcs:
             ss = SYM.get(src, {})
-            rol = ' / '.join(ROL[x] for x in ('A', 'P', 'B') if x in roles) if d == 1 else \
-                ('Bloquea (indirecto)' if roles == {'B'} else 'Condiciona (indirecto)')
+            if src == '—':
+                rol, est, rel = 'Sin entradas físicas', 'Depende solo de marcas/DB/HMI/comunicación', '—'
+            else:
+                rol = ' / '.join(ROL[x] for x in ('A', 'P', 'B') if x in roles) if d == 1 else \
+                    ('Bloquea (indirecto)' if roles == {'B'} else 'Condiciona (indirecto)')
+                est = estado(d, roles, via)
+                rel = 'Directa' if d == 1 else f'Indirecta ({d} niveles)'
             r = wsdep.max_row + 1
-            wsdep.append([t, st.get('Symbol', ''), traducir(st.get('Comment', '')) or st.get('Comment', ''), src,
-                          ss.get('Symbol', ''), traducir(ss.get('Comment', '')) or ss.get('Comment', ''), rol,
-                          'Directa' if d == 1 else f'Indirecta ({d} niveles)', nombre(via) if via else '—',
-                          f'=A{r}&" "&B{r}&" "&C{r}&" "&D{r}&" "&E{r}&" "&F{r}',
-                          f'=IF(Consulta!$C$4="","",IF(ISNUMBER(SEARCH(Consulta!$C$4,'
-                          f'IF(Consulta!$C$5="Entrada",D{r}&" "&E{r}&" "&F{r},A{r}&" "&B{r}&" "&C{r}))),ROW(),""))'])
-            dep_rows += 1
-    finish(wsdep, 11)
-    wsdep.column_dimensions['J'].hidden = True
+            wsdep.append([t, st.get('Symbol', ''), tr_es(st.get('Comment', '')), src, ss.get('Symbol', ''),
+                          tr_es(ss.get('Comment', '')), rol, est, rel, nombre(via) if via else '—',
+                          f'=A{r}&" "&B{r}&" "&C{r}&" "&SUBSTITUTE(A{r},"A","Q")',
+                          f'=IF({QS}="","",IF(ISNUMBER(SEARCH({QS},K{r})),ROW(),""))',
+                          f'=D{r}&" "&E{r}&" "&F{r}&" "&SUBSTITUTE(D{r},"E","I")',
+                          f'=IF({QE}="","",IF(ISNUMBER(SEARCH({QE},M{r})),ROW(),""))'])
+    finish(wsdep, 14)
+    for col in 'KLMN':
+        wsdep.column_dimensions[col].hidden = True
 
-    wsq = wb.create_sheet('Consulta', 1)
-    wsq.column_dimensions['A'].width = 3
-    for col, w_ in zip('BCDEFGHIJ', (10, 18, 34, 10, 18, 40, 22, 16, 22)):
-        wsq.column_dimensions[col].width = w_
-    wsq['B2'] = 'Consulta rápida: ¿qué entradas activan / permiten / bloquean una salida?'
-    wsq['B2'].font = Font(bold=True, size=14, color=C_HEAD)
-    wsq['B4'] = 'Buscar:'
-    wsq['B4'].font = Font(bold=True)
-    wsq['C4'] = 'A22.3'
-    wsq['C4'].fill = PatternFill('solid', fgColor='FFF7D6')
-    wsq['C4'].font = Font(bold=True, size=12)
-    wsq['E4'] = ('Escriba una dirección (A22.3), un símbolo (422KM22.3), un BMK de motor (46M2) o una palabra del '
-                 'comentario (Abschieber, Linie 603…). No distingue mayúsculas.')
-    wsq.merge_cells('E4:J4')
-    wsq['E4'].alignment = WRAP
-    wsq.row_dimensions[4].height = 32
-    wsq['B5'] = 'Buscar en:'
-    wsq['B5'].font = Font(bold=True)
-    wsq['C5'] = 'Salida'
-    wsq['C5'].fill = PatternFill('solid', fgColor='FFF7D6')
-    from openpyxl.worksheet.datavalidation import DataValidation
-    dv = DataValidation(type='list', formula1='"Salida,Entrada"', allow_blank=False)
-    wsq.add_data_validation(dv)
-    dv.add('C5')
-    wsq['E5'] = ('«Salida»: muestra las entradas que influyen en las salidas que coinciden (p. ej. motor en fallo → '
-                 'qué entradas lo activan). «Entrada»: muestra las salidas afectadas por las entradas que coinciden.')
-    wsq.merge_cells('E5:J5')
-    wsq['E5'].alignment = WRAP
-    wsq.row_dimensions[5].height = 32
-    wsq['B6'] = '=COUNT(Dependencias!K:K)&" coincidencias (se muestran hasta 400)"'
-    wsq['B6'].font = Font(italic=True, color='555555')
-    hdr = ['Salida', 'Símbolo salida', 'Descripción salida', 'Entrada', 'Símbolo entrada', 'Descripción entrada',
-           'Rol', 'Relación', 'A través de']
-    for j, h in enumerate(hdr, 2):
-        c = wsq.cell(row=8, column=j, value=h)
-        c.fill = F_HEAD
-        c.font = FONT_HEAD
-    src_cols = 'ABCDEFGHI'
-    for i in range(400):
-        rr = 9 + i
-        for j, sc in enumerate(src_cols, 2):
-            c = wsq.cell(row=rr, column=j,
-                         value=f'=IFERROR(INDEX(Dependencias!{sc}:{sc},SMALL(Dependencias!$K:$K,{i + 1})),"")')
-            c.alignment = WRAP if j in (4, 7, 10) else TOP
-    rng = 'B9:J408'
-    wsq.conditional_formatting.add(rng, FormulaRule(formula=['ISNUMBER(SEARCH("Bloquea",$H9))'], fill=F_B))
-    wsq.conditional_formatting.add(rng, FormulaRule(formula=['ISNUMBER(SEARCH("Activa",$H9))'], fill=F_A))
-    wsq.conditional_formatting.add(rng, FormulaRule(formula=['ISNUMBER(SEARCH("Permite",$H9))'], fill=F_P))
-    wsq.freeze_panes = 'B9'
-    wsq['B410'] = ('Fuente: hoja «Dependencias» (todas las relaciones entrada → salida, directas e indirectas a través '
-                   'de marcas, DB y temporizadores, hasta 6 niveles). Para el detalle de la condición, siga el enlace de '
-                   'la salida en la hoja «Salidas».')
+    def hoja_busqueda(titulo, nombre_hoja, pregunta, ejemplo, ayuda, fila_col, ficha, cols, cols_hdr, color_col):
+        ws = wb.create_sheet(nombre_hoja, 1 if 'salida' in nombre_hoja else 2)
+        ws.sheet_properties.tabColor = 'E0A800'
+        ws.column_dimensions['A'].width = 2
+        ws.column_dimensions['B'].width = 26
+        for col, w_ in zip('CDEFGHIJ', (12, 36, 12, 36, 18, 34, 16, 26)):
+            ws.column_dimensions[col].width = w_
+        ws['B2'] = titulo
+        ws['B2'].font = Font(bold=True, size=16, color=C_HEAD)
+        ws['B4'] = pregunta
+        ws['B4'].font = Font(bold=True, size=12)
+        ws['B5'] = 'Escribe aquí  ➜'
+        ws['B5'].font = Font(bold=True, size=12, color='B00000')
+        ws['B5'].alignment = Alignment(horizontal='right', vertical='center')
+        ws['C5'] = ejemplo
+        ws.merge_cells('C5:E5')
+        ws['C5'].fill = PatternFill('solid', fgColor='FFE680')
+        ws['C5'].font = Font(bold=True, size=14)
+        ws['C5'].border = Border(left=Side(style='medium'), right=Side(style='medium'), top=Side(style='medium'),
+                                 bottom=Side(style='medium'))
+        ws.row_dimensions[5].height = 26
+        ws['F5'] = ayuda
+        ws.merge_cells('F5:J6')
+        ws['F5'].alignment = WRAP
+        ws['F5'].font = Font(italic=True, color='555555')
+        n = f'COUNT(Dependencias!{fila_col}:{fila_col})'
+        ws['B7'] = f'=IF({n}=0,"Sin resultados: prueba con otra palabra o dirección",{n}&" relaciones encontradas")'
+        ws['B7'].font = Font(bold=True, color='1F4E9A')
+        r = 9
+        ws.cell(row=r, column=2, value='FICHA (primer resultado)').font = Font(bold=True, color='FFFFFF')
+        ws.cell(row=r, column=2).fill = F_HEAD
+        ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=10)
+        ws.cell(row=r, column=3).fill = F_HEAD
+        for k, (lbl, f, h) in enumerate(ficha, r + 1):
+            ws.cell(row=k, column=2, value=lbl).font = Font(bold=True)
+            ws.cell(row=k, column=2).alignment = Alignment(vertical='top')
+            c = ws.cell(row=k, column=3, value=f)
+            ws.merge_cells(start_row=k, start_column=3, end_row=k, end_column=10)
+            c.alignment = WRAP
+            ws.row_dimensions[k].height = h
+        hr = r + len(ficha) + 2
+        ws.cell(row=hr - 1, column=2, value='TODAS LAS RELACIONES').font = Font(bold=True, color=C_HEAD, size=12)
+        for j, h in enumerate(cols_hdr, 2):
+            c = ws.cell(row=hr, column=j, value=h)
+            c.fill = F_HEAD
+            c.font = FONT_HEAD
+            c.alignment = Alignment(wrap_text=True, vertical='center')
+        for i in range(400):
+            for j, sc in enumerate(cols, 2):
+                c = ws.cell(row=hr + 1 + i, column=j,
+                            value=f'=IFERROR(INDEX(Dependencias!{sc}:{sc},SMALL(Dependencias!${fila_col}:${fila_col},{i + 1})),"")')
+                c.alignment = WRAP
+        rng = f'B{hr + 1}:{get_column_letter(len(cols) + 1)}{hr + 400}'
+        cc = f'${color_col}{hr + 1}'
+        ws.conditional_formatting.add(rng, FormulaRule(formula=[f'ISNUMBER(SEARCH("Bloquea",{cc}))'], fill=F_B))
+        ws.conditional_formatting.add(rng, FormulaRule(formula=[f'ISNUMBER(SEARCH("Activa",{cc}))'], fill=F_A))
+        ws.conditional_formatting.add(rng, FormulaRule(formula=[f'ISNUMBER(SEARCH("Permite",{cc}))'], fill=F_P))
+        ws.freeze_panes = 'A8'
+        return ws
+
+    p1 = 'INDEX(Dependencias!A:A,SMALL(Dependencias!L:L,1))'
+    m1 = f'MATCH({p1},Salidas!A:A,0)'
+    hoja_busqueda(
+        '¿Por qué no se activa esta salida / motor?', 'Buscar salida',
+        '¿Qué salida, motor o válvula está fallando?', 'A22.3',
+        'Vale la dirección (A22.3 o Q22.3), el símbolo (422KM22.3), el motor (46M2), la posición (POSICIÓN 400) o '
+        'cualquier palabra de la descripción (empujador, línea 603…). No distingue mayúsculas.',
+        'L',
+        [('Salida', f'=IFERROR({p1}&"  —  "&INDEX(Salidas!D:D,{m1}),"")', 20),
+         ('Se ACTIVA cuando…', f'=IFERROR(INDEX(Salidas!K:K,{m1}),"")', 150),
+         ('Se DESACTIVA cuando…', f'=IFERROR(INDEX(Salidas!M:M,{m1}),"")', 70),
+         ('Seguridades / enclavamientos', f'=IFERROR(INDEX(Salidas!N:N,{m1}),"")', 70),
+         ('Dónde se escribe (bloque)', f'=IFERROR(INDEX(Salidas!P:P,{m1}),"")', 45),
+         ('Hoja del plano', f'=IFERROR(INDEX(Salidas!F:F,{m1}),"")', 18)],
+        list('ACDFGHIJ'), ['Salida', 'Descripción salida', 'Entrada a comprobar', 'Descripción entrada',
+                           'Qué hace la entrada', 'Estado necesario de la entrada', 'Relación', 'A través de'], 'G')
+    p2 = 'INDEX(Dependencias!D:D,SMALL(Dependencias!N:N,1))'
+    m2 = f'MATCH({p2},Entradas!A:A,0)'
+    hoja_busqueda(
+        '¿Qué hace esta entrada (sensor, pulsador, seta…)?', 'Buscar entrada',
+        '¿Qué entrada quieres consultar?', 'E30.1',
+        'Vale la dirección (E30.1 o I30.1), el símbolo (230B30.1), el motor (46M1), la posición o una palabra '
+        '(fotocélula, pulsador, emergencia…). Muestra todas las salidas a las que afecta.',
+        'N',
+        [('Entrada', f'=IFERROR({p2}&"  —  "&INDEX(Entradas!D:D,{m2}),"")', 20),
+         ('Elemento de campo', f'=IFERROR(INDEX(Entradas!G:G,{m2}),"")', 18),
+         ('ACTIVA / PERMITE', f'=IFERROR(INDEX(Entradas!M:M,{m2}),"")', 120),
+         ('BLOQUEA', f'=IFERROR(INDEX(Entradas!N:N,{m2}),"")', 60),
+         ('Hoja del plano', f'=IFERROR(INDEX(Entradas!H:H,{m2}),"")', 18)],
+        list('DFACGIJ'), ['Entrada', 'Descripción entrada', 'Salida afectada', 'Descripción salida',
+                          'Qué hace la entrada', 'Relación', 'A través de'], 'F')
 
     # ===================================================== símbolos sin uso / sin declarar (otros)
     for o, s in SYM.items():
@@ -1014,7 +1086,7 @@ def main(pkl, cfgpath, dst):
         ('Limitaciones', 'Temporizadores por software (contadores INT en décimas de segundo dentro de los FB '
                          'Langhammer) y accesos indirectos (punteros, DB[...]) no se resuelven por completo. La '
                          'remanencia de marcas es la de fábrica de la CPU (MB0–MB15) y no se ha verificado. Las '
-                         'traducciones al español son orientativas (glosario).'),
+                         'traducciones de los comentarios están en la hoja «Traducciones».'),
     ]
     r = 4
     for k, v in rows0:
@@ -1031,6 +1103,74 @@ def main(pkl, cfgpath, dst):
     assert CFG['_cell_pdf'] and CFG['_cell_off']
     wb.move_sheet('Referencias cruzadas', offset=wb.sheetnames.index('Avisos y discrepancias') -
                   wb.sheetnames.index('Referencias cruzadas'))
+    # ===================================================== Traducciones
+    wtr = sheet(wb, 'Traducciones', ['Texto original (alemán)', 'Traducción (español)', 'Dónde aparece',
+                                     'Veces en tabla de símbolos'], [60, 60, 40, 12], wrap_cols=(1, 2, 3))
+    cnt_sym = defaultdict(int)
+    for s_ in SYM.values():
+        cnt_sym[(s_['Comment'] or '').strip()] += 1
+    for orig in sorted(TR, key=lambda t: t.lower()):
+        wtr.append([orig, TR[orig]['es'], ', '.join(TR[orig]['donde'][:8]) +
+                    (' …' if len(TR[orig]['donde']) > 8 else ''), cnt_sym.get(orig, 0) or ''])
+    finish(wtr, 4)
+
+    # ===================================================== Inicio
+    wsi = wb.create_sheet('Inicio', 0)
+    wsi.sheet_properties.tabColor = '2E7D32'
+    wsi.column_dimensions['A'].width = 2
+    wsi.column_dimensions['B'].width = 34
+    wsi.column_dimensions['C'].width = 100
+    wsi['B2'] = f'{CFG["maquina"]}'
+    wsi['B2'].font = Font(bold=True, size=16, color=C_HEAD)
+    wsi['B3'] = 'Documentación de entradas, salidas y lógica del PLC. Haz clic en el nombre de la hoja para ir a ella.'
+    wsi['B3'].font = Font(italic=True, color='555555')
+    guia = [
+        ('PARA AVERÍAS', None),
+        ('Buscar salida', 'Tengo un motor/válvula/piloto que no funciona: escribe la salida o el motor (A22.3, 46M2…) y '
+                          'te dice qué entradas tienen que estar a 1 o a 0 y por qué.'),
+        ('Buscar entrada', 'Tengo un sensor/pulsador/seta: escribe la entrada (E30.1…) y te dice a qué salidas afecta.'),
+        ('DETALLE', None),
+        ('Salidas', 'Una fila por salida: cuándo se activa y se desactiva (en lenguaje claro y en booleano), '
+                    'seguridades, bloque donde se escribe.'),
+        ('Entradas', 'Una fila por entrada: qué activa, qué bloquea, dónde se usa, hoja de plano.'),
+        ('Marcas', 'Marcas internas: cómo se activan y qué hacen.'),
+        ('Temporizadores y contadores', 'Tipo, tiempo de preselección y condición de arranque.'),
+        ('DB y analógicas', 'Bloques de datos con sus variables y palabras de periferia.'),
+        ('Matriz causa-efecto', 'Cuadro de entradas/marcas (filas) contra salidas (columnas): A activa, P permite, '
+                                'B bloquea.'),
+        ('Dependencias', 'Tabla completa entrada → salida que usan las hojas de búsqueda.'),
+        ('Bloques', 'Lista de OB, FB, FC y DB del programa.'),
+        ('Referencias cruzadas', 'Dónde se lee y escribe cada variable (como la RefCruz de STEP 7). Al hacer clic en '
+                                 'una dirección de cualquier hoja vienes aquí.'),
+        ('Avisos y discrepancias', 'Dobles asignaciones, entradas escritas por programa, reservas usadas, variables '
+                                   'sin uso… Rojo = aviso, naranja = discrepancia, gris = sin uso.'),
+        ('Traducciones', 'Todos los comentarios del programa en alemán con su traducción al español.'),
+        ('Portada', 'Datos de la máquina, resumen, nombre del PDF del plano y método de análisis.'),
+    ]
+    r = 5
+    for name, txt in guia:
+        if txt is None:
+            r += 1
+            c = wsi.cell(row=r, column=2, value=name)
+            c.font = Font(bold=True, color='FFFFFF')
+            c.fill = F_HEAD
+            wsi.cell(row=r, column=3).fill = F_HEAD
+        else:
+            c = wsi.cell(row=r, column=2, value=name)
+            c.hyperlink = f"#'{name}'!A1"
+            c.font = Font(bold=True, color='1F4E9A', underline='single', size=12)
+            d_ = wsi.cell(row=r, column=3, value=txt)
+            d_.alignment = WRAP
+            wsi.row_dimensions[r].height = 32
+        r += 1
+
+    # celdas de texto que empiezan por "=" (p. ej. AWL "=  A0.0") no son fórmulas
+    legit = re.compile(r'^=(HYPERLINK|IF|IFERROR|COUNT|INDEX|[A-D]\d+&)')
+    for ws_ in wb.worksheets:
+        for row in ws_.iter_rows():
+            for c in row:
+                if isinstance(c.value, str) and c.value.startswith('=') and not legit.match(c.value):
+                    c.data_type = 's'
     wb.save(dst)
     print('OK', dst, {k: v for k, v in stats.items()}, dict(cnt))
 

@@ -26,7 +26,15 @@ lista qué entradas activan / permiten / bloquean esa salida).
 2. **Analizar**: `python analisis_plc/analizar.py salida/prog3.json salida/prog3.pkl`
 3. **Generar el Excel**:
    `python analisis_plc/generar_excel.py salida/prog3.pkl analisis_plc/C600_LANGHAMMER/config.json salida.xlsx`
-   (`config.json` lleva los datos de portada).
+   (`config.json` lleva los datos de portada y la ruta de `traducciones.json`, un
+   diccionario `{"texto en alemán": {"es": "traducción", "donde": [...]}}`; lo que no
+   esté en él se traduce de forma orientativa con `glosario.py`).
+
+El libro empieza por la hoja **Inicio** (índice con enlaces). Para averías se usan
+**Buscar salida** (motor que no arranca → qué entradas deben estar a 1 o a 0) y
+**Buscar entrada** (sensor → a qué salidas afecta). Ambas usan fórmulas
+INDEX/SMALL sobre la hoja **Dependencias**, así que funcionan en cualquier Excel
+y en LibreOffice.
 
 ## Límites conocidos
 
@@ -37,4 +45,5 @@ lista qué entradas activan / permiten / bloquean esa salida).
 - Sin el plano eléctrico, la hoja del plano se deduce del BMK del símbolo
   (convención Langhammer: hoja 200+byte para entradas y 400+byte para salidas) y
   queda marcada como pendiente de verificar.
-- La traducción al español de los comentarios es orientativa (glosario).
+- Los textos de las celdas que empiezan por `=` (líneas AWL) se guardan como texto
+  para que Excel no los tome por fórmulas.

@@ -17,3 +17,5 @@ venv/
 
 # Documentación generada a partir de programas de cliente: se entrega, no se versiona.
 analisis_plc/**/*.xlsx
+# Traducciones de los comentarios de un programa de cliente: datos del cliente.
+analisis_plc/**/traducciones.json
