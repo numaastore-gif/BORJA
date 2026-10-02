@@ -1,19 +1,17 @@
 """Proyecto 3MF de Bambu Studio para la Bambu Lab H2D con las piezas de la
-lámpara repartidas en camas, como en el proyecto de referencia:
+lámpara (11 piezas) repartidas en camas:
 
   cama 1   base y remate
-  cama 2-4 cuatro rodajas cada una
-  cama 5   las dos últimas rodajas
-  cama 6   difusor (aparte: va en filamento translúcido)
+  cama 2   rodajas 1-4
+  cama 3   rodajas 5-8
+  cama 4   difusor (aparte: va en filamento translúcido)
 
 Las camas se colocan como las ordena Bambu Studio (en columnas, separadas un
-20 % del tamaño de la cama) y cada objeto va centrado en su hueco. Con la
-textura a resolución de impresión un solo proyecto pasa de 30 MB, así que se
-reparte en dos ficheros: _1 con base, remate y difusor (camas 1 y 6) y _2
-con las rodajas (camas 2-5). Cada cama conserva su número en el nombre.
+20 % del tamaño de la cama) y cada objeto va centrado en su hueco. Todo cabe
+en un solo proyecto de menos de 30 MB.
 
     python lampara.py            # genera las piezas en piezas/
-    python exportar_bambu.py     # crea lampara_numa_home_H2D_1.3mf y _2.3mf
+    python exportar_bambu.py     # crea lampara_numa_home_H2D.3mf
 """
 import pathlib
 import zipfile
@@ -25,15 +23,15 @@ AQUI = pathlib.Path(__file__).parent
 CAMA = (350.0, 320.0)
 HUECO_CAMAS = 1 / 5
 # fichero -> camas que lleva
-FICHEROS = {"lampara_numa_home_H2D_1.3mf": (1, 6), "lampara_numa_home_H2D_2.3mf": (2, 3, 4, 5)}
+FICHEROS = {"lampara_numa_home_H2D.3mf": (1, 2, 3, 4)}
 
 # (cama, pieza, posición del centro respecto al centro de la cama)
 CUATRO = [(-77, 70), (77, 70), (-77, -70), (77, -70)]
-# los nombres llevan el número de montaje grabado en cada pieza
-PROYECTO = [(1, "01_base", (-80, 0)), (1, "17_remate", (95, 0))]
-for i in range(14):
-    PROYECTO.append((2 + i // 4, f"{i + 3:02d}_rodaja", CUATRO[i % 4]))
-PROYECTO.append((6, "02_difusor", (0, 0)))
+# 11 piezas en 4 camas; las rodajas llevan su número grabado en el rebaje
+PROYECTO = [(1, "base", (-85, 0)), (1, "remate", (90, 0))]
+for i in range(8):
+    PROYECTO.append((2 + i // 4, f"rodaja_{i + 1}", CUATRO[i % 4]))
+PROYECTO.append((4, "difusor", (0, 0)))
 
 TIPOS = """<?xml version="1.0" encoding="UTF-8"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
