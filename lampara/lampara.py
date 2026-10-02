@@ -9,11 +9,14 @@ médula, grietas de secado y la línea de la corteza. 11 piezas:
             alrededor del agujero de la cara inferior. Sin número.
   difusor   tubo translúcido escalonado: un escalón plano de 1 mm por pieza,
             donde apoya cada rodaja, una guía vertical y un casquillo de 12 mm
-            que entra en la base para que aguante el peso de arriba.
+            que entra en la base para que aguante el peso de arriba. Tres guías
+            verticales encajan en las muescas de las rodajas.
   rodajas   8 piezas. Cada una baja por el difusor y se asienta en su
             escalón, así que las rendijas salen iguales. Arriba, el agujero
             se abre en un rebaje con tres muescas, como en las piezas de
-            referencia, con el número de la rodaja (1-8) grabado en el suelo.
+            referencia, con el número de la rodaja (1-8) grabado en el suelo;
+            las muescas siguen hacia abajo por el agujero como ranuras donde
+            entran las guías del difusor.
   remate    tapa superior cortada en bisel que cubre el extremo del difusor.
             Sin número.
 
@@ -92,7 +95,9 @@ GRIETA = dict(largo=(14.0, 38.0), ancho=(1.2, 2.4), hondo=(1.2, 2.2), inclinacio
 R_DIFUSOR = 30.0        # el difusor asienta justo encima del disco LED
 ESCALON = 1.0
 PARED_DIFUSOR = 1.6
-GUIAS = (0.0,)          # una sola guía: cada pieza entra en una única posición
+# Tres guías verticales en el difusor que encajan en las tres muescas de cada
+# rodaja; repartidas de forma desigual (110°, 110°, 140°): solo entran en una posición.
+GUIAS = (70.0, 180.0, 290.0)
 GUIA = dict(ancho=4.0, alto=2.0)
 # El pie del difusor es un casquillo de 12 mm que entra en la base: con todo el
 # peso de las rodajas y el remate encima, así no cabecea.
@@ -100,8 +105,9 @@ PESTANA = dict(radio=R_DIFUSOR + 3.0, grosor=12.0, lengueta=4.0)
 HOLGURA = 0.1           # holgura radial de todos los encajes: entran justos
 # Rebaje de las rodajas, como en las piezas de referencia: en la cara de arriba
 # el agujero se abre en un rebaje con suelo plano y pared a 45° con tres
-# muescas; la ranura de la guía va en el agujero y el número en el suelo.
-REBAJE = dict(ancho=5.0, hondo=2.0, muescas=(70.0, 180.0, 290.0), ancho_muesca=5.0,
+# muescas, alineadas con las ranuras de las guías del agujero; el número va en
+# el suelo.
+REBAJE = dict(ancho=5.0, hondo=2.0, muescas=GUIAS, ancho_muesca=5.0,
               numero=3.8, numero_hondo=0.5, angulo_numero=125.0)
 ENTRA_EN_REMATE = 18.0
 
@@ -366,7 +372,8 @@ def difusor():
     z0 = ALTO_BASE - PESTANA["grosor"]
     pestana = Manifold.cylinder(PESTANA["grosor"], PESTANA["radio"], PESTANA["radio"], 180).translate((0, 0, z0))
     for ang in GUIAS:
-        pestana = pestana + Manifold.cube((PESTANA["lengueta"] + 1, 6.0, PESTANA["grosor"])) \
+        # 0,3 mm más bajas que el casquillo: sin caras coincidentes con su tapa
+        pestana = pestana + Manifold.cube((PESTANA["lengueta"] + 1, 6.0, PESTANA["grosor"] - 0.3)) \
             .translate((PESTANA["radio"] - 1, -3.0, z0)).rotate((0, 0, ang))
     return (fuera + pestana) - dentro
 
@@ -374,7 +381,7 @@ def difusor():
 def hueco_para(nivel, z0, z1, rebaje=None):
     """Hueco de una pieza para el tramo «nivel» del difusor, con la ranura de
     la guía. Con rebaje=n abre arriba el rebaje con las muescas y graba el
-    número n en su suelo."""
+    número n en su suelo. Las ranuras de las guías atraviesan toda la pieza."""
     r = radio_nivel(nivel) + HOLGURA
     h = z1 - z0 + 2
     agujero = Manifold.cylinder(h, r, r, 180)
