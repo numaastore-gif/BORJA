@@ -175,6 +175,6 @@
     "fecha": "2026-10-03",
     "archivo": "modelos/cabezas_cascos.txt",
     "origen": "cascos/cabezas_vista.stl",
-    "notas": "16 cabezas de medida para cascos, de 50 a 65 cm de contorno de centímetro en centímetro, en un solo STL (en el laminador: Dividir en objetos). Banda de 20 mm cuyo perímetro exterior es exactamente la talla, con planta de huevo (ancho 0,8 del largo, frente algo más estrecha), y bóveda de superelipse con la coronilla algo atrás. La talla va grabada 0,8 mm en la frente («57 cm») y en grande en la coronilla. Macizas: imprimir de pie sobre la banda con relleno relámpago o bajo."
+    "notas": "16 cabezas de medida para cascos (nº 1 = 50 cm … nº 16 = 65 cm de contorno), en un solo STL: en el laminador, Dividir en objetos. Cabeza humana realista (escaneo de Lee Perry-Smith, CC BY 3.0) escalada para que el contorno máximo por encima de las cejas sea exactamente la talla; cuello cortado en plano. En la nuca, grabado 1 mm: Cabeza nº, Eje largo, Eje corto, Contorno y Talla, en cm (la nº 8, 57 cm: eje largo 20,3 cm, eje corto 15,2 cm). Macizas, de pie sobre el cuello, sin soportes; relleno relámpago o bajo. Este visor muestra una versión aligerada."
   }
 ]
