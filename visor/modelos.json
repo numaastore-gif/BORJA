@@ -168,5 +168,13 @@
     "color": "#C9A381",
     "nombreColor": "PETG Translucent Brown",
     "notas": "Recambio de la ventanilla de plástico del buzón. Resalte de 1 mm que entra en el hueco del reborde interior (70 × 20 mm), con 0,1 mm de holgura por lado y 8 nervios finos en rampa que aprietan solo 0,08 mm junto a la pestaña: se aplastan ellos y la placa no se tensa ni se parte al encajar. Chaflán de entrada de 0,3 mm. Pestaña de 3 mm × 1,2 mm alrededor que apoya por dentro contra el reborde. Total 76 × 26 × 2,2 mm. Imprimir plana, pestaña sobre la cama, sin soportes, mejor en PETG; encajar empujando recto."
+  },
+  {
+    "id": "cabezas_cascos",
+    "nombre": "Cabezas de medida 50-65 cm",
+    "fecha": "2026-10-03",
+    "archivo": "modelos/cabezas_cascos.txt",
+    "origen": "cascos/cabezas_vista.stl",
+    "notas": "16 cabezas de medida para cascos, de 50 a 65 cm de contorno de centímetro en centímetro, en un solo STL (en el laminador: Dividir en objetos). Banda de 20 mm cuyo perímetro exterior es exactamente la talla, con planta de huevo (ancho 0,8 del largo, frente algo más estrecha), y bóveda de superelipse con la coronilla algo atrás. La talla va grabada 0,8 mm en la frente («57 cm») y en grande en la coronilla. Macizas: imprimir de pie sobre la banda con relleno relámpago o bajo."
   }
 ]
