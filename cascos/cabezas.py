@@ -17,7 +17,7 @@ Macizas, de pie sobre la base plana del cuello, sin soportes; con relleno bajo
 (mejor «relámpago»). Medidas en mm.
 
     python base_cabeza.py   # una vez: prepara cabeza_base.stl
-    python cabezas.py            # cabezas_50_65.stl, para imprimir
+    python cabezas.py            # cabezas_50_65.stl y una por talla en cabezas/
     python cabezas.py --vista    # cabezas_vista.stl, ligera para el visor
 """
 import pathlib
@@ -104,6 +104,14 @@ if __name__ == "__main__":
     for n, (t, (p, largo, corto)) in enumerate(zip(tallas, piezas)):
         fila, col = divmod(n, 4)
         todas.append(p.translate((col * paso_x, -fila * paso_y, 0)))
+        if not VISTA:  # y cada cabeza en su propio STL, centrada y apoyada en z = 0
+            carpeta = AQUI / "cabezas"
+            carpeta.mkdir(exist_ok=True)
+            u = p.to_mesh()
+            una = trimesh.Trimesh(u.vert_properties[:, :3], u.tri_verts, process=False)
+            c = una.bounds.mean(0)
+            una.apply_translation([-c[0], -c[1], -una.bounds[0][2]])
+            una.export(carpeta / f"cabeza_{n + 1:02d}_{t}cm.stl")
         b = p.to_mesh().vert_properties[:, :3]
         print(f"nº {n + 1:2d}  contorno {t} cm  eje largo {texto_cm(largo)}  eje corto {texto_cm(corto)}  "
               f"tamaño {np.round(np.ptp(b, axis=0), 1)} mm")
