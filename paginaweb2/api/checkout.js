@@ -11,14 +11,20 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const { lines: LINES, pricing: PRICING, catalog: CATALOG, filaments: FILAMENTS } = DATA;
 const FIL = Object.fromEntries(FILAMENTS.map(f => [f.code, f]));
 const TYPE_NAMES = { vase: 'Jarrón', lamp: 'Lámpara', planter: 'Maceta', tray: 'Bandeja', candle: 'Portavelas' };
-const SHAPES = ['organica', 'columna', 'caliz', 'bulbo', 'cono', 'reloj'];
+const SHAPES = ['organica', 'recta', 'columna', 'caliz', 'bulbo', 'cono', 'reloj'];
+const PLANS = { circular: 32, cuadrada: 4, triangular: 3, hexagonal: 6, octogonal: 8, poligono: null };
+const BUILD = DATA.build;
 const TEXTURES = ['lisa', 'ondas', 'estrias', 'costillas', 'relieve'];
 
 const int = (v, min, max) => Number.isInteger(v) && v >= min && v <= max;
 const num = (v, min, max) => typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max;
 function validParams(p) {
-  if (!p || !TYPE_NAMES[p.type] || !SHAPES.includes(p.shape) || !TEXTURES.includes(p.tex) || !LINES[p.line]) return false;
-  if (!int(p.height, 4, 40) || !num(p.width, .7, 1.4) || !num(p.mouth, .5, 1.5) || !int(p.twist, -360, 360) || !int(p.sides, 3, 32)) return false;
+  if (!p || !TYPE_NAMES[p.type] || !SHAPES.includes(p.shape) || !TEXTURES.includes(p.tex) || !LINES[p.line] || !(p.plan in PLANS)) return false;
+  if (p.type !== 'vase' && !['organica', 'recta'].includes(p.shape)) return false;
+  // medidas en mm dentro del volumen de impresión (la web además comprueba la caja con la torsión)
+  if (!int(p.h, 30, BUILD.z) || !int(p.w, 40, BUILD.x) || !int(p.d, 20, BUILD.y)) return false;
+  if (PLANS[p.plan] ? p.sides !== PLANS[p.plan] : !int(p.sides, 3, 12)) return false;
+  if (!num(p.corner, 0, 1) || !num(p.mouth, .5, 1.5) || !int(p.twist, -360, 360)) return false;
   if (!num(p.texAmt, 0, 1) || !int(p.texN, 6, 40) || !int(p.seed, 1, 99999)) return false;
   const f1 = FIL[p.color]; if (!f1 || f1.line !== p.line) return false;
   if (p.mode === 'bicolor') { const f2 = FIL[p.color2]; if (p.line === 'gradient' || !f2 || f2.line !== p.line || !num(p.split, .15, .85)) return false; }
@@ -28,7 +34,8 @@ function validParams(p) {
   return true;
 }
 function priceOf(p) {
-  let pr = PRICING.base[p.type] + PRICING.perCm[p.type] * p.height * p.width + LINES[p.line].fee;
+  const size = Math.min(3, Math.max(.4, ((p.w + p.d) / 2) / PRICING.refMm[p.type]));
+  let pr = PRICING.base[p.type] + PRICING.perCm[p.type] * (p.h / 10) * size + LINES[p.line].fee;
   if (p.mode === 'bicolor') pr += PRICING.bicolor;
   if (p.watertight) pr += PRICING.watertight;
   if (p.engrave) pr += PRICING.engrave;
@@ -36,7 +43,7 @@ function priceOf(p) {
 }
 function describe(p) {
   const f1 = FIL[p.color], f2 = FIL[p.color2];
-  return [`${p.height} cm`, `${LINES[p.line].name} ${f1.name} (${f1.code})` + (p.mode === 'bicolor' ? ` + ${f2.name} (${f2.code})` : ''),
+  return [`${p.w} × ${p.d} × ${p.h} mm`, `${LINES[p.line].name} ${f1.name} (${f1.code})` + (p.mode === 'bicolor' ? ` + ${f2.name} (${f2.code})` : ''),
     p.watertight ? 'interior estanco' : '', p.engrave ? `grabado «${p.engrave}»` : ''].filter(Boolean).join(' · ');
 }
 

@@ -41,15 +41,33 @@ const DATA = window.ARKO_DATA || { lines: {}, pricing: { base: {}, perCm: {} }, 
 const LINES = DATA.lines, PRICING = DATA.pricing, CATALOG = DATA.catalog, FILAMENTS = DATA.filaments;
 const FIL = Object.fromEntries(FILAMENTS.map(f => [f.code, f]));
 const TYPE_NAMES = { vase: 'Jarrón', lamp: 'Lámpara', planter: 'Maceta', tray: 'Bandeja', candle: 'Portavelas' };
-const SHAPES = { organica: 'Orgánica', columna: 'Columna', caliz: 'Cáliz', bulbo: 'Bulbo', cono: 'Cono', reloj: 'Reloj' };
+const SHAPES = { organica: 'Orgánica', recta: 'Recta', columna: 'Columna', caliz: 'Cáliz', bulbo: 'Bulbo', cono: 'Cono', reloj: 'Reloj' };
+// Planta (sección vista desde arriba) y su número de lados; 32 = circular
+const PLANS = { circular: ['Circular', 32], cuadrada: ['Cuadrada', 4], triangular: ['Triangular', 3], hexagonal: ['Hexagonal', 6], octogonal: ['Octogonal', 8], poligono: ['Polígono', null] };
+const BUILD = DATA.build || { name: 'Bambu Lab X1C / P1S / A1', x: 256, y: 256, z: 256 };
+// Medidas en mm: alto (h), ancho (w, eje X) y fondo (d, eje Z). Límites por tipología.
+const DIM_LIMITS = { h: [30, BUILD.z], w: [40, BUILD.x], d: [20, BUILD.y] };
+const TYPE_DIMS = { vase: [240, 140, 140], lamp: [220, 220, 220], planter: [160, 180, 180], tray: [40, 240, 240], candle: [90, 80, 80] };
+const fmtMM = mm => `${Math.round(mm)} mm`;
+const fmtCM = mm => `${(mm / 10).toFixed(1).replace('.0', '').replace('.', ',')} cm`;
 const TEXTURES = { lisa: 'Lisa', ondas: 'Ondas', estrias: 'Estrías', costillas: 'Costillas', relieve: 'Relieve' };
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const cleanEngrave = s => String(s || '').replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9 .,&'·-]/g, '').slice(0, 14);
 // Rellena los campos que falten (configuraciones antiguas o incompletas)
 function normalizeParams(q) {
-  const p = Object.assign(JSON.parse(JSON.stringify(CATALOG[0] ? CATALOG[0].params : {})), q || {});
+  q = Object.assign({}, q || {});
+  // configuraciones antiguas: altura en cm y anchura como factor
+  if (q.h == null && q.height != null) { q.h = Math.round(q.height * 10); }
+  if (q.w == null && q.height != null) { const s = (q.width ?? 1); q.w = q.d = Math.round((TYPE_DIMS[q.type] || TYPE_DIMS.vase)[1] * s); }
+  delete q.height; delete q.width;
+  const p = Object.assign(JSON.parse(JSON.stringify(CATALOG[0] ? CATALOG[0].params : {})), q);
+  if (!PLANS[p.plan]) p.plan = p.sides >= 32 ? 'circular' : p.sides === 4 ? 'cuadrada' : 'poligono';
+  if (PLANS[p.plan][1]) p.sides = PLANS[p.plan][1]; else p.sides = clamp(Math.round(p.sides) || 5, 3, 12);
+  p.corner = clamp(+p.corner || 0, 0, 1);
+  for (const k of ['h', 'w', 'd']) p[k] = clamp(Math.round(+p[k] || DIM_LIMITS[k][0]), DIM_LIMITS[k][0], DIM_LIMITS[k][1]);
+  p.mouth = clamp(+p.mouth || 1, .5, 1.5);
   if (!TYPE_NAMES[p.type]) p.type = 'vase';
-  if (!SHAPES[p.shape]) p.shape = 'organica';
+  if (!SHAPES[p.shape] || (p.type !== 'vase' && p.shape !== 'recta')) p.shape = 'organica';
   if (!TEXTURES[p.tex]) p.tex = 'lisa';
   if (!LINES[p.line]) p.line = 'matte';
   if (!FIL[p.color] || FIL[p.color].line !== p.line) p.color = FILAMENTS.find(f => f.line === p.line).code;
@@ -61,7 +79,9 @@ function normalizeParams(q) {
   return p;
 }
 function priceOf(p) {
-  let pr = (PRICING.base[p.type] ?? 29) + (PRICING.perCm[p.type] ?? 1.2) * p.height * (p.width ?? 1) + (LINES[p.line] ? LINES[p.line].fee : 0);
+  // más ancho/fondo que el de referencia = más material (y al revés)
+  const size = clamp(((p.w + p.d) / 2) / ((PRICING.refMm || {})[p.type] || 140), .4, 3);
+  let pr = (PRICING.base[p.type] ?? 29) + (PRICING.perCm[p.type] ?? 1.2) * (p.h / 10) * size + (LINES[p.line] ? LINES[p.line].fee : 0);
   if (p.mode === 'bicolor') pr += PRICING.bicolor;
   if (p.watertight) pr += PRICING.watertight;
   if (p.engrave) pr += PRICING.engrave;
@@ -79,7 +99,8 @@ function deliveryWindow(from = new Date()) {
 const swatchCSS = code => { const f = FIL[code]; if (!f) return '#ccc'; return f.hex.length > 1 ? `linear-gradient(0deg, ${f.hex[0]}, ${f.hex[1]})` : f.hex[0]; };
 const filLabel = code => { const f = FIL[code]; return f ? `${LINES[f.line].name} · ${f.name} · ${f.code}` : ''; };
 function describe(p) {
-  const parts = [TYPE_NAMES[p.type] + (p.type === 'vase' ? ' ' + SHAPES[p.shape].toLowerCase() : ''), `${p.height} cm`];
+  const plan = p.plan === 'poligono' ? `${p.sides} lados` : PLANS[p.plan][0].toLowerCase();
+  const parts = [TYPE_NAMES[p.type] + (p.type === 'vase' ? ' ' + SHAPES[p.shape].toLowerCase() : '') + ' · planta ' + plan, `${p.w} × ${p.d} × ${p.h} mm`];
   if (p.tex !== 'lisa') parts.push(TEXTURES[p.tex].toLowerCase());
   parts.push(`${LINES[p.line].name} ${FIL[p.color].name} (${p.color})` + (p.mode === 'bicolor' ? ` + ${FIL[p.color2].name} (${p.color2})` : ''));
   if (p.watertight) parts.push('interior estanco');
@@ -201,16 +222,19 @@ function makeWallTextures() {
 }
 
 /* ---------- 01. NÚCLEO DE FORMA ----------
-   params: { type, shape, height (cm), width, mouth, twist (°), sides (3–32; 32 = redondo),
-             tex, texAmt (0–1), texN, seed, … }   1 unidad = 10 cm */
+   params: { type, shape, plan, sides, corner, h/w/d (mm), mouth, twist (°), tex, texAmt, texN, seed }
+   1 unidad de escena = 100 mm. La sección se dibuja en planta, se escala para que mida
+   exactamente ancho × fondo y después se gira con la torsión. */
 const PWForm = {
   CODES: { vase: 'V', lamp: 'L', planter: 'M', tray: 'B', candle: 'P' },
   coeffs(seed) {
     const r = mulberry32((seed * 9301 + 49297) | 0);
     return { bc: .22 + r() * .32, bw: .13 + r() * .15, bulb: .26 + r() * .24, lip: r() * .16, a2: .02 + r() * .05, f2: 1 + r() * 2.6, p2: r(), wf: 3 + Math.floor(r() * 6), wp: r() * 6.283, k: r() };
   },
-  // Perfil de revolución según tipología y silueta
+  H(p) { return p.h != null ? p.h / 100 : (p.height || 24) / 10; },
+  // Perfil de alzado según tipología y silueta (relativo; luego se escala a medida)
   profile(p, t, c) {
+    if (p.shape === 'recta') return .4;                            // paredes totalmente rectas (cualquier tipología)
     const rip = c.a2 * Math.sin(Math.PI * 2 * (c.f2 * t + c.p2));
     switch (p.type) {
       case 'lamp':    return .2 + .88 * Math.pow(t, 1.15 + c.k * 1.6) + rip * .8 + .05 * smooth(.9, 1, t);
@@ -227,38 +251,73 @@ const PWForm = {
       default: { const bulb = c.bulb * Math.exp(-((t - c.bc) ** 2) / (2 * c.bw * c.bw)); return .27 + bulb + c.lip * smooth(.78, 1, t) + rip; }
     }
   },
-  radius(p, t, c) {
-    let r = PWForm.profile(p, t, c) * (p.width ?? 1);
-    r *= lerp(1, p.mouth ?? 1, smooth(.55, 1, t));
-    return Math.max(.05, r);
+  // Planta: polígono regular con una cara mirando al frente (+X) y esquinas redondeables
+  plan(p, phi) {
+    const n = p.sides;
+    if (!n || n >= 32) return 1;
+    const seg = (Math.PI * 2) / n, a = ((phi + seg / 2) % seg + seg) % seg - seg / 2;
+    const poly = Math.cos(seg / 2) / Math.cos(a), round = (1 + Math.cos(seg / 2)) / 2;
+    return lerp(poly, round, (p.corner || 0) * .85);
   },
-  // Textura de superficie (modula el radio antes de la torsión, así las estrías giran)
+  // Textura de superficie (antes de la torsión, así las estrías giran)
   surface(p, t, phi, c) {
     const tex = p.tex || (p.wave ? 'ondas' : 'lisa'), a = p.tex ? (p.texAmt ?? 0) : (p.wave || 0), n = p.texN || 16;
     switch (tex) {
       case 'ondas': return 1 + a * .14 * Math.sin(phi * c.wf + t * Math.PI * 4 + c.wp);
       case 'estrias': { const s = Math.sin(phi * n / 2); return 1 - a * .075 * s * s; }
       case 'costillas': return 1 + a * .07 * Math.pow(Math.abs(Math.cos(phi * n / 2)), 10);
-      case 'relieve': { const m = Math.max(2, Math.round(n * (p.height / 10) * .32)); return 1 + a * .065 * Math.max(0, Math.sin(phi * n)) * Math.max(0, Math.sin(t * Math.PI * m)); }
+      case 'relieve': { const m = Math.max(2, Math.round(n * PWForm.H(p) * .32)); return 1 + a * .065 * Math.max(0, Math.sin(phi * n)) * Math.max(0, Math.sin(t * Math.PI * m)); }
       default: return 1;
     }
   },
-  point(p, c, t, phi, out) {
-    const H = p.height / 10;
-    let r = PWForm.radius(p, t, c);
-    if (p.sides < 32) { const seg = (Math.PI * 2) / p.sides; const a = ((phi % seg) + seg) % seg - seg / 2; r *= Math.cos(seg / 2) / Math.cos(a); }
-    r *= PWForm.surface(p, t, phi, c);
-    const ang = phi + (p.twist * Math.PI / 180) * t;
-    out[0] = r * Math.cos(ang); out[1] = t * H; out[2] = r * Math.sin(ang);
+  local(p, c, t, phi) {
+    let r = PWForm.profile(p, t, c) * lerp(1, p.mouth ?? 1, smooth(.55, 1, t));
+    r = Math.max(.05, r) * PWForm.plan(p, phi) * PWForm.surface(p, t, phi, c);
+    return r;
+  },
+  // Escala X/Z para que la pieza (sin torsión) mida exactamente ancho × fondo
+  _scaleCache: new Map(),
+  scale(p, c) {
+    if (p.w == null) { const s = p.width ?? 1; return [s, s]; }   // formato antiguo (animaciones de la página de proceso)
+    const key = [p.type, p.shape, p.sides, p.corner, p.mouth, p.tex, p.texAmt, p.texN, p.seed, p.h].join('|');
+    let raw = PWForm._scaleCache.get(key);
+    if (!raw) {
+      let mx = 0, mz = 0;
+      for (let j = 0; j <= 48; j++) for (let i = 0; i < 360; i++) {
+        const phi = i / 360 * Math.PI * 2, r = PWForm.local(p, c, j / 48, phi);
+        mx = Math.max(mx, Math.abs(r * Math.cos(phi))); mz = Math.max(mz, Math.abs(r * Math.sin(phi)));
+      }
+      raw = [mx, mz]; PWForm._scaleCache.set(key, raw);
+      if (PWForm._scaleCache.size > 200) PWForm._scaleCache.clear();
+    }
+    return [(p.w / 200) / raw[0], (p.d / 200) / raw[1]];
+  },
+  point(p, c, t, phi, out, sc) {
+    const [sx, sz] = sc || PWForm.scale(p, c), r = PWForm.local(p, c, t, phi);
+    const x = r * Math.cos(phi) * sx, z = r * Math.sin(phi) * sz, ang = (p.twist * Math.PI / 180) * t;
+    const ca = Math.cos(ang), sa = Math.sin(ang);
+    out[0] = x * ca - z * sa; out[1] = t * PWForm.H(p); out[2] = x * sa + z * ca;
     return out;
   },
-  // Resolución necesaria para que las texturas finas no se pierdan
+  // Caja real (mm) con la torsión incluida: es la que tiene que caber en la impresora
+  box(p) {
+    const c = PWForm.coeffs(p.seed), sc = PWForm.scale(p, c), tmp = [0, 0, 0];
+    let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
+    for (let j = 0; j <= 40; j++) for (let i = 0; i < 180; i++) {
+      PWForm.point(p, c, j / 40, i / 180 * Math.PI * 2, tmp, sc);
+      x0 = Math.min(x0, tmp[0]); x1 = Math.max(x1, tmp[0]); z0 = Math.min(z0, tmp[2]); z1 = Math.max(z1, tmp[2]);
+    }
+    const b = { x: Math.round((x1 - x0) * 100), y: Math.round((z1 - z0) * 100), z: Math.round(PWForm.H(p) * 100) };
+    b.fits = b.x <= BUILD.x && b.y <= BUILD.y && b.z <= BUILD.z;
+    return b;
+  },
+  // Resolución necesaria para que las texturas finas y las esquinas no se pierdan
   res(p, baseU, baseV) {
     const n = p.texN || 16;
     let U = baseU, V = baseV;
     if (p.tex === 'estrias' || p.tex === 'costillas') U = Math.max(U, Math.min(320, n * 8));
-    if (p.tex === 'relieve') { U = Math.max(U, Math.min(320, n * 10)); V = Math.max(V, Math.min(260, Math.round(n * (p.height / 10) * .32) * 10)); }
-    if (p.sides < 32) U = p.sides * Math.max(1, Math.ceil(U / p.sides));
+    if (p.tex === 'relieve') { U = Math.max(U, Math.min(320, n * 10)); V = Math.max(V, Math.min(260, Math.round(n * PWForm.H(p) * .32) * 10)); }
+    if (p.sides < 32) U = 2 * p.sides * Math.max(1, Math.ceil(U / (2 * p.sides)));   // un vértice justo en cada esquina
     return [U, V];
   },
   code(p) { return `${PWForm.CODES[p.type] || 'O'}—${pad(p.seed, 5)}`; },
@@ -300,15 +359,15 @@ function colorAt(p, t, out) {
   return out.copy(lin(f.hex[0]));
 }
 function fillFormPositions(geo, p) {
-  const { U, V } = geo.userData, c = PWForm.coeffs(p.seed), H = p.height / 10;
+  const { U, V } = geo.userData, c = PWForm.coeffs(p.seed), H = PWForm.H(p), sc = PWForm.scale(p, c);
   const pos = geo.attributes.position.array, uv = geo.attributes.uv.array, col = geo.attributes.color.array, tmp = [0, 0, 0];
-  const col3 = new THREE.Color(), R0 = .45 * (p.width ?? 1);
+  const col3 = new THREE.Color(), R0 = p.w != null ? (p.w + p.d) / 400 : .45;
   let k = 0, q = 0, m = 0;
   for (let j = 0; j <= V; j++) {
     const t = j / V;
     colorAt(p, t, col3);
     for (let i = 0; i < U; i++) {
-      PWForm.point(p, c, t, (i / U) * Math.PI * 2, tmp);
+      PWForm.point(p, c, t, (i / U) * Math.PI * 2, tmp, sc);
       pos[k++] = tmp[0]; pos[k++] = tmp[1] - H / 2; pos[k++] = tmp[2];
       uv[q++] = (i / U) * Math.PI * 2 * R0 * 10 * UV_CM; uv[q++] = t * H * 10 * UV_CM;   // en cm
       col[m++] = col3.r; col[m++] = col3.g; col[m++] = col3.b;
@@ -502,7 +561,7 @@ class FormStage {
   fit() {
     const pos = this.mesh.geometry.attributes.position.array;
     let m = 0; for (let i = 0; i < pos.length; i += 3) m = Math.max(m, pos[i] * pos[i] + pos[i + 2] * pos[i + 2]);
-    const maxR = this.maxR = Math.sqrt(m), H = this.H = this.p.height / 10, ph = this.o.plinthH;
+    const maxR = this.maxR = Math.sqrt(m), H = this.H = PWForm.H(this.p), ph = this.o.plinthH;
     const pr = maxR * 1.16 + .06;
     this.group.position.y = H / 2;
     this.bulb.position.set(0, -H / 2 + H * .38, 0);
@@ -728,7 +787,7 @@ function initHero() {
   const base = Object.assign({}, model.params, { tex: 'ondas', texAmt: .1 });
   const stage = new FormStage(canvas, { params: base, resU: PW.isMobile() ? 64 : 96, resV: PW.isMobile() ? 90 : 140, autoRotate: .14, elev: .12 });
   const twistOut = $('[data-hero-twist]'), diamOut = $('[data-hero-diam]'), filOut = $('[data-hero-fil]');
-  if (diamOut) diamOut.textContent = Math.round(stage.maxR * 20);
+  const dimsOut = $('[data-hero-dims]'); if (dimsOut) dimsOut.textContent = `${model.params.w} × ${model.params.d} × ${model.params.h}`;
   if (filOut) filOut.textContent = `${LINES[base.line].name} ${FIL[base.color].name}`;
   let mx = 0, my = 0, frame = 0;
   if (PW.fine) addEventListener('pointermove', e => { mx = e.clientX / innerWidth * 2 - 1; my = e.clientY / innerHeight * 2 - 1; }, { passive: true });
@@ -864,7 +923,7 @@ function estimateOf(geo, p) {
       const ux = P[b] - P[a], uy = P[b + 1] - P[a + 1], uz = P[b + 2] - P[a + 2], vx = P[c] - P[a], vy = P[c + 1] - P[a + 1], vz = P[c + 2] - P[a + 2];
       const cx = uy * vz - uz * vy, cy = uz * vx - ux * vz, cz = ux * vy - uy * vx; area += Math.sqrt(cx * cx + cy * cy + cz * cz) / 2;
     }
-  } else area = p.height / 10 * 3.4;
+  } else area = PWForm.H(p) * 3.4;
   const grams = area * 100 * (p.watertight ? .16 : .12) * 1.24, hours = grams / 11;
   return { grams, hours };
 }
@@ -883,6 +942,20 @@ function initLab() {
   // Controles generados desde los datos
   const chips = (sel, obj, attr) => { $(sel, form).innerHTML = Object.entries(obj).map(([k, v]) => `<button type="button" data-${attr}="${k}" aria-pressed="false">${v}</button>`).join(''); };
   chips('[data-types]', TYPE_NAMES, 'type'); chips('[data-shapes]', SHAPES, 'shape'); chips('[data-texes]', TEXTURES, 'tex');
+  chips('[data-plans]', Object.fromEntries(Object.entries(PLANS).map(([k, v]) => [k, v[0]])), 'plan');
+  // Unidades: el cliente elige cm o mm; internamente todo va en mm
+  let unit = store.get('arko-unidad') === 'mm' ? 'mm' : 'cm';
+  const toUnit = mm => (unit === 'cm' ? (mm / 10).toFixed(1).replace('.', ',') : String(Math.round(mm)));
+  const fmtU = mm => `${toUnit(mm)} ${unit}`;
+  const syncDims = () => {
+    ['h', 'w', 'd'].forEach(k => {
+      const num = $(`[data-num="${k}"]`, form), rng = $(`input[name="${k}"]`, form);
+      if (document.activeElement !== num) num.value = toUnit(p[k]);
+      rng.value = p[k];
+    });
+    $$('[data-unit-label]', form).forEach(e => (e.textContent = unit));
+    $$('[data-unit]', form).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.unit === unit)));
+  };
   $('[data-lines]', form).innerHTML = Object.entries(LINES).map(([k, l]) => `<button type="button" data-line="${k}" aria-pressed="false">${l.short}${l.fee ? ` <small>+${l.fee} €</small>` : ''}</button>`).join('');
   $('[data-models]', form).innerHTML = CATALOG.map(m => `<button type="button" class="pw-model" data-model="${m.id}" aria-pressed="false"><span class="pw-model__img"><img alt="" data-snap="${m.id}"></span><span>${esc(m.name)}</span></button>`).join('')
     + `<button type="button" class="pw-model" data-model="cero" aria-pressed="false"><span class="pw-model__img pw-model__img--blank">+</span><span>Desde cero</span></button>`;
@@ -903,15 +976,19 @@ function initLab() {
   } else webglFallback(canvas.parentElement);
 
   const OUT = {
-    height: v => `${v} cm`, width: v => `${Math.round(v * 100)} %`, mouth: v => `${Math.round(v * 100)} %`, texAmt: v => `${Math.round(v * 100)} %`,
-    texN: v => v, twist: v => `${v}°`, sides: v => (v >= 32 ? 'redondo' : v), seed: v => pad(v, 5), split: v => `${Math.round(v * 100)} %`,
+    mouth: v => `${Math.round(v * 100)} %`, texAmt: v => `${Math.round(v * 100)} %`, corner: v => `${Math.round(v * 100)} %`,
+    texN: v => v, twist: v => `${v}°`, sides: v => v, seed: v => pad(v, 5), split: v => `${Math.round(v * 100)} %`,
   };
   const press = (attr, val) => $$(`[data-${attr}]`, form).forEach(b => b.setAttribute('aria-pressed', String(b.dataset[attr] === String(val))));
   const show = (sel, ok) => $$(sel, form).forEach(e => (e.hidden = !ok));
   const syncUI = () => {
     $$('input[type="range"]', form).forEach(inp => { inp.value = p[inp.name]; const o = $(`[data-out="${inp.name}"]`, form); if (o) o.textContent = OUT[inp.name](p[inp.name]); });
+    syncDims();
+    press('plan', p.plan); show('[data-show="sides"]', p.plan === 'poligono'); show('[data-show="corner"]', p.sides < 32);
+    // fuera de los jarrones solo hay perfil de serie o recto
+    $$('[data-shape]', form).forEach(b => { b.hidden = p.type !== 'vase' && !['organica', 'recta'].includes(b.dataset.shape); if (b.dataset.shape === 'organica') b.textContent = p.type === 'vase' ? 'Orgánica' : 'De serie'; });
     press('type', p.type); press('shape', p.shape); press('tex', p.tex); press('line', p.line); press('mode', p.mode); press('model', model ? model.id : '');
-    show('[data-only="vase"]', p.type === 'vase'); show('[data-only="lamp"]', p.type === 'lamp'); show('[data-only-water]', p.type === 'vase' || p.type === 'planter');
+    show('[data-only="lamp"]', p.type === 'lamp'); show('[data-only-water]', p.type === 'vase' || p.type === 'planter');
     show('[data-show="texAmt"]', p.tex !== 'lisa'); show('[data-show="texN"]', ['estrias', 'costillas', 'relieve'].includes(p.tex));
     show('[data-color-mode]', p.line !== 'gradient'); show('[data-bicolor]', p.mode === 'bicolor');
     $('[data-swatches]', form).innerHTML = swatchesHTML(p.line, p.color);
@@ -921,15 +998,17 @@ function initLab() {
     $('#pw-water').checked = !!p.watertight; $('#pw-lit').checked = !!p.lit;
     const eng = $('#pw-engrave'); if (document.activeElement !== eng) eng.value = p.engrave;
   };
+  let box = PWForm.box(p);
   const renderJSON = est => {
     const f1 = FIL[p.color], f2 = FIL[p.color2];
     const data = {
-      modelo: model ? `${model.code} ${model.name}` : 'A medida', tipo: TYPE_NAMES[p.type], silueta: p.type === 'vase' ? SHAPES[p.shape] : '—',
-      alto_cm: p.height, anchura: OUT.width(p.width), boca: OUT.mouth(p.mouth), torsion: p.twist, lados: p.sides >= 32 ? 'redondo' : p.sides,
+      modelo: model ? `${model.code} ${model.name}` : 'A medida', tipo: TYPE_NAMES[p.type], silueta: SHAPES[p.shape],
+      planta: p.plan === 'poligono' ? `${p.sides} lados` : PLANS[p.plan][0], esquinas: p.sides < 32 ? OUT.corner(p.corner) : '—',
+      alto_mm: p.h, ancho_mm: p.w, fondo_mm: p.d, caja_real_mm: `${box.x} × ${box.y} × ${box.z}`, boca: OUT.mouth(p.mouth), torsion: p.twist,
       superficie: TEXTURES[p.tex] + (p.tex !== 'lisa' ? ` ${OUT.texAmt(p.texAmt)}` : ''), seed: p.seed,
       filamento: `${LINES[p.line].name} ${f1.name} (${f1.code})`,
-      ...(p.mode === 'bicolor' ? { filamento_2: `${f2.name} (${f2.code})`, cambio_en_capa: Math.round(p.split * p.height * 50) } : {}),
-      capas: Math.round(p.height * 50), interior_estanco: !!p.watertight, grabado: p.engrave || '—',
+      ...(p.mode === 'bicolor' ? { filamento_2: `${f2.name} (${f2.code})`, cambio_en_capa: Math.round(p.split * p.h / .2) } : {}),
+      capas: Math.round(p.h / .2), interior_estanco: !!p.watertight, grabado: p.engrave || '—',
       estimacion: { peso_g: Math.round(est.grams), impresion: fmtTime(est.hours), precio_eur: priceOf(p), plazo: '7 días + envío' },
     };
     const v = (k, val) => { const s = JSON.stringify(val), ch = prev[k] !== undefined && prev[k] !== s ? ' pw-json-changed' : ''; prev[k] = s; return `<span class="pw-json-v${ch}">${esc(s)}</span>`; };
@@ -952,18 +1031,36 @@ function initLab() {
     outs.weight.textContent = Math.round(est.grams) + ' g'; outs.time.textContent = fmtTime(est.hours);
     outs.price.textContent = `${priceOf(p)} €`;
     if (outs.price2) outs.price2.textContent = `${priceOf(p)} €`;
+    box = PWForm.box(p);
+    const boxEl = $('[data-box]', form);
+    boxEl.classList.toggle('is-warn', !box.fits);
+    boxEl.textContent = box.fits
+      ? `Medida real con la torsión: ${toUnit(box.x)} × ${toUnit(box.y)} × ${toUnit(box.z)} ${unit}. Cabe en la ${BUILD.name} (${BUILD.x} × ${BUILD.y} × ${BUILD.z} mm).`
+      : `No cabe en la impresora: con la torsión ocupa ${toUnit(box.x)} × ${toUnit(box.y)} × ${toUnit(box.z)} ${unit} y el máximo es ${toUnit(BUILD.x)} × ${toUnit(BUILD.y)} × ${toUnit(BUILD.z)} ${unit}. Reduce el ancho, el fondo o la torsión.`;
+    $$('[data-action="order"]', form).forEach(b => (b.disabled = !box.fits));
     renderJSON(est);
   };
 
   form.addEventListener('input', e => {
     const t = e.target;
     if (t.type === 'range') {
-      p[t.name] = ['width', 'mouth', 'texAmt', 'split'].includes(t.name) ? parseFloat(t.value) : parseInt(t.value, 10);
-      $(`[data-out="${t.name}"]`, form).textContent = OUT[t.name](p[t.name]);
+      p[t.name] = ['mouth', 'texAmt', 'split', 'corner'].includes(t.name) ? parseFloat(t.value) : parseInt(t.value, 10);
+      const o = $(`[data-out="${t.name}"]`, form); if (o) o.textContent = OUT[t.name](p[t.name]);
+      if (['h', 'w', 'd'].includes(t.name)) syncDims();
       if (t.name === 'split') { update(false, false); return; }
+      if (!update.raf) update.raf = requestAnimationFrame(() => { update.raf = 0; update(false, false); });
+    } else if (t.dataset.num) {
+      // medida escrita a mano: se aplica cuando el número es válido
+      const v = parseFloat(t.value.replace(',', '.'));
+      if (!Number.isFinite(v)) return;
+      const k = t.dataset.num, mm = Math.round(unit === 'cm' ? v * 10 : v);
+      if (mm < DIM_LIMITS[k][0] || mm > DIM_LIMITS[k][1]) { t.classList.add('is-bad'); return; }
+      t.classList.remove('is-bad'); p[k] = mm; $(`input[name="${k}"]`, form).value = mm;
       if (!update.raf) update.raf = requestAnimationFrame(() => { update.raf = 0; update(false, false); });
     } else if (t.id === 'pw-engrave') { p.engrave = cleanEngrave(t.value); if (t.value !== p.engrave) t.value = p.engrave; update(false, false); }
   });
+  form.addEventListener('focusout', e => { if (e.target.dataset && e.target.dataset.num) { e.target.classList.remove('is-bad'); syncDims(); } });
+  form.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.dataset && e.target.dataset.num) { e.preventDefault(); e.target.blur(); } });
   form.addEventListener('change', e => {
     if (e.target.id === 'pw-water') { p.watertight = e.target.checked; update(false, false); }
     if (e.target.id === 'pw-lit') { p.lit = e.target.checked; update(false, false); }
@@ -972,18 +1069,18 @@ function initLab() {
     const b = e.target.closest('button'); if (!b || !form.contains(b)) return;
     const d = b.dataset;
     if (d.model) {
-      if (d.model === 'cero') { model = null; p = normalizeParams({ type: 'vase', shape: 'organica', height: 24, width: 1, mouth: 1, twist: 0, sides: 32, tex: 'lisa', texAmt: .5, texN: 16, seed: 1 + Math.floor(Math.random() * 99999), line: p.line, color: p.color, mode: 'solid', lit: true }); }
+      if (d.model === 'cero') { model = null; p = normalizeParams({ type: 'vase', shape: 'organica', plan: 'circular', corner: 0, h: 240, w: 140, d: 140, mouth: 1, twist: 0, tex: 'lisa', texAmt: .5, texN: 16, seed: 1 + Math.floor(Math.random() * 99999), line: p.line, color: p.color, mode: 'solid', lit: true }); }
       else { model = modelById(d.model); p = normalizeParams(Object.assign({}, model.params, { lit: true })); }
       syncUI(); update(true, true); emit('generated'); return;
     }
     if (d.type) {
       p.type = d.type;
-      if (p.type === 'tray' && p.height > 12) p.height = 6;
-      if (p.type === 'candle' && p.height > 16) p.height = 10;
-      if ((p.type === 'vase' || p.type === 'lamp') && p.height < 14) p.height = 24;
+      [p.h, p.w, p.d] = TYPE_DIMS[p.type];
       syncUI(); update(true, true); emit('generated'); return;
     }
     if (d.shape) { p.shape = d.shape; syncUI(); update(false, false); return; }
+    if (d.plan) { p.plan = d.plan; if (d.plan === 'poligono' && (p.sides >= 32 || p.sides === 4)) p.sides = 5; p = normalizeParams(p); syncUI(); update(false, false); return; }
+    if (d.unit) { unit = d.unit; store.set('arko-unidad', unit); syncUI(); update(false, false); return; }
     if (d.tex) { p.tex = d.tex; if (p.tex !== 'lisa' && p.texAmt < .2) p.texAmt = .6; syncUI(); update(false, false); return; }
     if (d.line) { p.line = d.line; p = normalizeParams(p); syncUI(); update(false, false); return; }
     if (d.mode) { p.mode = d.mode; p = normalizeParams(p); syncUI(); update(false, false); return; }
@@ -1031,7 +1128,7 @@ const hexRGB = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
 const mixHex = (a, b, t) => '#' + hexRGB(a).map((v, i) => Math.round(v + (hexRGB(b)[i] - v) * t).toString(16).padStart(2, '0')).join('');
 let svgUid = 0;
 function pieceSVG(p, mode) {
-  const uid = 'pw' + (svgUid++), c = PWForm.coeffs(p.seed), H = p.height / 10, ROWS = 70, SAMPLES = 72, tmp = [0, 0, 0], rows = [];
+  const uid = 'pw' + (svgUid++), c = PWForm.coeffs(p.seed), H = PWForm.H(p), ROWS = 70, SAMPLES = 72, tmp = [0, 0, 0], rows = [];
   let maxX = 0;
   for (let j = 0; j <= ROWS; j++) {
     const t = j / ROWS; let mn = 0, mx = 0; const ring = [];
@@ -1054,7 +1151,7 @@ function pieceSVG(p, mode) {
     s += `<ellipse cx="${X(maxX * .35)}" cy="${Y(0)}" rx="${(maxX * 1.35).toFixed(3)}" ry="${(maxX * .22).toFixed(3)}" fill="rgba(40,30,20,.34)" filter="url(#${uid}b)"/>`;
     s += `<path d="${outline()}" fill="url(#${uid}g)"/>`;
     if (p.sides < 32) for (let e = 0; e < p.sides; e++) {
-      let seg = '', on = false; const phi = (e / p.sides) * Math.PI * 2;
+      let seg = '', on = false; const phi = ((e + .5) / p.sides) * Math.PI * 2;   // aristas de la planta
       for (let j = 0; j <= ROWS; j++) { PWForm.point(p, c, j / ROWS, phi, tmp); if (tmp[2] > 0) { seg += `${on ? 'L' : 'M'}${X(tmp[0])},${Y(tmp[1])}`; on = true; } else on = false; }
       if (seg) s += `<path d="${seg}" fill="none" stroke="rgba(255,250,240,.2)" stroke-width="${sw}"/>`;
     }
@@ -1078,10 +1175,10 @@ function pieceSVG(p, mode) {
     s += `<line x1="${X(0)}" y1="${Y(H + ext)}" x2="${X(0)}" y2="${Y(-ext)}" stroke="#9C5F38" stroke-width="${sw}" stroke-dasharray="${(maxX * .12).toFixed(3)} ${(maxX * .04).toFixed(3)} ${(maxX * .02).toFixed(3)} ${(maxX * .04).toFixed(3)}"/>`;
     const dx = -maxX - padX * .45, tk = maxX * .06;
     s += `<g stroke="${ink}" stroke-width="${sw}"><line x1="${X(dx)}" y1="${Y(0)}" x2="${X(dx)}" y2="${Y(H)}"/><line x1="${X(dx - tk)}" y1="${Y(-tk)}" x2="${X(dx + tk)}" y2="${Y(tk)}"/><line x1="${X(dx - tk)}" y1="${Y(H - tk)}" x2="${X(dx + tk)}" y2="${Y(H + tk)}"/></g>`;
-    s += `<text transform="translate(${(+X(dx) - maxX * .1).toFixed(3)} ${Y(H / 2)}) rotate(-90)" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="${fs}" fill="${ink}">${p.height} cm</text>`;
+    s += `<text transform="translate(${(+X(dx) - maxX * .1).toFixed(3)} ${Y(H / 2)}) rotate(-90)" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="${fs}" fill="${ink}">${Math.round(H * 100)} mm</text>`;
     const rt = rows[ROWS].mx, dy = H + span * .16;
     s += `<g stroke="${ink}" stroke-width="${sw}"><line x1="${X(-rt)}" y1="${Y(dy)}" x2="${X(rt)}" y2="${Y(dy)}"/><line x1="${X(-rt - tk)}" y1="${Y(dy - tk)}" x2="${X(-rt + tk)}" y2="${Y(dy + tk)}"/><line x1="${X(rt - tk)}" y1="${Y(dy - tk)}" x2="${X(rt + tk)}" y2="${Y(dy + tk)}"/></g>`;
-    s += `<text x="${X(0)}" y="${(+Y(dy) - maxX * .08).toFixed(3)}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="${fs}" fill="${ink}">Ø ${Math.round(rt * 20)} cm</text>`;
+    s += `<text x="${X(0)}" y="${(+Y(dy) - maxX * .08).toFixed(3)}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="${fs}" fill="${ink}">${Math.round(rt * 200)} mm</text>`;
     s += `<text x="${X(0)}" y="${(vbH - padB * .35).toFixed(3)}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="${fs}" letter-spacing="${(vbW / 200).toFixed(3)}" fill="#5B5249">SECCIÓN A–A · E 1:4</text>`;
     s += `<line x1="${X(-maxX * 1.3)}" y1="${Y(0)}" x2="${X(maxX * 1.3)}" y2="${Y(0)}" stroke="${ink}" stroke-width="${(sw * 1.6).toFixed(4)}"/>`;
   }
@@ -1094,7 +1191,7 @@ const snapCache = {}, snapJobs = [];
 let snapBusy = false;
 function snapInto(img, key, params, opts) {
   if (!PW.hasThree || !img) return;
-  const ck = 'arko-snap-v2-' + key + '-' + JSON.stringify(params).length;
+  const ck = 'arko-snap-v3-' + key + '-' + JSON.stringify(params).length;
   const apply = url => { if (url) { img.src = url; img.classList.add('is-ready'); } };
   try { const c = snapCache[ck] || sessionStorage.getItem(ck); if (c) { snapCache[ck] = c; return apply(c); } } catch (e) { /* sin almacenamiento */ }
   snapJobs.push(() => { const url = snapshot(params, opts); snapCache[ck] = url; try { if (url) sessionStorage.setItem(ck, url); } catch (e) { /* cuota llena */ } apply(url); });
@@ -1113,7 +1210,7 @@ function modelCardHTML(m, span) {
     </a>
     <div class="pw-piece__row"><span class="pw-piece__code">${m.code}</span><span class="pw-piece__price">${priceOf(p)} €</span></div>
     <h3 class="pw-piece__name"><a href="pieza.html#${m.id}">${esc(m.name)}</a></h3>
-    <p class="pw-piece__desc"><i style="background:${swatchCSS(p.color)}"></i>${TYPE_NAMES[p.type]} · ${p.height} cm · ${esc(LINES[p.line].name)} ${esc(f.name)}</p>
+    <p class="pw-piece__desc"><i style="background:${swatchCSS(p.color)}"></i>${TYPE_NAMES[p.type]} · ${p.w} × ${p.d} × ${p.h} mm · ${esc(LINES[p.line].name)} ${esc(f.name)}</p>
     <p class="pw-piece__lead">Preparación 7 días + envío</p>
     <div class="pw-piece__actions"><button class="pw-btn pw-btn--sm" type="button" data-add data-magnetic>Añadir</button><button class="pw-btn pw-btn--sm pw-btn--line" type="button" data-customize data-magnetic>Personalizar</button></div>
   </article>`;
@@ -1152,11 +1249,6 @@ function initDoors() {
   const dots = $('[data-door="taller"]');
   if (dots) dots.innerHTML = `<span class="pw-door__dots">${FILAMENTS.filter(f => f.line === 'matte').slice(0, 15).map(f => `<i style="background:${f.hex[0]}" title="${esc(f.name)}"></i>`).join('')}</span>`;
 }
-function maxDiameterCm(p) {
-  const c = PWForm.coeffs(p.seed), tmp = [0, 0, 0]; let m = 0;
-  for (let j = 0; j <= 40; j++) for (let i = 0; i < 64; i++) { PWForm.point(p, c, j / 40, i / 64 * Math.PI * 2, tmp); m = Math.max(m, Math.hypot(tmp[0], tmp[2])); }
-  return Math.round(m * 20);
-}
 // Página de pieza: pieza.html#anfora — el cliente puede cambiarle el color aquí mismo
 function initPieza() {
   const root = $('[data-pieza]'); if (!root) return;
@@ -1179,8 +1271,10 @@ function initPieza() {
     out.family.textContent = `Modelos · ${model.code}`;
     out.name.textContent = model.name; out.code.textContent = model.code; out.tag.textContent = model.tag; out.desc.textContent = model.desc;
     const p = model.params;
-    out.spec.innerHTML = [['Tipo', TYPE_NAMES[p.type] + (p.type === 'vase' ? ' · ' + SHAPES[p.shape] : '')], ['Alto', p.height + ' cm'], ['Ø máximo', maxDiameterCm(p) + ' cm'], ['Superficie', TEXTURES[p.tex]],
-      ['Torsión', p.twist + '°'], ['Lados', p.sides >= 32 ? 'Redondo' : p.sides], ['Capa', '0,2 mm · ' + Math.round(p.height * 50) + ' capas'], ['Seed', pad(p.seed, 5)]]
+    const bx = PWForm.box(p);
+    out.spec.innerHTML = [['Tipo', TYPE_NAMES[p.type] + (p.type === 'vase' ? ' · ' + SHAPES[p.shape] : '')], ['Planta', p.plan === 'poligono' ? p.sides + ' lados' : PLANS[p.plan][0]],
+      ['Ancho × fondo', `${p.w} × ${p.d} mm`], ['Alto', `${p.h} mm`], ['Con la torsión', `${bx.x} × ${bx.y} × ${bx.z} mm`], ['Superficie', TEXTURES[p.tex]],
+      ['Torsión', p.twist + '°'], ['Capa', '0,2 mm · ' + Math.round(p.h / .2) + ' capas']]
       .map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
     out.delivery.textContent = deliveryWindow();
     out.section.innerHTML = pieceSVG(p, 'section');

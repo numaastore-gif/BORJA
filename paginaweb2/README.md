@@ -29,8 +29,13 @@ Cada uno se puede pedir tal cual, cambiarle el color en su ficha o llevarlo al t
 En el **Taller** el cliente elige:
 - Punto de partida: uno de los cuatro modelos o desde cero.
 - Tipología: jarrón, lámpara, maceta, bandeja, portavelas.
-- Silueta (jarrones): orgánica, columna, cáliz, bulbo, cono, reloj.
-- Medidas: altura, anchura y boca.
+- Planta (vista desde arriba): circular, cuadrada, triangular, hexagonal, octogonal o polígono
+  de 3 a 12 lados, con esquinas redondeables.
+- Silueta (vista de lado): recta (paredes totalmente rectas, para cualquier tipología), orgánica,
+  columna, cáliz, bulbo, cono y reloj.
+- Medidas exactas de alto, ancho y fondo en cm o mm (deslizador o número escrito), más la boca.
+  La web calcula la caja real con la torsión y no deja comprar una pieza que no quepa en la
+  impresora (volumen en `BUILD`, por defecto 256 × 256 × 256 mm: Bambu Lab X1C / P1S / A1).
 - Superficie: lisa, ondas, estrías, costillas o relieve, con intensidad y densidad;
   además torsión, número de lados y variación (seed).
 - Filamento Bambu Lab: PLA Matte, Basic, Silk+, Marble, Wood, Translucent y Basic Gradient

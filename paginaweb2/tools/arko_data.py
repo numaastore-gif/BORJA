@@ -30,7 +30,8 @@ LINES = {
 
 PRICING = {
     "base":  {"vase": 29, "lamp": 59, "planter": 25, "tray": 22, "candle": 14},   # € de partida (la lámpara incluye kit eléctrico)
-    "perCm": {"vase": 1.2, "lamp": 2.5, "planter": 1.3, "tray": 1.6, "candle": 1.0},  # € por cm de alto
+    "perCm": {"vase": 1.2, "lamp": 2.5, "planter": 1.3, "tray": 1.6, "candle": 1.0},  # € por cm de alto a tamaño de referencia
+    "refMm": {"vase": 140, "lamp": 220, "planter": 180, "tray": 240, "candle": 90},   # ancho/fondo de referencia (mm); más ancho, más material
     "bicolor": 10,       # cambio de color por capa con AMS
     "watertight": 5,     # interior estanco para flores frescas
     "engrave": 3,        # grabado en la base
@@ -38,27 +39,26 @@ PRICING = {
     "prepDays": 7, "shipMin": 1, "shipMax": 3,
 }
 
+# Volumen de impresión: ninguna pieza puede superarlo (la web lo comprueba con la torsión incluida)
+BUILD = {"name": "Bambu Lab X1C / P1S / A1", "x": 256, "y": 256, "z": 256}
+
 # Los modelos fijos de la casa (cada uno se puede personalizar en el taller)
 CATALOG = [
     {"id": "anfora", "code": "AR—01", "name": "Ánfora", "tag": "Edición 04",
      "desc": "Seis caras que giran 140° de la base a la boca. La luz lateral dibuja una arista distinta a cada hora del día.",
-     "params": {"type": "vase", "shape": "organica", "height": 28, "width": 1, "mouth": 1, "twist": 140, "sides": 6,
-                "tex": "lisa", "texAmt": 0, "texN": 16, "seed": 42, "line": "matte", "color": "11103",
+     "params": {"type": "vase", "shape": "organica", "plan": "hexagonal", "sides": 6, "corner": 0, "h": 240, "w": 150, "d": 150, "mouth": 1, "twist": 140, "tex": "lisa", "texAmt": 0, "texN": 16, "seed": 42, "line": "matte", "color": "11103",
                 "mode": "solid", "color2": None, "split": 0.5, "watertight": False, "engrave": ""}},
     {"id": "monolito", "code": "AR—02", "name": "Monolito", "tag": "Pieza de suelo",
      "desc": "Una columna de cuatro caras retorcida 220°. Pesa a la vista y se sostiene sola en el suelo o sobre un aparador.",
-     "params": {"type": "vase", "shape": "columna", "height": 34, "width": 0.95, "mouth": 0.9, "twist": -220, "sides": 4,
-                "tex": "lisa", "texAmt": 0, "texN": 16, "seed": 77, "line": "matte", "color": "11101",
+     "params": {"type": "vase", "shape": "columna", "plan": "cuadrada", "sides": 4, "corner": 0, "h": 250, "w": 80, "d": 80, "mouth": 1, "twist": -220, "tex": "lisa", "texAmt": 0, "texN": 16, "seed": 77, "line": "matte", "color": "11101",
                 "mode": "solid", "color2": None, "split": 0.5, "watertight": False, "engrave": ""}},
     {"id": "estrato", "code": "AR—03", "name": "Estrato", "tag": "Lámpara · E27",
      "desc": "Una pantalla estriada que se abre hacia arriba. En PLA translúcido, la luz atraviesa las estrías y dibuja franjas en la pared. Incluye portalámparas, cable textil y bombilla LED cálida.",
-     "params": {"type": "lamp", "shape": "organica", "height": 22, "width": 1, "mouth": 1, "twist": 40, "sides": 32,
-                "tex": "estrias", "texAmt": 0.7, "texN": 28, "seed": 17, "line": "translucent", "color": "13410",
+     "params": {"type": "lamp", "shape": "organica", "plan": "circular", "sides": 32, "corner": 0, "h": 220, "w": 230, "d": 230, "mouth": 1, "twist": 40, "tex": "estrias", "texAmt": 0.7, "texN": 28, "seed": 17, "line": "translucent", "color": "13410",
                 "mode": "solid", "color2": None, "split": 0.5, "watertight": False, "engrave": ""}},
     {"id": "onda", "code": "AR—04", "name": "Onda", "tag": "Con drenaje",
      "desc": "Pared ondulada de arriba abajo, como un encofrado de chapa. Lleva orificio de drenaje y platillo a juego.",
-     "params": {"type": "planter", "shape": "organica", "height": 16, "width": 1, "mouth": 1, "twist": 20, "sides": 32,
-                "tex": "ondas", "texAmt": 0.8, "texN": 6, "seed": 31, "line": "matte", "color": "11203",
+     "params": {"type": "planter", "shape": "organica", "plan": "circular", "sides": 32, "corner": 0, "h": 160, "w": 190, "d": 190, "mouth": 1, "twist": 20, "tex": "ondas", "texAmt": 0.8, "texN": 6, "seed": 31, "line": "matte", "color": "11203",
                 "mode": "solid", "color2": None, "split": 0.5, "watertight": False, "engrave": ""}},
 ]
 
@@ -160,7 +160,7 @@ FILAMENTS = [
     {"code": "10907", "line": "gradient", "name": "Nube de algodón de azúcar", "en": "Cotton Candy Cloud", "hex": ["#E7C1D5", "#8EC9E9"]}
 ]
 
-DATA = {"lines": LINES, "pricing": PRICING, "catalog": CATALOG, "filaments": FILAMENTS}
+DATA = {"lines": LINES, "pricing": PRICING, "build": BUILD, "catalog": CATALOG, "filaments": FILAMENTS}
 
 if __name__ == "__main__":
     js = json.dumps(DATA, ensure_ascii=False, indent=1)
