@@ -2,8 +2,8 @@
   {
     "id": "cubitera",
     "nombre": "Cubitera Valle y Jose",
-    "fecha": "2026-09-26",
-    "notas": "Silueta ajustada a la foto: 20 × 20,5 × 24 cm, pared lisa de 3 mm, boca curva y asa triangular simétrica con el vértice redondeado. Debajo, «Valle y Jose» y «10/09/1994» en Playfair Display (la de numashome.com), en relieve biselado siguiendo la pared, impresas en rojo. Fondo de 2 mm (10 capas de 0,2 mm, todas macizas) y tope hueco con pared de 1,9 mm apoyado en el fondo, para que sea estanca sin relleno al 100 %. Tope en el fondo para recostar la botella contra la pared alta. Imprimir de pie, sin soportes; capa de 0,2 mm, 5 capas inferiores + 5 superiores y 4 perímetros (ya puestos en el 3MF).",
+    "fecha": "2026-10-26",
+    "notas": "Silueta ajustada a la foto, con el pie a 40° como máximo para imprimir sin voladizos y la arista de abajo viva: 20 × 20,5 × 24 cm, pared lisa de 3 mm, boca curva y asa triangular simétrica con el vértice redondeado. Debajo, «Valle y Jose» y «10/09/1994» en Playfair Display (la de numashome.com), incrustadas en la pared a ras (1 mm de hondo), impresas en rojo. Fondo de 2 mm (10 capas de 0,2 mm, todas macizas) y tope hueco con pared de 1,9 mm apoyado en el fondo, para que sea estanca sin relleno al 100 %. Tope en el fondo para recostar la botella contra la pared alta. Imprimir de pie, sin soportes; capa de 0,2 mm, 5 capas inferiores + 5 superiores y 4 perímetros (ya puestos en el 3MF).",
     "partes": [
       {
         "archivo": "modelos/cubitera_cuerpo.txt",

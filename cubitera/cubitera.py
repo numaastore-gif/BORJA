@@ -31,6 +31,10 @@ from shapely.geometry import LineString, Polygon
 # calcada de la foto (error < 1 mm), a(z) = c0 + c1*z - c2*exp(-z/L).
 # Al ser una sola función sin tramos, la pared no tiene pliegues.
 PERFIL = dict(c0=76.456, c1=0.1166, c2=34.238, L=33.336)
+# Voladizo máximo de la pared exterior (grados desde la vertical). Abajo la
+# curva se abría a ~50° y daba voladizos al imprimir: ahí se sustituye por un
+# tramo a 40° que empalma tangente con la curva (a unos 13 mm del suelo).
+VOLADIZO_MAX = 40.0
 # Borde de la boca: parábola ajustada al borde de la foto, z(x) = p0*x² + p1*x + p2.
 BOCA = dict(p0=5.14e-4, p1=0.260454, p2=207.33)
 ANCHO_RELATIVO = 20.5 / 20.0  # semieje transversal / semieje largo
@@ -41,7 +45,9 @@ PARED = 3.0
 CAPA = 0.2
 CAPAS_FONDO = 10
 FONDO = CAPA * CAPAS_FONDO
-REDONDEO_FONDO = (8.0, 5.0)  # radio de la arista del fondo por fuera y por dentro
+# radio de la arista del fondo por fuera y por dentro; por fuera viva: un
+# redondeo arranca en horizontal desde la cama y es puro voladizo
+REDONDEO_FONDO = (0.0, 5.0)
 # Asa: ranura triangular redondeada y simétrica (base abajo, vértice arriba).
 # (u, v, radio horizontal, radio vertical) de las elipses que la envuelven;
 # u a lo largo de la pared (0 = punta del lado alto), v hacia arriba. El
@@ -57,9 +63,10 @@ LINEAS = [
 ]
 FUENTES = {False: "PlayfairDisplay-Medium.ttf", True: "PlayfairDisplay-MediumItalic.ttf"}  # OFL
 ENGROSAR = 0.15        # mm que se engordan los trazos finos para que se impriman
-# Relieve en escalones que imitan un bisel: (ensanche del trazo, altura) en mm,
-# así las letras nacen de la pared en vez de parecer pegadas.
-RELIEVE = [(0.3, 0.4), (0.0, 0.8)]
+# Letras incrustadas en la pared, a ras: entran INCRUSTE mm en la pared y no
+# sobresalen. En el 3MF son una pieza aparte (en rojo); en el STL de una pieza
+# quedan grabadas.
+INCRUSTE = 1.0
 TOPE = dict(x=-34.0, ancho=30.0, alto=16.0)  # suplemento del fondo
 PARED_TOPE = 1.9      # el tope es hueco: ~4 perímetros y su hueco apoya en el fondo
 SEGMENTOS = 240
@@ -67,9 +74,27 @@ PASO_Z = 1.5           # separación entre anillos de la pared
 ALTO_CUERPO = 290.0    # el cuerpo se genera algo más alto y la boca lo recorta
 
 
-def perfil(z):
+def _perfil_curva(z):
     p = PERFIL
     return p["c0"] + p["c1"] * z - p["c2"] * np.exp(-np.asarray(z) / p["L"])
+
+
+def _perfil_limitado():
+    """La curva, pero bajando desde arriba sin estrecharse más de lo que
+    permite VOLADIZO_MAX (el semieje transversal es el que más se inclina)."""
+    z = np.arange(0.0, 400.0, 0.05)
+    a = _perfil_curva(z)
+    paso = np.tan(np.radians(VOLADIZO_MAX)) / ANCHO_RELATIVO * 0.05
+    for i in range(len(z) - 2, -1, -1):
+        a[i] = max(a[i], a[i + 1] - paso)
+    return z, a
+
+
+_Z_PERFIL, _A_PERFIL = _perfil_limitado()
+
+
+def perfil(z):
+    return np.interp(z, _Z_PERFIL, _A_PERFIL)
 
 
 def semieje(z, offset=0.0):
@@ -110,7 +135,8 @@ def contorno(interior=False):
     r = REDONDEO_FONDO[1 if interior else 0]
     # sección completa (simétrica) para que el redondeo solo afecte al fondo
     seccion = Polygon([*zip(-a[::-1], zs[::-1]), *zip(a, zs)])
-    seccion = seccion.buffer(-r, quad_segs=32).buffer(r, quad_segs=32)
+    if r:
+        seccion = seccion.buffer(-r, quad_segs=32).buffer(r, quad_segs=32)
     x, z = np.array(seccion.exterior.coords).T
     x0 = x[(np.abs(z - zs[0]) < 1e-6)].max()
     lado = (x > 0) & (z > zs[0] + 1e-6) & (z < zs[-1] - 3 * r)
@@ -188,15 +214,12 @@ def linea(tramos, letra, aire):
 
 
 def texto():
-    """Líneas en relieve biselado, enrolladas sobre la pared bajo el asa."""
-    relieve = []
-    for l in LINEAS:
-        letras = linea(l["tramos"], l["letra"], l["aire"])
-        for ensanche, alto in RELIEVE:
-            capa = letras.offset(ensanche, JoinType.Round) if ensanche else letras
-            relieve.append(envolver(capa.extrude(alto + 2.0).translate((0, 0, -2.0)), l["z"]))
+    """Líneas enrolladas sobre la pared bajo el asa, desde INCRUSTE mm dentro
+    de la pared hasta 1 mm fuera (se recortan luego a ras de la pared)."""
+    capas = [envolver(linea(l["tramos"], l["letra"], l["aire"]).extrude(INCRUSTE + 1.0)
+                      .translate((0, 0, -INCRUSTE)), l["z"]) for l in LINEAS]
     # sin detalles por debajo de 0,01 mm, que al guardar en STL se solaparían
-    return Manifold.batch_boolean(relieve, OpType.Add).set_tolerance(0.01)
+    return Manifold.batch_boolean(capas, OpType.Add).set_tolerance(0.01)
 
 
 def tope():
@@ -231,13 +254,13 @@ def interior_tope(exterior, hueco):
 def construir():
     exterior = cuerpo() ^ bajo_la_boca()
     hueco = cuerpo(interior=True)
-    vaso = exterior - hueco + (tope() ^ exterior) - interior_tope(exterior, hueco) - asa()
-    # letras: solo el relieve que sobresale de la pared, como pieza aparte
-    # para imprimirlo en otro color (rojo en el proyecto 3MF)
-    letras = texto() - hueco - vaso - asa()
-    # en una pieza: el relieve entra 2 mm en la pared y se funde con ella
-    solido = exterior - hueco + (tope() ^ exterior) + (texto() - hueco) - interior_tope(exterior, hueco) - asa()
-    return a_trimesh(vaso), a_trimesh(letras), a_trimesh(solido)
+    # letras a ras de la pared: lo que de ellas queda dentro del cuerpo
+    grabado = texto()
+    letras = (grabado ^ exterior) - hueco - asa()
+    # se vacía con las letras sin recortar (asoman 1 mm): sin caras coincidentes
+    vaso = exterior - hueco + (tope() ^ exterior) - interior_tope(exterior, hueco) - asa() - grabado
+    # el cuerpo con las letras vaciadas sirve también de STL de un color (grabadas)
+    return a_trimesh(vaso), a_trimesh(letras), a_trimesh(vaso)
 
 
 def a_trimesh(solido):
