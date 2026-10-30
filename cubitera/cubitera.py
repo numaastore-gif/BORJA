@@ -62,11 +62,11 @@ LINEAS = [
     dict(tramos=[("10/09/1994", False)], letra=8.5, aire=0.12, z=151.0),
 ]
 FUENTES = {False: "PlayfairDisplay-Medium.ttf", True: "PlayfairDisplay-MediumItalic.ttf"}  # OFL
-ENGROSAR = 0.15        # mm que se engordan los trazos finos para que se impriman
-# Letras incrustadas en la pared, a ras: entran INCRUSTE mm en la pared y no
-# sobresalen. En el 3MF son una pieza aparte (en rojo); en el STL de una pieza
-# quedan grabadas.
+ENGROSAR = 0.45        # mm que se engordan los trazos (por cada lado) para que se vean bien impresos
+# Letras incrustadas en la pared: entran INCRUSTE mm en la pared y asoman
+# SALIENTE mm. En el 3MF son una pieza aparte (en rojo).
 INCRUSTE = 1.0
+SALIENTE = 0.6
 TOPE = dict(x=-34.0, ancho=30.0, alto=16.0)  # suplemento del fondo
 PARED_TOPE = 1.9      # el tope es hueco: ~4 perímetros y su hueco apoya en el fondo
 SEGMENTOS = 240
@@ -215,8 +215,8 @@ def linea(tramos, letra, aire):
 
 def texto():
     """Líneas enrolladas sobre la pared bajo el asa, desde INCRUSTE mm dentro
-    de la pared hasta 1 mm fuera (se recortan luego a ras de la pared)."""
-    capas = [envolver(linea(l["tramos"], l["letra"], l["aire"]).extrude(INCRUSTE + 1.0)
+    de la pared hasta SALIENTE mm fuera."""
+    capas = [envolver(linea(l["tramos"], l["letra"], l["aire"]).extrude(INCRUSTE + SALIENTE)
                       .translate((0, 0, -INCRUSTE)), l["z"]) for l in LINEAS]
     # sin detalles por debajo de 0,01 mm, que al guardar en STL se solaparían
     return Manifold.batch_boolean(capas, OpType.Add).set_tolerance(0.01)
@@ -255,12 +255,12 @@ def construir():
     exterior = cuerpo() ^ bajo_la_boca()
     hueco = cuerpo(interior=True)
     # letras a ras de la pared: lo que de ellas queda dentro del cuerpo
-    grabado = texto()
-    letras = (grabado ^ exterior) - hueco - asa()
-    # se vacía con las letras sin recortar (asoman 1 mm): sin caras coincidentes
-    vaso = exterior - hueco + (tope() ^ exterior) - interior_tope(exterior, hueco) - asa() - grabado
-    # el cuerpo con las letras vaciadas sirve también de STL de un color (grabadas)
-    return a_trimesh(vaso), a_trimesh(letras), a_trimesh(vaso)
+    letras = texto() - hueco - asa()
+    base = exterior - hueco + (tope() ^ exterior) - interior_tope(exterior, hueco) - asa()
+    vaso = base - letras   # con el hueco de las letras, para el 3MF de dos colores
+    # en una pieza: las letras se funden con la pared
+    solido = base + letras
+    return a_trimesh(vaso), a_trimesh(letras), a_trimesh(solido)
 
 
 def a_trimesh(solido):
