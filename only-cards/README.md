@@ -28,3 +28,9 @@ Ver la web mejorada en el navegador (tienda, fichas, filtros y carrito funcionan
 python3 only-cards/herramientas/servidor-demo.py      # http://localhost:8080
 DEMO_SIN_BOOSTER=1 DEMO_SIN_IMAGENES=1 python3 only-cards/herramientas/servidor-demo.py 8081   # la web tal cual, para comparar
 ```
+
+Versión que se abre sin servidor (doble clic en `only-cards/demo/index.html`; necesita internet para estilos y tipografías):
+
+```bash
+python3 only-cards/herramientas/exportar-demo.py
+```
