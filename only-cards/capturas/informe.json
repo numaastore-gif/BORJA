@@ -1,0 +1,96 @@
+[
+  {
+    "vista": "escritorio",
+    "pagina": "tienda",
+    "jsonld": [
+      "Organization",
+      "Store",
+      "ItemList"
+    ],
+    "metaDescription": "Only Cards: tienda online de cartas coleccionables. Cajas selladas, preventas y colecciones de Pokémon, Yu-Gi-Oh! y Riftbound. Envío en 2-3 días laborables.",
+    "errores": []
+  },
+  {
+    "vista": "escritorio",
+    "pagina": "producto",
+    "jsonld": [
+      "Organization",
+      null,
+      "BreadcrumbList",
+      "Store"
+    ],
+    "metaDescription": "Caja de 36 Sobres - Pokémon JCC: Dominio Delta (Español) Estás comprando una caja completa y sellada de fábrica que contiene 36 sobres de la esperada expansió",
+    "errores": []
+  },
+  {
+    "vista": "escritorio",
+    "pagina": "preventa",
+    "jsonld": [
+      "Organization",
+      null,
+      "BreadcrumbList",
+      "Store"
+    ],
+    "metaDescription": "Tuckbox - Yu-Gi-Oh! Magnificent Maestros (Inglés) ⚠️ Producto en Reserva: La fecha oficial de lanzamiento y envío es el 12 de noviembre. Detalles del producto",
+    "errores": []
+  },
+  {
+    "vista": "escritorio",
+    "pagina": "agotado",
+    "jsonld": [
+      "Organization",
+      null,
+      "BreadcrumbList",
+      "Store"
+    ],
+    "metaDescription": "Colección Prémium Ditto. 30 Aniversario Pokémon. Español — compra en Only Cards. Producto original sellado. Envío en 2-3 días laborables.",
+    "errores": []
+  },
+  {
+    "vista": "movil",
+    "pagina": "tienda",
+    "jsonld": [
+      "Organization",
+      "Store",
+      "ItemList"
+    ],
+    "metaDescription": "Only Cards: tienda online de cartas coleccionables. Cajas selladas, preventas y colecciones de Pokémon, Yu-Gi-Oh! y Riftbound. Envío en 2-3 días laborables.",
+    "errores": []
+  },
+  {
+    "vista": "movil",
+    "pagina": "producto",
+    "jsonld": [
+      "Organization",
+      null,
+      "BreadcrumbList",
+      "Store"
+    ],
+    "metaDescription": "Caja de 36 Sobres - Pokémon JCC: Dominio Delta (Español) Estás comprando una caja completa y sellada de fábrica que contiene 36 sobres de la esperada expansió",
+    "errores": []
+  },
+  {
+    "vista": "movil",
+    "pagina": "preventa",
+    "jsonld": [
+      "Organization",
+      null,
+      "BreadcrumbList",
+      "Store"
+    ],
+    "metaDescription": "Tuckbox - Yu-Gi-Oh! Magnificent Maestros (Inglés) ⚠️ Producto en Reserva: La fecha oficial de lanzamiento y envío es el 12 de noviembre. Detalles del producto",
+    "errores": []
+  },
+  {
+    "vista": "movil",
+    "pagina": "agotado",
+    "jsonld": [
+      "Organization",
+      null,
+      "BreadcrumbList",
+      "Store"
+    ],
+    "metaDescription": "Colección Prémium Ditto. 30 Aniversario Pokémon. Español — compra en Only Cards. Producto original sellado. Envío en 2-3 días laborables.",
+    "errores": []
+  }
+]
