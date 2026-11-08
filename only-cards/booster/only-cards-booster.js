@@ -542,7 +542,7 @@
   // 11. Barra de envío gratis en el carrito (solo si hay umbral definido)
   function barraEnvioGratis() {
     if (!CONFIG.envioGratisDesde || !isCart) return;
-    var totalEl = $("#order_total .oe_currency_value, tr#order_total .oe_currency_value, [data-oe-expression*=amount_total] .oe_currency_value");
+    var totalEl = $("tr.border-top strong.monetary_field .oe_currency_value, #order_total .oe_currency_value, tr#order_total .oe_currency_value, [data-oe-expression*=amount_total] .oe_currency_value");
     var total = parsePrice(totalEl && totalEl.textContent);
     if (total == null) return;
     var falta = CONFIG.envioGratisDesde - total;
