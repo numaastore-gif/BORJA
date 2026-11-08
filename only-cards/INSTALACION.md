@@ -60,6 +60,19 @@ window.ONLY_CARDS_BOOSTER_CONFIG = { modulos: { hero: false, barraAnuncios: fals
 - Ficha: bloque de confianza bajo «Añadir a la cesta», y en móvil la barra fija al hacer scroll.
 - SEO: pegar la URL de una ficha en <https://search.google.com/test/rich-results>. Debe detectar *Producto* y *Ruta de navegación*.
 
+## Subir las imágenes re-encuadradas
+
+Las fotos de `imagenes/mejoradas/` llevan el nombre de la URL del producto (el número final es su ID en Odoo).
+
+1. *Ventas → Productos* → abrir el producto.
+2. Pasar el ratón por la foto → icono del lápiz → elegir el `.jpg` correspondiente → **Guardar**.
+3. En *Sitio web → Tienda → Editar*, dejar el diseño de imagen en **cuadrado (1:1)**. Con las fotos ya
+   cuadradas, el recorte «cover» del listado deja de cortar productos.
+
+Al ser 18 se hace en unos 15 minutos. Para fotos de productos nuevos, ejecutar
+`python3 only-cards/herramientas/encuadrar-imagenes.py`: vuelve a descargar todas las de la tienda y las re-encuadra
+con el mismo criterio (recorte al producto, lienzo 1200×1200 blanco, el producto ocupa el 84 % y lleva sombra de apoyo).
+
 ## Quitarlo
 
 Borrar los bloques de la inyección de código. El script no guarda nada en Odoo. Solo usa el

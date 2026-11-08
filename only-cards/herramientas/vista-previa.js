@@ -60,6 +60,41 @@ const PAGES = [
       report.push({ vista, pagina: p.id, jsonld: ld, metaDescription: meta, errores: errors });
       await page.close();
     }
+    // Tienda con las fotos re-encuadradas (only-cards/imagenes/mejoradas), servidas en lugar de las de Odoo.
+    const IMGS = path.join(__dirname, "..", "imagenes", "mejoradas");
+    if (fs.existsSync(IMGS)) {
+      const porId = {};
+      for (const f of fs.readdirSync(IMGS)) { const m = f.match(/-(\d+)\.jpg$/); if (m) porId[m[1]] = path.join(IMGS, f); }
+      const page = await ctx.newPage();
+      await page.route(/\/web\/image\/product\.(product|template)\/(\d+)\/image_/, (route) => {
+        const id = route.request().url().match(/product\.(?:product|template)\/(\d+)\//)[1];
+        return porId[id] ? route.fulfill({ path: porId[id], contentType: "image/jpeg" }) : route.continue();
+      });
+      await page.goto(`${BASE}/shop`, { waitUntil: "networkidle" });
+      await page.locator("#cookies-consent-essential, .js_close_popup, a:has-text('Solo las necesarias')").first().click({ timeout: 2000 }).catch(() => {});
+      await page.addScriptTag({ content: DEMO_CONFIG });
+      await page.addScriptTag({ content: code });
+      await page.waitForTimeout(600);
+      await page.evaluate(() => {
+        const g = document.querySelector(".ocb-filters") || document.querySelector("#o_wsale_products_grid");
+        window.scrollTo(0, g.getBoundingClientRect().top + window.scrollY - 80);
+      });
+      await page.waitForTimeout(400);
+      await page.screenshot({ path: path.join(OUT, `tienda-${vista}-despues-imagenes.jpg`), type: "jpeg", quality: 80 });
+      // Misma posición sin las fotos nuevas, para comparar.
+      await page.unrouteAll();
+      await page.reload({ waitUntil: "networkidle" });
+      await page.addScriptTag({ content: DEMO_CONFIG });
+      await page.addScriptTag({ content: code });
+      await page.waitForTimeout(600);
+      await page.evaluate(() => {
+        const g = document.querySelector(".ocb-filters") || document.querySelector("#o_wsale_products_grid");
+        window.scrollTo(0, g.getBoundingClientRect().top + window.scrollY - 80);
+      });
+      await page.waitForTimeout(400);
+      await page.screenshot({ path: path.join(OUT, `tienda-${vista}-despues-imagenes-antes.jpg`), type: "jpeg", quality: 80 });
+      await page.close();
+    }
     await ctx.close();
   }
   await browser.close();

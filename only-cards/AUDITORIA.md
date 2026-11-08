@@ -36,6 +36,13 @@ Por impacto, de mayor a menor.
 - **No se da el precio por sobre** en cajas y blísteres, que es justo lo que compara un jugador.
 - **Móvil:** el botón «Añadir a la cesta» desaparece al leer la descripción, y no hay un acceso rápido a WhatsApp.
 
+### Imágenes
+
+- Las 18 fotos tienen tamaños de 300×300 a 1024×1024 y proporciones distintas (apaisadas, verticales, cuadradas).
+- Los márgenes y fondos no son coherentes: unas tienen bandas blancas enormes, otras fondo gris o azulado y otras ninguno.
+- El listado recorta en cuadrado («cover»), así que productos verticales u horizontales salen cortados.
+- Solución entregada en `imagenes/mejoradas/`: 1200×1200, producto completo, centrado, mismo margen y sombra.
+
 ### SEO
 
 - No hay `meta description` en ninguna página.

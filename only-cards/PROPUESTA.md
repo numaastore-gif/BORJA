@@ -54,13 +54,26 @@ Un script que se pega en Odoo (*Inyección de código*) y añade:
 | Agotado | ![](capturas/agotado-escritorio-antes.jpg) | ![](capturas/agotado-escritorio-despues.jpg) |
 | Móvil, scroll en ficha | — | ![](capturas/producto-movil-despues-scroll.jpg) |
 
-### 2. Puesta a punto en Odoo
+### 2. Fotos de producto re-encuadradas: listas hoy
+
+Las 18 fotos actuales tienen tamaños de 300 a 1024 px, proporciones distintas, márgenes desiguales y fondos de
+colores diferentes. Como el listado de Odoo recorta en cuadrado, algunas salen cortadas (el álbum o la colección
+con póster). Las hemos re-encuadrado todas con el mismo criterio: producto completo y centrado, mismo tamaño,
+fondo blanco y sombra suave. Solo hay que subirlas.
+
+| Listado actual | Con las fotos nuevas |
+|----------------|----------------------|
+| ![](capturas/tienda-escritorio-despues-imagenes-antes.jpg) | ![](capturas/tienda-escritorio-despues-imagenes.jpg) |
+
+Todas, una a una: [imagenes/comparativa.jpg](imagenes/comparativa.jpg).
+
+### 3. Puesta a punto en Odoo
 
 Lo que debe arreglarse en la propia plataforma: corregir el enlace y el IVA del filtro, crear categorías
 y el atributo de idioma, hacer una portada real con novedades, preventas y la tienda de Vigo, normalizar
 los nombres de producto y redactar descripciones SEO.
 
-### 3. Crecimiento
+### 4. Crecimiento
 
 Google Business Profile de la tienda de Vigo, Google Shopping (Merchant Center), newsletter con cupón de
 bienvenida para avisar de las preventas, y un informe mensual de GA4 (visitas, carritos y ventas por juego).
@@ -71,8 +84,8 @@ Precios orientativos, para ajustar en la reunión.
 
 | Paquete | Incluye | Precio |
 |---------|---------|--------|
-| **Booster** | Instalación y configuración del script, revisión con vosotros, 30 días de ajustes | 390 € |
-| **Booster + Odoo** | Lo anterior y la puesta a punto completa en Odoo (punto 2) | 990 € |
+| **Booster** | Instalación y configuración del script, subida de las fotos re-encuadradas, revisión con vosotros, 30 días de ajustes | 390 € |
+| **Booster + Odoo** | Lo anterior y la puesta a punto completa en Odoo (puntos 2 y 3) | 990 € |
 | **Crecimiento** | Mantenimiento del script, alta de productos con SEO, Merchant Center e informe mensual | 79 €/mes |
 
 ## Cómo medimos el resultado

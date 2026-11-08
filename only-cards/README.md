@@ -10,10 +10,13 @@ coleccionables (Pokémon, Yu-Gi-Oh!, Riftbound) con recogida en Vigo.
 | [INSTALACION.md](INSTALACION.md) | Cómo instalar y configurar el script en Odoo |
 | `booster/only-cards-booster.js` | El script de mejoras: JavaScript sin dependencias, configurable por módulos |
 | `herramientas/vista-previa.js` | Inyecta el script en la web real y saca capturas antes/después |
+| `imagenes/` | Las 18 fotos de producto: `originales/`, `mejoradas/` (1200×1200, re-encuadradas) y `comparativa.jpg` |
+| `herramientas/encuadrar-imagenes.py` | Descarga las fotos de la tienda y las re-encuadra (recorte al producto, lienzo cuadrado, margen y sombra iguales) |
 | `capturas/` | Capturas de escritorio y móvil, e `informe.json` con los datos estructurados detectados |
 
 Regenerar las capturas (necesita Playwright y acceso a www.only-cards.com):
 
 ```bash
+python3 only-cards/herramientas/encuadrar-imagenes.py   # necesita Pillow y numpy
 node only-cards/herramientas/vista-previa.js
 ```

@@ -129,8 +129,10 @@
     } else if (/reserva|preventa|pre-?order/i.test(name)) {
       info.preventa = true;
     }
+    // Solo productos que son únicamente sobres: en colecciones y álbumes el precio
+    // incluye cartas promo, figuras, etc., y el «precio por sobre» engañaría.
     var s = name.match(/(\d+)\s*sobres/i);
-    if (s) info.sobres = parseInt(s[1], 10);
+    if (s && /caja|bl[ií]ster|display/i.test(name) && !/colecci[oó]n|[aá]lbum|p[oó]ster|figura|entrenador/i.test(name)) info.sobres = parseInt(s[1], 10);
     return info;
   }
 
