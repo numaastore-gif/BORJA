@@ -1,54 +1,37 @@
-"""Pantalla colgante tipo campana orgánica para imprimir en modo jarrón con
-piel difusa (estilo elden.designs), y anillo adaptador para portalámparas E27
-con aro roscado.
+"""Pantalla colgante tipo campana, lisa, para imprimir del revés en modo jarrón
+con piel difusa (estilo elden.designs), con el agujero del portalámparas E27.
 
-  pantalla   sólido cerrado: Bambu Studio en modo jarrón imprime solo su
-             pared exterior en espiral, sin fondo (0 capas inferiores) y con
-             la boca del cuello abierta. Falda casi vertical abajo, cuerpo a
-             40°, hombro que se redondea hasta un cuello recto. La planta se
-             ondula en lóbulos suaves que crecen hacia el borde y giran al
-             subir. Ninguna parte pasa de VOLADIZO_MAX de inclinación.
-  anillo     se mete por dentro de la pantalla y sube por el cuello: arriba
-             queda una tapa con el agujero del E27 (el aro del portalámparas
-             aprieta por encima) y abajo un cono a 45° que se encaja en el
-             hombro y sostiene el peso de la pantalla. Impresión normal, con la
-             tapa sobre la cama y sin soportes.
+Se imprime boca arriba: la parte de arriba de la pantalla (un disco plano)
+va sobre la cama y la falda sube. En modo jarrón Bambu Studio hace primero
+las capas inferiores macizas (el disco, con el agujero del E27, donde aprieta
+el aro del portalámparas) y luego solo la pared exterior en espiral, abierta
+por la boca. Perfil convexo: casi vertical en la falda y a 44° junto al disco,
+así que en esta postura ninguna parte pasa de VOLADIZO_MAX. Sin lóbulos ni
+cuello.
 
-Medidas en mm.
-
-    python pantalla.py            # pantalla_jarron.stl y anillo_e27.stl, para imprimir
-    python pantalla.py --vista    # vista_*.stl, ligeras y montadas, para el visor
+    python pantalla.py            # pantalla_jarron.stl, para imprimir
+    python pantalla.py --vista    # vista_pantalla.stl, ligera y colgada, para el visor
 """
 import pathlib
 import sys
 
 import numpy as np
 import trimesh
-from manifold3d import CrossSection, Manifold, Mesh, triangulate
+from manifold3d import Manifold, Mesh, triangulate
 
 AQUI = pathlib.Path(__file__).parent
+VISTA = "--vista" in sys.argv
 
-# --- Pantalla ---------------------------------------------------------------------------
-R_BORDE = 136.0        # radio medio del borde de abajo (Ø ~272, con lóbulos ~290)
-R_CUELLO = 31.0        # cuello: Ø 62 por fuera
-ALTO_CUELLO = 12.0
-ANGULOS = [(0.0, 6.0), (0.35, 30.0), (0.93, 44.0), (1.0, 0.0)]  # (fracción del cuerpo, grados desde la vertical): convexa hasta el cuello
-LOBULOS = [(3, 0.065, 0.3, 0.9), (5, 0.02, 2.1, -0.6)]  # (número, amplitud en el borde, fase, giro total)
+R_BORDE = 140.0        # radio de la boca (Ø 280)
+R_ARRIBA = 34.0        # disco plano de arriba (Ø 68): apoyo en la cama y del aro del E27
+ANGULOS = [(0.0, 6.0), (0.35, 30.0), (1.0, 44.0)]  # (fracción desde la boca, grados desde la vertical)
 VOLADIZO_MAX = 45.0
-VISTA = "--vista" in sys.argv   # versión ligera para el visor, montada
+AGUJERO_E27 = 40.5     # rosca exterior del portalámparas: Ø 40 mm
+CAPA = 0.2
+CAPAS_DISCO = 8        # capas inferiores del modo jarrón: disco de 1,6 mm
+DISCO = CAPA * CAPAS_DISCO
 PUNTOS = 240 if VISTA else 720
 PASO_Z = 2.0 if VISTA else 0.5
-
-# --- Modo jarrón ------------------------------------------------------------------------
-PARED = 0.6            # ancho de línea de la pared en modo jarrón (boquilla 0,4)
-PIEL = 0.3             # grosor de la piel difusa
-
-# --- Anillo E27 -------------------------------------------------------------------------
-AGUJERO_E27 = 40.5     # rosca exterior del portalámparas: Ø 40 mm
-TAPA = 3.0
-PARED_ANILLO = 3.0
-HOLGURA = 0.3
-CONO = 7.0              # el cono del anillo se ensancha 7 mm a 45°
 
 
 def suave(x):
@@ -57,7 +40,6 @@ def suave(x):
 
 
 def angulo(t):
-    """Inclinación de la pared (grados desde la vertical) en la fracción t del cuerpo."""
     for (t0, a0), (t1, a1) in zip(ANGULOS, ANGULOS[1:]):
         if t <= t1:
             return a0 + (a1 - a0) * suave((t - t0) / (t1 - t0))
@@ -65,37 +47,22 @@ def angulo(t):
 
 
 def perfil():
-    """Radio medio r(z) del cuerpo, desde el borde (z = 0) hasta el cuello."""
-    ts = np.linspace(0, 1, 2001)
+    """Radio r según la altura de impresión z (z = 0 el disco sobre la cama)."""
+    ts = np.linspace(0, 1, 4001)                      # desde la boca hacia arriba
     pend = np.tan(np.radians([angulo(t) for t in ts]))
-    # alto del cuerpo para que el radio baje exactamente de R_BORDE a R_CUELLO
-    alto = (R_BORDE - R_CUELLO) / np.trapezoid(pend, ts)
+    alto = (R_BORDE - R_ARRIBA) / np.trapezoid(pend, ts)
     r = R_BORDE - np.concatenate([[0], np.cumsum((pend[1:] + pend[:-1]) / 2 * np.diff(ts))]) * alto
-    return ts * alto, r, alto
+    z = alto - ts * alto                              # del revés: la boca arriba
+    return z[::-1], r[::-1], alto
 
 
-Z_CUERPO, R_CUERPO, ALTO_CUERPO = perfil()
-ALTO = ALTO_CUERPO + ALTO_CUELLO
-
-
-def anillo_planta(z):
-    """Contorno en planta a la altura z (PUNTOS puntos, antihorario)."""
-    th = np.linspace(0, 2 * np.pi, PUNTOS, endpoint=False)
-    if z >= ALTO_CUERPO:
-        r = np.full_like(th, R_CUELLO)
-    else:
-        t = z / ALTO_CUERPO
-        r0 = np.interp(z, Z_CUERPO, R_CUERPO)
-        f = np.zeros_like(th)
-        for n, a, fase, giro in LOBULOS:
-            f += a * (1 - suave(t / 0.85)) * np.cos(n * th + fase + giro * t)
-        r = r0 * (1 + f)
-    return np.c_[r * np.cos(th), r * np.sin(th)]
+Z, R, ALTO = perfil()
 
 
 def pantalla():
+    th = np.linspace(0, 2 * np.pi, PUNTOS, endpoint=False)
     zs = np.unique(np.r_[np.arange(0, ALTO, PASO_Z), ALTO])
-    anillos = [anillo_planta(z) for z in zs]
+    anillos = [np.interp(z, Z, R) * np.c_[np.cos(th), np.sin(th)] for z in zs]
     n = PUNTOS
     pts = np.vstack([np.c_[a, np.full(n, z)] for a, z in zip(anillos, zs)])
     caras = []
@@ -106,34 +73,18 @@ def pantalla():
     caras.append(triangulate([anillos[0]])[:, ::-1])
     caras.append(triangulate([anillos[-1]]) + (len(zs) - 1) * n)
     m = Manifold(Mesh(vert_properties=pts.astype(np.float32), tri_verts=np.vstack(caras).astype(np.uint32)))
-    return m, zs, anillos
+    # agujero del E27 solo en el disco (las capas inferiores); más arriba el
+    # modo jarrón solo hace la pared exterior
+    agujero = Manifold.cylinder(DISCO + 1, AGUJERO_E27 / 2, AGUJERO_E27 / 2, 180).translate((0, 0, -1))
+    return m - agujero, zs, anillos
 
 
 def voladizo_max(zs, anillos):
-    """Mayor inclinación de la pared (grados desde la vertical) en todo el contorno."""
     peor = 0.0
     for z0, z1, a0, a1 in zip(zs, zs[1:], anillos, anillos[1:]):
         d = np.linalg.norm(a1, axis=1) - np.linalg.norm(a0, axis=1)
         peor = max(peor, np.degrees(np.arctan(np.abs(d).max() / (z1 - z0))))
     return peor
-
-
-def anillo_e27():
-    """Adaptador, en la posición de montaje (tapa arriba, a ras de la boca del
-    cuello). El cono de abajo apoya en la pared de la pantalla justo donde su
-    radio interior iguala al del cono, así el anillo queda a la altura justa."""
-    r_tubo = R_CUELLO - PARED - PIEL - HOLGURA          # lo más estrecho por dentro del cuello
-    r_cono = r_tubo + CONO
-    # altura donde la pantalla, por dentro, mide r_cono
-    r_dentro = R_CUERPO - PARED - PIEL
-    z_apoyo = np.interp(r_cono, r_dentro[::-1], Z_CUERPO[::-1])
-    z0 = z_apoyo + CONO                                 # arranque del tubo
-    tubo = Manifold.cylinder(ALTO - z0, r_tubo, r_tubo, 180).translate((0, 0, z0))
-    cono = Manifold.cylinder(CONO, r_cono, r_tubo, 180).translate((0, 0, z_apoyo))
-    hueco = Manifold.cylinder(ALTO, r_tubo - PARED_ANILLO, r_tubo - PARED_ANILLO, 180).translate((0, 0, z_apoyo - 1))
-    hueco = hueco ^ Manifold.cube((200, 200, ALTO - TAPA - z_apoyo + 1)).translate((-100, -100, z_apoyo - 1))
-    e27 = Manifold.cylinder(TAPA + 2, AGUJERO_E27 / 2, AGUJERO_E27 / 2, 180).translate((0, 0, ALTO - TAPA - 1))
-    return tubo + cono - hueco - e27, r_tubo, z_apoyo
 
 
 def a_trimesh(m):
@@ -142,23 +93,13 @@ def a_trimesh(m):
 
 
 if __name__ == "__main__":
-    if VISTA:  # pantalla y anillo en su sitio, para el visor
-        p, _, _ = pantalla()
-        a, _, _ = anillo_e27()
-        a_trimesh(p).export(AQUI / "vista_pantalla.stl")
-        a_trimesh(a).export(AQUI / "vista_anillo.stl")
-        sys.exit()
     p, zs, anillos = pantalla()
-    tp = a_trimesh(p)
-    tp.export(AQUI / "pantalla_jarron.stl")
-    print(f"pantalla: estanca={tp.is_watertight} tamaño={np.round(tp.extents, 1)} "
-          f"voladizo máximo={voladizo_max(zs, anillos):.1f}° alto del cuerpo={ALTO_CUERPO:.1f}")
-    a, r_tubo, z_apoyo = anillo_e27()
-    ta = a_trimesh(a)
-    # para imprimir: tapa sobre la cama
-    ta.apply_transform(trimesh.transformations.rotation_matrix(np.pi, [1, 0, 0]))
-    ta.apply_translation([0, 0, -ta.bounds[0][2]])
-    ta.export(AQUI / "anillo_e27.stl")
-    print(f"anillo: estanca={ta.is_watertight} tamaño={np.round(ta.extents, 1)} tubo Ø {2 * r_tubo:.1f} "
-          f"(cuello por dentro Ø {2 * (R_CUELLO - PARED):.1f}, con piel Ø {2 * (R_CUELLO - PARED - PIEL):.1f}); "
-          f"largo {ALTO - z_apoyo:.1f} mm, apoya {ALTO_CUERPO - z_apoyo:.1f} mm por debajo del cuello")
+    t = a_trimesh(p)
+    if VISTA:  # colgada, como queda puesta
+        t.apply_transform(trimesh.transformations.rotation_matrix(np.pi, [1, 0, 0]))
+        t.apply_translation([0, 0, -t.bounds[0][2]])
+        t.export(AQUI / "vista_pantalla.stl")
+    else:
+        t.export(AQUI / "pantalla_jarron.stl")
+    print(f"pantalla: estanca={t.is_watertight} tamaño={np.round(t.extents, 1)} "
+          f"voladizo máximo={voladizo_max(zs, anillos):.1f}° disco Ø {2 * R_ARRIBA:.0f} con agujero Ø {AGUJERO_E27}")

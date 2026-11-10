@@ -3,15 +3,14 @@ imprimir en modo jarrón con piel difusa. El formato y la configuración
 completa salen de la plantilla de un proyecto real de H2D
 (../cubitera/plantilla_H2D_project_settings.config); aquí solo se cambia:
 
-  - modo jarrón (espiral) con 0 capas inferiores: la pantalla sale abierta
-    por abajo y por el cuello, con una sola pared
+  - modo jarrón (espiral), del revés: 8 capas inferiores macizas (el disco de
+    arriba de la pantalla, con el agujero del E27) y luego una sola pared
+    abierta por la boca
   - pared de 0,6 mm de ancho de línea (más resistente y más difusora)
   - piel difusa en la pared exterior, 0,3 mm de grosor
   - un solo filamento (blanco)
 
-El anillo del E27 va aparte (anillo_e27.stl), en impresión normal.
-
-    python pantalla.py          # genera pantalla_jarron.stl y anillo_e27.stl
+    python pantalla.py          # genera pantalla_jarron.stl
     python exportar_bambu.py    # crea pantalla_jarron_H2D.3mf
 """
 import json
@@ -28,7 +27,7 @@ CAMA = (350.0, 320.0)
 NOMBRE = "Pantalla jarrón E27"
 PARTES = [("pantalla", "pantalla_jarron.stl", 1)]
 COLORES = ["#FFFFFF"]  # blanco
-AJUSTES = {"spiral_mode": "1", "spiral_mode_smooth": "1", "bottom_shell_layers": "0", "top_shell_layers": "0",
+AJUSTES = {"spiral_mode": "1", "spiral_mode_smooth": "1", "bottom_shell_layers": "8", "top_shell_layers": "0",
            "wall_loops": "1", "sparse_infill_density": "0%", "outer_wall_line_width": "0.6",
            "fuzzy_skin": "external", "fuzzy_skin_thickness": "0.3", "fuzzy_skin_point_distance": "0.8",
            "layer_height": "0.2", "initial_layer_print_height": "0.2"}

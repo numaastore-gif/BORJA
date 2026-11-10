@@ -187,14 +187,8 @@
         "origen": "pantalla/vista_pantalla.stl",
         "color": "#F4F1EA",
         "nombre": "Pantalla (modo jarrón, piel difusa)"
-      },
-      {
-        "archivo": "modelos/pantalla_anillo_e27.txt",
-        "origen": "pantalla/vista_anillo.stl",
-        "color": "#9B9EA0",
-        "nombre": "Anillo E27"
       }
     ],
-    "notas": "Pantalla colgante tipo campana orgánica (Ø ~275 × 190 mm) para imprimir en modo jarrón con piel difusa: falda casi vertical, cuerpo convexo con tres lóbulos suaves que giran al subir, hombro hasta un cuello de Ø 62 mm; ninguna parte pasa de 44° de voladizo. El anillo E27 se mete por dentro y sube por el cuello: arriba deja una tapa con agujero de Ø 40,5 mm para la rosca del portalámparas (el aro aprieta por encima) y su cono a 45° apoya en el hombro y sostiene la pantalla. El 3MF lleva el modo jarrón, 0 capas inferiores, pared de 0,6 mm y piel difusa de 0,3 mm."
+    "notas": "Pantalla colgante tipo campana, lisa y sin cuello (Ø 280 × 173 mm), para imprimir del revés en modo jarrón con piel difusa: el disco plano de arriba (Ø 68 mm) va sobre la cama y sale macizo con las 8 capas inferiores, con el agujero de Ø 40,5 mm para la rosca del portalámparas E27 (el aro aprieta directamente el disco); luego una sola pared en espiral hasta la boca. Perfil convexo, casi vertical en la falda y a 44° junto al disco: nada pasa de 44° de voladizo. El 3MF lleva el modo jarrón, 8 capas inferiores, pared de 0,6 mm y piel difusa de 0,3 mm. En el visor se ve colgada."
   }
 ]
