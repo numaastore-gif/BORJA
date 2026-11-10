@@ -7,10 +7,10 @@ las capas inferiores macizas (el disco, con el agujero del E27, donde aprieta
 el aro del portalámparas) y luego solo la pared exterior en espiral, abierta
 por la boca. Perfil convexo: casi vertical en la falda y a 44° junto al disco,
 así que en esta postura ninguna parte pasa de VOLADIZO_MAX. Sin lóbulos ni
-cuello.
+cuello; la boca se ondula en ondas suaves que crecen hacia el borde.
 
     python pantalla.py            # pantalla_jarron.stl, para imprimir
-    python pantalla.py --vista    # vista_pantalla.stl, ligera y colgada, para el visor
+    python pantalla.py --vista    # vista_pantalla.stl, ligera, para el visor
 """
 import pathlib
 import sys
@@ -26,6 +26,9 @@ R_BORDE = 140.0        # radio de la boca (Ø 280)
 R_ARRIBA = 34.0        # disco plano de arriba (Ø 68): apoyo en la cama y del aro del E27
 ANGULOS = [(0.0, 6.0), (0.35, 30.0), (1.0, 44.0)]  # (fracción desde la boca, grados desde la vertical)
 VOLADIZO_MAX = 45.0
+# Ondas en la boca: la planta se ondula en ONDAS.numero ondas suaves que nacen
+# a media altura y crecen hasta la boca (amplitud radial en mm)
+ONDAS = dict(numero=12, amplitud=9.0, desde=0.45)
 AGUJERO_E27 = 40.5     # rosca exterior del portalámparas: Ø 40 mm
 CAPA = 0.2
 CAPAS_DISCO = 8        # capas inferiores del modo jarrón: disco de 1,6 mm
@@ -62,7 +65,10 @@ Z, R, ALTO = perfil()
 def pantalla():
     th = np.linspace(0, 2 * np.pi, PUNTOS, endpoint=False)
     zs = np.unique(np.r_[np.arange(0, ALTO, PASO_Z), ALTO])
-    anillos = [np.interp(z, Z, R) * np.c_[np.cos(th), np.sin(th)] for z in zs]
+    def radio(z):
+        s = suave((z / ALTO - ONDAS["desde"]) / (1 - ONDAS["desde"]))   # 0 lejos de la boca, 1 en la boca
+        return np.interp(z, Z, R) + ONDAS["amplitud"] * s * np.cos(ONDAS["numero"] * th)
+    anillos = [radio(z)[:, None] * np.c_[np.cos(th), np.sin(th)] for z in zs]
     n = PUNTOS
     pts = np.vstack([np.c_[a, np.full(n, z)] for a, z in zip(anillos, zs)])
     caras = []
@@ -95,9 +101,7 @@ def a_trimesh(m):
 if __name__ == "__main__":
     p, zs, anillos = pantalla()
     t = a_trimesh(p)
-    if VISTA:  # colgada, como queda puesta
-        t.apply_transform(trimesh.transformations.rotation_matrix(np.pi, [1, 0, 0]))
-        t.apply_translation([0, 0, -t.bounds[0][2]])
+    if VISTA:  # en la postura de impresión, como se verá en Bambu Studio
         t.export(AQUI / "vista_pantalla.stl")
     else:
         t.export(AQUI / "pantalla_jarron.stl")
