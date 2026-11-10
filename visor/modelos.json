@@ -176,5 +176,25 @@
     "archivo": "modelos/cabezas_cascos.txt",
     "origen": "cascos/cabezas_vista.stl",
     "notas": "16 cabezas de medida para cascos (nº 1 = 50 cm … nº 16 = 65 cm de contorno), en un solo STL: en el laminador, Dividir en objetos. Cabeza humana realista (escaneo de Lee Perry-Smith, CC BY 3.0) escalada para que el contorno máximo por encima de las cejas sea exactamente la talla; cuello cortado en plano. En la nuca, grabado 1 mm: Cabeza nº, Eje largo, Eje corto, Contorno y Talla, en cm (la nº 8, 57 cm: eje largo 20,3 cm, eje corto 15,2 cm). Macizas, de pie sobre el cuello, sin soportes; relleno relámpago o bajo. Este visor muestra una versión aligerada."
+  },
+  {
+    "id": "pantalla_e27",
+    "nombre": "Pantalla colgante jarrón E27",
+    "fecha": "2026-11-10",
+    "partes": [
+      {
+        "archivo": "modelos/pantalla_e27.txt",
+        "origen": "pantalla/vista_pantalla.stl",
+        "color": "#F4F1EA",
+        "nombre": "Pantalla (modo jarrón, piel difusa)"
+      },
+      {
+        "archivo": "modelos/pantalla_anillo_e27.txt",
+        "origen": "pantalla/vista_anillo.stl",
+        "color": "#9B9EA0",
+        "nombre": "Anillo E27"
+      }
+    ],
+    "notas": "Pantalla colgante tipo campana orgánica (Ø ~275 × 190 mm) para imprimir en modo jarrón con piel difusa: falda casi vertical, cuerpo convexo con tres lóbulos suaves que giran al subir, hombro hasta un cuello de Ø 62 mm; ninguna parte pasa de 44° de voladizo. El anillo E27 se mete por dentro y sube por el cuello: arriba deja una tapa con agujero de Ø 40,5 mm para la rosca del portalámparas (el aro aprieta por encima) y su cono a 45° apoya en el hombro y sostiene la pantalla. El 3MF lleva el modo jarrón, 0 capas inferiores, pared de 0,6 mm y piel difusa de 0,3 mm."
   }
 ]
