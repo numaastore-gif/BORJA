@@ -1,20 +1,22 @@
 """Abridor de regalo de boda: disco de Ø 75 mm, como los abridores imán
-personalizados, con el abridor redondo de acero comprado encastrado delante y,
-en la cara de atrás, el dibujo de los novios en línea continua y dos imanes de
-8 × 2 mm a los lados.
+personalizados. En una cara, la que se pega a la nevera, el abridor redondo de
+acero comprado encastrado y dos imanes de 8 × 2 mm a sus lados; en la otra,
+la que queda a la vista, el dibujo de los novios en línea continua.
 
   disco    Ø 75 × 10 mm
-  abridor  delante: asiento redondo del grosor del abridor (queda a ras), hueco
+  abridor  cara de los imanes: asiento redondo del grosor del abridor (queda a ras), hueco
            detrás de su boca para el borde de la chapa y agujeros guía para
            sus dos tornillos
-  dibujo   detrás: la línea del dibujo (dibujo_novios.png) vectorizada (su
+  dibujo   cara a la vista: la línea del dibujo (dibujo_novios.png) vectorizada (su
            esqueleto con trazo uniforme) e incrustada a ras en la cara de
            atrás, en espejo para que se lea al darle la vuelta. En el 3MF es
-           una pieza aparte de otro color; al imprimirse sobre la cama queda
-           plana y la cara de atrás sigue lisa para los imanes
-  imanes   detrás, a izquierda y derecha: Ø 8 × 2 mm con 0,1 mm de holgura
+           una pieza aparte de otro color; se imprime sobre la cama, así que
+           queda plana y a ras
+  imanes   en la cara del abridor, a izquierda y derecha: Ø 8 × 2 mm con
+           0,1 mm de holgura
 
-MEDIDAS DEL ABRIDOR: son una estimación hecha a partir de la foto; con el
+MEDIDAS DEL ABRIDOR: son una estimación sacada de las fotos (proporción con
+el disco de 75 mm); con el
 abridor en la mano se ajustan en ABRIDOR y se vuelve a generar.
 Medidas en mm.
 
@@ -32,19 +34,19 @@ AQUI = pathlib.Path(__file__).parent
 
 # --- Disco y dibujo ----------------------------------------------------------------------
 DISCO = dict(diametro=75.0, grosor=10.0, chaflan=0.8)
-ALTO_DIBUJO = 49.0           # cabe entre los imanes dentro de un círculo de Ø 66
+ALTO_DIBUJO = 52.0           # cabe dentro de un círculo de Ø ~68
 TRAZO = 0.6                  # ancho de la línea del dibujo
 INCRUSTE = 0.6               # hondo de la línea en la cara de atrás (3 capas)
 BOTONES = [(50, 378, 26), (582, 378, 26)]  # flechas de la captura que se borran (x, y, radio en píxeles)
 
 # --- Abridor comprado (estimación: COMPRUEBA CON EL ABRIDOR EN LA MANO) ---------------------
-ABRIDOR = dict(diametro=41.0, grosor=2.5, boca=(24.0, 17.0), radio_boca=3.0, tornillos=15.5)
+ABRIDOR = dict(diametro=50.0, grosor=2.5, boca=(25.0, 16.0), radio_boca=3.0, tornillos=18.5)
 HOLGURA = 0.3                # en el diámetro del asiento
 HUECO_CHAPA = 5.0            # hondo del hueco detrás de la boca del abridor (deja 1,5 mm de fondo)
 GUIA_TORNILLO = dict(diametro=2.0, hondo=5.0)
 
 # --- Imanes -----------------------------------------------------------------------------
-IMAN = dict(diametro=8.0, alto=2.0, holgura=0.1, separacion=29.5)  # desde el centro del disco
+IMAN = dict(diametro=8.0, alto=2.0, holgura=0.1, separacion=31.0)  # desde el centro del disco
 
 
 def rect_redondeado(ancho, alto, radio):
@@ -86,12 +88,12 @@ def construir():
         .translate((0, 0, g - a["grosor"] - HUECO_CHAPA))
     guias = [Manifold.cylinder(GUIA_TORNILLO["hondo"] + 1, GUIA_TORNILLO["diametro"] / 2, GUIA_TORNILLO["diametro"] / 2, 32)
              .translate((0, s * a["tornillos"], g - a["grosor"] - GUIA_TORNILLO["hondo"])) for s in (-1, 1)]
-    # imanes detrás (z = 0), a izquierda y derecha
+    # imanes en la cara del abridor (z = g), a izquierda y derecha
     im = IMAN
     r_im = (im["diametro"] + 2 * im["holgura"]) / 2
-    imanes = [Manifold.cylinder(im["alto"] + im["holgura"] + 1, r_im, r_im, 64).translate((s * im["separacion"], 0, -1))
-              for s in (-1, 1)]
-    # dibujo detrás, en espejo (se mira desde atrás), incrustado a ras
+    imanes = [Manifold.cylinder(im["alto"] + im["holgura"] + 1, r_im, r_im, 64)
+              .translate((s * im["separacion"], 0, g - im["alto"] - im["holgura"])) for s in (-1, 1)]
+    # dibujo en la cara a la vista (z = 0), en espejo (se mira desde ese lado), incrustado a ras
     lineas = dibujo(100.0)
     x0, y0, x1, y1 = lineas.bounds()
     k = ALTO_DIBUJO / (y1 - y0)

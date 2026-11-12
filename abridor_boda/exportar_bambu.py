@@ -3,7 +3,7 @@ placa en blanco y la línea del dibujo en negro, con torre de purga. El formato
 y la configuración completa salen de la plantilla de un proyecto real de H2D
 (../cubitera/plantilla_H2D_project_settings.config).
 
-Se imprime con la cara de atrás (la de los imanes) sobre la cama, sin soportes.
+Se imprime con la cara del dibujo sobre la cama (queda plana y a ras), sin soportes.
 
     python abridor.py            # genera abridor_placa.stl y abridor_dibujo.stl
     python exportar_bambu.py     # crea abridor_boda_H2D.3mf
