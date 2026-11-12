@@ -190,5 +190,25 @@
       }
     ],
     "notas": "Pantalla colgante tipo campana, sin cuello (Ø 298 × 173 mm), con 12 ondas suaves en la boca que nacen a media altura y crecen hasta el borde (9 mm). Se muestra en la postura de impresión, del revés: el disco plano de arriba (Ø 68 mm) va sobre la cama y sale macizo con las 8 capas inferiores del modo jarrón, con el agujero de Ø 40,5 mm para la rosca del portalámparas E27; luego una sola pared en espiral hasta la boca. Nada pasa de 44° de voladizo. El 3MF lleva el modo jarrón, 8 capas inferiores, pared de 0,6 mm y piel difusa de 0,3 mm."
+  },
+  {
+    "id": "abridor_boda",
+    "nombre": "Abridor regalo de boda",
+    "fecha": "2026-11-12",
+    "partes": [
+      {
+        "archivo": "modelos/abridor_placa.txt",
+        "origen": "abridor_boda/abridor_placa.stl",
+        "color": "#FFFFFF",
+        "nombre": "Placa · PLA Basic Jade White"
+      },
+      {
+        "archivo": "modelos/abridor_dibujo.txt",
+        "origen": "abridor_boda/abridor_dibujo.stl",
+        "color": "#000000",
+        "nombre": "Dibujo · PLA Basic Black"
+      }
+    ],
+    "notas": "Placa de 110 × 170 × 9 mm con el dibujo de los novios en línea continua (trazo de 1,1 mm, 0,8 mm de relieve) y, abajo, el asiento para el abridor redondo de acero (Ø 41,3 × 2,5 mm a ras, hueco de 5 mm detrás de su boca para la chapa y agujeros guía para los dos tornillos). Por detrás, dos alojamientos para imanes de Ø 8 × 2 mm a los lados del abridor. Las medidas del abridor son una estimación a partir de la foto: hay que comprobarlas con el abridor en la mano. Se imprime con la cara de atrás sobre la cama, sin soportes."
   }
 ]
