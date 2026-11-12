@@ -1,5 +1,5 @@
 """Espejo de regalo de boda, compañero del abridor: el mismo disco de Ø 75 × 10
-mm con la misma cara del dibujo de los novios, «Marta y Borja» y «12/12/26»
+mm con la misma cara del dibujo de los novios, «Marta y Borja» y «12/12/2026»
 (incrustados a ras, en otro color), y en la otra cara, en lugar del abridor,
 el hueco para un cristal espejo redondo de Ø 50 × 1 mm.
 

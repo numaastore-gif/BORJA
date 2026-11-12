@@ -12,7 +12,7 @@ la que queda a la vista, el dibujo de los novios en línea continua.
            atrás, en espejo para que se lea al darle la vuelta. En el 3MF es
            una pieza aparte de otro color; se imprime sobre la cama, así que
            queda plana y a ras
-  textos   debajo del dibujo, «Marta y Borja» y «12/12/26» en Great Vibes
+  textos   debajo del dibujo, «Marta y Borja» y «12/12/2026» en Great Vibes
            (caligráfica de boda, OFL), incrustados igual que el dibujo
   imanes   en la cara del abridor, a izquierda y derecha: Ø 8 × 2 mm con
            0,1 mm de holgura
@@ -42,7 +42,7 @@ ALTO_DIBUJO = 40.0           # dibujo arriba
 CENTRO_DIBUJO = 9.0          # altura del centro del dibujo en la cara
 # Nombres y fecha debajo del dibujo, en Great Vibes (caligráfica, OFL)
 FUENTE = AQUI / "GreatVibes-Regular.ttf"
-TEXTOS = [dict(texto="Marta y Borja", alto=8.0, y=-19.0), dict(texto="12/12/26", alto=5.2, y=-28.5)]
+TEXTOS = [dict(texto="Marta y Borja", alto=8.0, y=-19.0), dict(texto="12/12/2026", alto=5.2, y=-28.5)]
 ENGROSAR = 0.15              # se engordan los trazos finos de la caligrafía para que se impriman
 TRAZO = 1.25                 # ancho de la línea del dibujo: 3 líneas de 0,42 con boquilla de 0,4
 HUECO_MIN = 0.45             # huecos entre líneas más estrechos que esto se cierran
