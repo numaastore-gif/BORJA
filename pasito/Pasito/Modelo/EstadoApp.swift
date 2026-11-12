@@ -1,17 +1,20 @@
 import Foundation
 import Observation
 
-/// Estado global. Guarda los registros por día en UserDefaults (suficiente para la v0.1).
+/// Todo lo que se guarda en el teléfono.
+struct Datos: Codable {
+    var bienvenidaHecha = false
+    var perfil = Perfil()
+    var pesos: [RegistroPeso] = []
+    var registros: [String: RegistroDia] = [:]
+    var recetasHechas: Set<String> = []
+}
+
 @Observable
 final class EstadoApp {
-    var bienvenidaHecha: Bool { didSet { guardar() } }
-    var objetivo: Objetivo = .ambos { didSet { guardar() } }
-    var energia: Energia = .normal { didSet { guardar() } }
-    var animo: Animo? = nil
-    var recetasHechas: Set<String> = [] { didSet { guardar() } }
-    private(set) var registros: [String: RegistroDia] = [:] { didSet { guardar() } }
+    private(set) var datos: Datos { didSet { guardar() } }
 
-    private let defaults = UserDefaults.standard
+    private static let clave = "datos.v2"
     private static let formato: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd"
@@ -19,91 +22,174 @@ final class EstadoApp {
     }()
 
     init() {
-        bienvenidaHecha = defaults.bool(forKey: "bienvenidaHecha")
-        if let raw = defaults.string(forKey: "objetivo"), let o = Objetivo(rawValue: raw) { objetivo = o }
-        if let raw = defaults.string(forKey: "energia"), let e = Energia(rawValue: raw) { energia = e }
-        recetasHechas = Set(defaults.stringArray(forKey: "recetasHechas") ?? [])
-        if let data = defaults.data(forKey: "registros"),
-           let r = try? JSONDecoder().decode([String: RegistroDia].self, from: data) {
-            registros = r
+        if let data = UserDefaults.standard.data(forKey: Self.clave),
+           let d = try? JSONDecoder().decode(Datos.self, from: data) {
+            datos = d
+        } else {
+            datos = Datos()
         }
     }
 
     private func guardar() {
-        defaults.set(bienvenidaHecha, forKey: "bienvenidaHecha")
-        defaults.set(objetivo.rawValue, forKey: "objetivo")
-        defaults.set(energia.rawValue, forKey: "energia")
-        defaults.set(Array(recetasHechas), forKey: "recetasHechas")
-        if let data = try? JSONEncoder().encode(registros) { defaults.set(data, forKey: "registros") }
+        if let data = try? JSONEncoder().encode(datos) { UserDefaults.standard.set(data, forKey: Self.clave) }
     }
 
-    // MARK: Día de hoy
+    static func dia(_ fecha: Date) -> String { formato.string(from: fecha) }
 
-    static func clave(_ fecha: Date) -> String { formato.string(from: fecha) }
+    // MARK: Perfil y plan
 
-    var hoy: RegistroDia {
-        get { registros[Self.clave(.now)] ?? RegistroDia() }
-        set { registros[Self.clave(.now)] = newValue }
+    var bienvenidaHecha: Bool {
+        get { datos.bienvenidaHecha }
+        set { datos.bienvenidaHecha = newValue }
+    }
+    var perfil: Perfil { datos.perfil }
+    var pesos: [RegistroPeso] { datos.pesos }
+    var pesoActual: Double { datos.pesos.last?.kg ?? datos.perfil.peso }
+    var plan: Plan { Plan(perfil: datos.perfil, peso: pesoActual) }
+
+    func guardarPerfil(_ p: Perfil) {
+        datos.perfil = p
+        if abs(pesoActual - p.peso) > 0.01 || datos.pesos.isEmpty { registrarPeso(p.peso) }
+        datos.registros[Self.dia(.now)]?.menu = [:]
     }
 
-    var planMinimo: Bool { animo == .sinGanas }
-    var metaVasos: Int { planMinimo ? 4 : 6 }
-    var rutinaDeHoy: Rutina { planMinimo ? Catalogo.estiramientoMinimo : Catalogo.rutina(energia) }
-
-    func pasosCompletados(_ r: RegistroDia, metaVasos: Int = 6) -> Int {
-        (r.vasos >= metaVasos ? 1 : 0) + (r.verdura ? 1 : 0) + (r.movimiento ? 1 : 0)
+    /// Guarda el peso de hoy (sustituye si ya había uno) y recalcula el menú.
+    func registrarPeso(_ kg: Double) {
+        let hoy = Calendar.current.startOfDay(for: .now)
+        datos.pesos.removeAll { Calendar.current.isDate($0.fecha, inSameDayAs: hoy) }
+        datos.pesos.append(RegistroPeso(fecha: hoy, kg: kg))
+        datos.pesos.sort { $0.fecha < $1.fecha }
+        datos.perfil.peso = kg
+        hoy_.menu = [:]
     }
-    var pasosHoy: Int { pasosCompletados(hoy, metaVasos: metaVasos) }
+
+    // MARK: Hoy
+
+    private var hoy_: RegistroDia {
+        get { datos.registros[Self.dia(.now)] ?? RegistroDia() }
+        set { datos.registros[Self.dia(.now)] = newValue }
+    }
+    var hoy: RegistroDia { hoy_ }
+
+    var animo: Animo? {
+        get { hoy_.animo }
+        set { hoy_.animo = newValue }
+    }
+    var planMinimo: Bool { hoy_.animo == .sinGanas }
+    var metaVasos: Int { planMinimo ? 4 : plan.vasos }
+    var metaComidas: Int { planMinimo ? 2 : 3 }
+
+    var menu: [TipoComida: String] {
+        let guardado = hoy_.menu
+        if guardado.count == TipoComida.allCases.count {
+            return Dictionary(uniqueKeysWithValues: guardado.compactMap { k, v in TipoComida(rawValue: k).map { ($0, v) } })
+        }
+        return plan.mejorMenu()
+    }
+    func receta(de tipo: TipoComida) -> Receta { Recetas.receta(menu[tipo] ?? "") ?? Recetas.de(tipo)[0] }
+
+    private func fijarMenu(_ m: [TipoComida: String]) {
+        hoy_.menu = Dictionary(uniqueKeysWithValues: m.map { ($0.key.rawValue, $0.value) })
+    }
+
+    func cambiarReceta(de tipo: TipoComida) {
+        var m = menu
+        let opciones = Recetas.de(tipo)
+        let i = opciones.firstIndex { $0.id == m[tipo] } ?? 0
+        m[tipo] = opciones[(i + 1) % opciones.count].id
+        fijarMenu(m)
+        hoy_.comidas.remove(tipo)
+    }
+
+    func alternarComida(_ tipo: TipoComida) {
+        if hoy_.comidas.contains(tipo) { hoy_.comidas.remove(tipo) } else { hoy_.comidas.insert(tipo) }
+    }
+
+    /// «La he comido» desde el detalle de una receta: la pone en el menú si no estaba.
+    func comer(_ receta: Receta) {
+        var m = menu
+        m[receta.tipo] = receta.id
+        fijarMenu(m)
+        hoy_.comidas.insert(receta.tipo)
+        datos.recetasHechas.insert(receta.id)
+    }
+
+    func comido(_ tipo: TipoComida) -> Bool { hoy_.comidas.contains(tipo) }
+
+    func nutrientesHoy(soloComidas: Bool) -> Nutrientes {
+        let p = plan
+        return TipoComida.allCases.reduce(Nutrientes()) { acc, t in
+            guard !soloComidas || hoy_.comidas.contains(t) else { return acc }
+            return acc + p.racion(receta(de: t), para: t).total
+        }
+    }
+
+    func tocarVaso(_ i: Int) { hoy_.vasos = hoy_.vasos == i + 1 ? i : i + 1 }
+    func alternarAgua() { hoy_.vasos = hoy_.vasos >= metaVasos ? 0 : metaVasos }
+
+    func registrarEjercicio(minutos: Int, kcal: Int) {
+        hoy_.minutos += minutos
+        hoy_.kcalQuemadas += kcal
+    }
+    func borrarEjercicioDeHoy() {
+        hoy_.minutos = 0
+        hoy_.kcalQuemadas = 0
+    }
+
+    // MARK: Pasos, racha y semana
+
+    var pasos: [Bool] { [hoy_.vasos >= metaVasos, hoy_.comidas.count >= metaComidas, hoy_.minutos > 0] }
+    var pasosHoy: Int { pasos.filter { $0 }.count }
     var diaCompleto: Bool { pasosHoy == 3 }
 
-    /// Días seguidos con al menos un paso hecho. Si hoy aún no hay nada, se cuenta desde ayer.
+    private func pasos(de r: RegistroDia) -> Int {
+        (r.vasos >= 6 ? 1 : 0) + (r.comidas.count >= 3 ? 1 : 0) + (r.minutos > 0 ? 1 : 0)
+    }
+
     var racha: Int {
         let cal = Calendar.current
         var dia = cal.startOfDay(for: .now)
         if pasosHoy == 0 { dia = cal.date(byAdding: .day, value: -1, to: dia)! }
         var n = 0
-        while let r = registros[Self.clave(dia)], pasosCompletados(r) > 0 {
+        while true {
+            let r = Self.dia(dia) == Self.dia(.now) ? (pasosHoy > 0 ? 1 : 0) : pasos(de: datos.registros[Self.dia(dia)] ?? RegistroDia())
+            guard r > 0 else { break }
             n += 1
             dia = cal.date(byAdding: .day, value: -1, to: dia)!
         }
         return n
     }
 
-    /// Últimos 7 días (de más antiguo a hoy) con los pasos completados.
-    var semana: [(fecha: Date, pasos: Int)] {
+    struct DiaSemana: Identifiable {
+        var id: Date { fecha }
+        let fecha: Date
+        let pasos: Int
+        let registro: RegistroDia
+    }
+
+    var semana: [DiaSemana] {
         let cal = Calendar.current
         return (0..<7).reversed().map { atras in
-            let d = cal.date(byAdding: .day, value: -atras, to: .now)!
-            let r = registros[Self.clave(d)] ?? RegistroDia()
-            return (d, atras == 0 ? pasosHoy : pasosCompletados(r))
+            let d = cal.date(byAdding: .day, value: -atras, to: cal.startOfDay(for: .now))!
+            let r = datos.registros[Self.dia(d)] ?? RegistroDia()
+            return DiaSemana(fecha: d, pasos: atras == 0 ? pasosHoy : pasos(de: r), registro: r)
         }
     }
-
-    var vasosSemana: Int { semanaRegistros.reduce(0) { $0 + $1.vasos } }
-    var minutosSemana: Int { semanaRegistros.reduce(0) { $0 + $1.minutosMovimiento } }
-    private var semanaRegistros: [RegistroDia] {
-        semana.map { registros[Self.clave($0.fecha)] ?? RegistroDia() }
-    }
-
-    // MARK: Acciones
-
-    func tocarVaso(_ i: Int) { hoy.vasos = hoy.vasos == i + 1 ? i : i + 1 }
-    func alternarAgua() { hoy.vasos = hoy.vasos >= metaVasos ? 0 : metaVasos }
-    func alternarVerdura() { hoy.verdura.toggle() }
-    func alternarMovimiento() { hoy.movimiento.toggle() }
-
-    func rutinaTerminada(minutos: Int) {
-        hoy.movimiento = true
-        hoy.minutosMovimiento += minutos
-    }
-
-    func marcarReceta(_ r: Receta) {
-        recetasHechas.insert(r.id)
-        hoy.verdura = true
-    }
+    var vasosSemana: Int { semana.reduce(0) { $0 + $1.registro.vasos } }
+    var minutosSemana: Int { semana.reduce(0) { $0 + $1.registro.minutos } }
+    var kcalSemana: Int { semana.reduce(0) { $0 + $1.registro.kcalQuemadas } }
+    var recetasHechas: Set<String> { datos.recetasHechas }
 
     var consejoDelDia: String {
+        let consejos = [
+            "Llena una botella de \(plan.litrosAgua.es()) litros por la mañana y déjala a la vista. Es toda el agua que necesitas hoy.",
+            "Compra verdura ya lavada y cortada. Quitar excusas también es cuidarse.",
+            "Pon las zapatillas al lado de la puerta. Salir a andar empieza ahí.",
+            "Come sentado y sin pantallas. Notarás antes cuándo estás lleno.",
+            "Si un día fallas, no pasa nada. Lo importante es volver mañana.",
+            "Antes de picar, bebe un vaso de agua y espera 10 minutos.",
+        ]
         let n = Calendar.current.ordinality(of: .day, in: .year, for: .now) ?? 0
-        return Catalogo.consejos[n % Catalogo.consejos.count]
+        return consejos[n % consejos.count]
     }
 }

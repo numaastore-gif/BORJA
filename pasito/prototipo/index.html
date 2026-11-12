@@ -268,7 +268,7 @@ details.learn div b{color:var(--ink)}
   </div>
 
   <aside class="notes">
-    <span class="tag">Prototipo v0.2</span>
+    <span class="tag">Prototipo v0.3</span>
     <h1>Pasito</h1>
     <p>Dieta y ejercicio para quien le cuesta empezar. Con tu peso, altura y peso objetivo calcula las calorías y los macros de cada día, y ajusta cada receta a tu ración.</p>
     <p><b>Novedades:</b></p>
@@ -277,7 +277,7 @@ details.learn div b{color:var(--ink)}
       <li><b>Comer:</b> menú del día que cuadra tus macros. Cada receta tiene imagen, ingredientes en gramos para tu ración, pasos, macros y micronutrientes.</li>
       <li><b>Ejercicio:</b> eliges qué hacer hoy: andar, piscina o en casa.</li>
       <li><b>Progreso:</b> registra tu peso; el plan se recalcula.</li>
-      <li>Para cambiar tus datos: Mi plan → «Cambiar mis datos».</li>
+      <li>Para cambiar tus datos o elegir fondo claro u oscuro: pestaña Mi plan.</li>
     </ol>
     <p>Los datos de la persona y su historial son de ejemplo. Las imágenes son ilustraciones provisionales.</p>
   </aside>
@@ -450,8 +450,18 @@ const S = {
   act:'andar', walkMin:30, walkPace:'ligero', poolLvl:'empiezo', energy:'normal',
   moved:false, burned:0, minutes:0,
   weights:[[ -42,88.0],[-35,87.4],[-28,86.9],[-21,86.8],[-14,86.1],[-7,85.7]],
-  sheet:null, timer:null, pool:null, ob:null, obErr:'', filter:'todo', streak:4
+  sheet:null, timer:null, pool:null, ob:null, obErr:'', filter:'todo', streak:4, theme:'sistema'
 };
+const HOST_THEME = document.documentElement.getAttribute('data-theme');
+function applyTheme(){
+  const r=document.documentElement;
+  if (S.theme==='claro') r.setAttribute('data-theme','light');
+  else if (S.theme==='oscuro') r.setAttribute('data-theme','dark');
+  else if (HOST_THEME) r.setAttribute('data-theme',HOST_THEME); else r.removeAttribute('data-theme');
+  try{ localStorage.setItem('pasito.tema',S.theme) }catch(e){}
+}
+try{ const t=localStorage.getItem('pasito.tema'); if(t) S.theme=t }catch(e){}
+applyTheme();
 const $ = s => document.querySelector(s);
 const fmt = (n,d=0) => Number(n).toLocaleString('es-ES',{maximumFractionDigits:d,minimumFractionDigits:d});
 const curWeight = () => S.weights.length ? S.weights[S.weights.length-1][1] : S.p.peso;
@@ -832,6 +842,11 @@ function viewPlan(){
       <div class="label">Entiende lo que comes</div>
       <div style="margin-top:4px">${LEARN(P).map(([n,col,v,txt])=>`<details class="learn"><summary><i style="background:var(${col})"></i><span>${n}</span><span>${v}</span></summary><div>${txt.map(x=>`<p>${x}</p>`).join('')}</div></details>`).join('')}</div>
     </div>
+    <div class="card">
+      <div class="label">Apariencia</div>
+      <div class="seg" style="margin-top:10px">${[['sistema','Automático'],['claro','Claro'],['oscuro','Oscuro']].map(([k,l])=>`<button aria-pressed="${S.theme===k}" data-act="theme" data-v="${k}">${l}</button>`).join('')}</div>
+      <p class="muted small" style="margin-top:10px">«Automático» sigue el modo claro u oscuro de tu iPhone.</p>
+    </div>
     <button class="btn ghost block" data-act="onboard">Cambiar mis datos</button>
     <p class="muted small" style="line-height:1.5">Cálculo con la fórmula de Mifflin-St Jeor. Nunca bajamos de ${p.sexo==='h'?'1.500':'1.200'} kcal. Si tienes diabetes, hipertensión, estás embarazada o tomas medicación, consulta con tu médico o dietista antes de empezar.</p>
   </div>`;
@@ -949,6 +964,7 @@ document.addEventListener('click',ev=>{
     case 'eat': S.eaten=S.eaten.includes(v)?S.eaten.filter(x=>x!==v):[...S.eaten,v]; break;
     case 'swap': {const opts=RECIPES.filter(r=>r.meal===v),i=opts.findIndex(r=>r.id===S.menu[v]); S.menu[v]=opts[(i+1)%opts.length].id; S.eaten=S.eaten.filter(x=>x!==v); break}
     case 'eatrecipe': {const s=el.dataset.slot; if(S.menu[s]!==v){S.menu[s]=v} if(!S.eaten.includes(s))S.eaten.push(s); S.sheet=null; break}
+    case 'theme': S.theme=v; applyTheme(); break;
     case 'act': S.act=v; break;
     case 'walkmin': S.walkMin=+v; break;
     case 'pace': S.walkPace=v; break;

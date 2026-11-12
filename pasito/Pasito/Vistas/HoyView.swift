@@ -2,9 +2,7 @@ import SwiftUI
 
 struct HoyView: View {
     @Environment(EstadoApp.self) private var estado
-    @Binding var pestana: RaizView.Pestana
-    @State private var rutinaAbierta: Rutina?
-    @State private var verBienvenida = false
+    @Binding var pestana: Pestana
 
     private var saludo: String {
         switch Calendar.current.component(.hour, from: .now) {
@@ -18,30 +16,26 @@ struct HoyView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 14) {
+                    Text(Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(Locale(identifier: "es_ES"))).capitalizedPrimeraLetra)
+                        .font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     resumen
                     animo
                     if estado.planMinimo {
                         Aviso(titulo: "Hoy, lo mínimo también cuenta",
-                              texto: "Hemos encogido tu plan: menos agua, una fruta y dos minutos de estirar. Lo importante es no romper la racha.",
+                              texto: "Menos agua, dos comidas del menú y diez minutos andando o dos de estirar. Lo importante es no romper la racha.",
                               color: .sol)
                     }
                     plan
+                    llevas
                     if estado.diaCompleto {
-                        Aviso(titulo: "¡Bien hecho!", texto: "Has completado tus tres pasos. Tu racha va por \(estado.racha) días.", color: .hoja)
+                        Aviso(titulo: "¡Bien hecho!", texto: "Tres pasos completados. Tu racha va por \(estado.racha) días.", color: .hoja)
                     }
                     Aviso(titulo: "Consejo del día", texto: estado.consejoDelDia)
                 }
-                .padding(.horizontal)
-                .padding(.bottom)
+                .padding(.horizontal).padding(.bottom)
             }
-            .background(Color.fondo)
-            .navigationTitle(saludo)
-            .toolbar {
-                Button { verBienvenida = true } label: { Image(systemName: "person.crop.circle") }
-                    .accessibilityLabel("Perfil")
-            }
-            .fullScreenCover(item: $rutinaAbierta) { RutinaEnCursoView(rutina: $0) }
-            .fullScreenCover(isPresented: $verBienvenida) { BienvenidaView() }
+            .pantalla(saludo)
         }
     }
 
@@ -57,13 +51,11 @@ struct HoyView: View {
             .frame(width: 100, height: 100)
             VStack(alignment: .leading, spacing: 6) {
                 Label("\(estado.racha) días seguidos", systemImage: "flame.fill")
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(Color.sol)
+                    .font(.subheadline.weight(.bold)).foregroundStyle(Color.sol)
                 Text(estado.diaCompleto ? "Día completado. Mañana, otro pasito."
                      : estado.planMinimo ? "Plan mínimo activado. Hoy vale con poco."
-                     : "Tres cosas pequeñas. Ninguna lleva más de 15 minutos.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                     : "Agua, tu menú y moverte. Sin prisas.")
+                    .font(.subheadline).foregroundStyle(.secondary)
             }
         }
         .tarjeta()
@@ -86,45 +78,66 @@ struct HoyView: View {
     private var plan: some View {
         let meta = estado.metaVasos
         let hoy = estado.hoy
+        let hechos = estado.pasos
         return VStack(alignment: .leading, spacing: 0) {
             Etiqueta("Tu plan de hoy").padding(.bottom, 6)
-
-            FilaPaso(hecho: hoy.vasos >= meta, accion: estado.alternarAgua,
+            FilaPaso(hecho: hechos[0], accion: estado.alternarAgua,
                      titulo: "Bebe \(meta) vasos de agua",
-                     detalle: "\(hoy.vasos) de \(meta) · toca un vaso para sumarlo") {
+                     detalle: "\(hoy.vasos) de \(meta) · \((Double(meta) * 0.25).es()) litros") {
                 EmptyView()
             } extra: {
-                HStack(spacing: 6) {
+                LazyVGrid(columns: Array(repeating: GridItem(.fixed(28), spacing: 6), count: 6), alignment: .leading, spacing: 6) {
                     ForEach(0..<meta, id: \.self) { i in
                         Button { estado.tocarVaso(i) } label: {
                             Image(systemName: i < hoy.vasos ? "drop.fill" : "drop")
-                                .font(.title2)
-                                .foregroundStyle(Color.cielo)
-                                .frame(width: 34, height: 40)
+                                .font(.title3).foregroundStyle(Color.cielo).frame(width: 28, height: 34)
                         }
                         .accessibilityLabel("Vaso \(i + 1)")
                     }
                 }
             }
             Divider()
-            FilaPaso(hecho: hoy.verdura, accion: estado.alternarVerdura,
-                     titulo: estado.planMinimo ? "Come una pieza de fruta" : "Pon verdura en una comida",
-                     detalle: estado.planMinimo ? "La que tengas a mano" : "La mitad del plato, como en «Comer»") {
-                Button("Ideas") { pestana = .comer }.botonMini()
+            FilaPaso(hecho: hechos[1], accion: { pestana = .comer },
+                     titulo: "Come \(estado.metaComidas) comidas de tu menú",
+                     detalle: "\(hoy.comidas.count) de 4 registradas") {
+                Button("Menú") { pestana = .comer }.botonMini()
             } extra: { EmptyView() }
             Divider()
-            FilaPaso(hecho: hoy.movimiento, accion: estado.alternarMovimiento,
-                     titulo: estado.planMinimo ? "Estira 2 minutos" : "Muévete \(estado.rutinaDeHoy.minutos) minutos",
-                     detalle: estado.planMinimo ? "Sin levantarte del sofá, si quieres" : "Rutina guiada, sin material") {
-                Button("Empezar") { rutinaAbierta = estado.rutinaDeHoy }.botonMini()
+            FilaPaso(hecho: hechos[2], accion: {
+                         if hechos[2] { estado.borrarEjercicioDeHoy() } else { pestana = .ejercicio }
+                     },
+                     titulo: estado.planMinimo ? "Anda 10 min o estira 2" : "Haz ejercicio",
+                     detalle: hoy.minutos > 0 ? "\(hoy.minutos) min · \(hoy.kcalQuemadas) kcal" : "Andar, piscina o en casa") {
+                Button("Elegir") { pestana = .ejercicio }.botonMini()
             } extra: { EmptyView() }
         }
         .tarjeta()
     }
-}
 
-extension Rutina: Identifiable {
-    var id: String { "\(energia.rawValue)-\(minutos)" }
+    private var llevas: some View {
+        let p = estado.plan
+        let n = estado.nutrientesHoy(soloComidas: true)
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Etiqueta("Hoy llevas")
+                Spacer()
+                Text("objetivo \(Int(p.kcal)) kcal").font(.footnote).foregroundStyle(.secondary)
+            }
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text("\(Int(n.kcal.rounded()))").font(.largeTitle.weight(.heavy)).monospacedDigit()
+                Text("kcal · quedan \(Int(max(0, p.kcal - n.kcal).rounded()))").font(.subheadline).foregroundStyle(.secondary)
+            }
+            BarraMacro(nombre: "Proteínas", valor: n.proteinas, objetivo: p.proteinas, color: .ciruela)
+            BarraMacro(nombre: "Hidratos", valor: n.hidratos, objetivo: p.hidratos, color: .trigo)
+            BarraMacro(nombre: "Grasas", valor: n.grasas, objetivo: p.grasas, color: .cielo)
+            BarraMacro(nombre: "Fibra", valor: n.fibra, objetivo: p.fibra, color: .hoja)
+            if estado.hoy.kcalQuemadas > 0 {
+                Text("Has quemado \(estado.hoy.kcalQuemadas) kcal con ejercicio. No las sumamos a lo que comes: así bajas de peso a ritmo constante.")
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
+        }
+        .tarjeta()
+    }
 }
 
 private struct FilaPaso<Accesorio: View, Extra: View>: View {
@@ -139,10 +152,9 @@ private struct FilaPaso<Accesorio: View, Extra: View>: View {
         HStack(alignment: .center, spacing: 12) {
             Button(action: accion) {
                 Image(systemName: hecho ? "checkmark.circle.fill" : "circle")
-                    .font(.title)
-                    .foregroundStyle(hecho ? Color.hoja : .secondary)
+                    .font(.title).foregroundStyle(hecho ? Color.hoja : .secondary)
             }
-            .accessibilityLabel(hecho ? "Desmarcar" : "Marcar")
+            .accessibilityLabel(hecho ? "Hecho" : "Pendiente")
             VStack(alignment: .leading, spacing: 2) {
                 Text(titulo).font(.body.weight(.semibold))
                     .strikethrough(hecho).foregroundStyle(hecho ? .secondary : .primary)
@@ -157,10 +169,6 @@ private struct FilaPaso<Accesorio: View, Extra: View>: View {
     }
 }
 
-extension View {
-    func botonMini() -> some View {
-        self.font(.footnote.weight(.bold))
-            .buttonStyle(.bordered)
-            .tint(.sol)
-    }
+extension String {
+    var capitalizedPrimeraLetra: String { prefix(1).uppercased() + dropFirst() }
 }
