@@ -1,0 +1,21 @@
+name: Pasito
+options:
+  bundleIdPrefix: com.pasito
+  deploymentTarget:
+    iOS: "17.0"
+targets:
+  Pasito:
+    type: application
+    platform: iOS
+    sources: [Pasito]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.pasito.app
+        MARKETING_VERSION: "0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Pasito
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_VERSION: "5.9"

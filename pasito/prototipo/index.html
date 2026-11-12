@@ -1,0 +1,499 @@
+<title>Pasito</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: una pantalla de iPhone centrada, con notas del prototipo al lado en escritorio */
+:root{
+  --page:#E7ECE6; --bg:#F5F8F3; --card:#FFFFFF; --ink:#16251C; --muted:#5E6F64; --line:#DCE4DC;
+  --leaf:#2E8B57; --leaf-soft:#DDEFE3; --sun:#EE9640; --sun-soft:#FCEBD8; --sky:#3E8CC9; --sky-soft:#DCEBF7;
+  --wheat:#E3C26B; --frame:#1B1F1C; --on-accent:#FFFFFF;
+  --f-display:"Bricolage Grotesque", ui-rounded, system-ui, sans-serif;
+  --f-body:"Figtree", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --page:#0D110E; --bg:#131915; --card:#1C241F; --ink:#E9F1EB; --muted:#9AAA9F; --line:#2A352E;
+  --leaf:#5CC28A; --leaf-soft:#1E3A2A; --sun:#F3A75B; --sun-soft:#3D2B19; --sky:#6EB0E6; --sky-soft:#1A3043;
+  --wheat:#D9B95E; --frame:#000000; --on-accent:#0D140F; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --page:#0D110E; --bg:#131915; --card:#1C241F; --ink:#E9F1EB; --muted:#9AAA9F; --line:#2A352E;
+  --leaf:#5CC28A; --leaf-soft:#1E3A2A; --sun:#F3A75B; --sun-soft:#3D2B19; --sky:#6EB0E6; --sky-soft:#1A3043;
+  --wheat:#D9B95E; --frame:#000000; --on-accent:#0D140F; color-scheme:dark }
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--page);color:var(--ink);font-family:var(--f-body);font-size:15px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+
+.stage{display:flex;flex-wrap:wrap;gap:40px;justify-content:center;align-items:flex-start;max-width:1000px;margin:0 auto}
+.notes{flex:1 1 280px;max-width:380px;min-width:0;padding-top:24px;line-height:1.55}
+.notes h1{font-size:2.4rem;font-weight:800}
+.notes .tag{display:inline-block;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--leaf);margin-bottom:8px}
+.notes p{color:var(--muted);margin:.6em 0}
+.notes ol{padding-left:1.2em;color:var(--muted);margin:.4em 0}
+.notes li{margin:.35em 0}.notes li b{color:var(--ink)}
+
+/* Teléfono */
+.phone{position:relative;width:min(390px,100%);height:min(820px,calc(100dvh - 48px));min-height:620px;
+  background:var(--bg);border:11px solid var(--frame);border-radius:52px;overflow:hidden;
+  display:flex;flex-direction:column;box-shadow:0 30px 60px -20px rgba(0,0,0,.35)}
+.statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 28px 6px;font-weight:600;font-size:.85rem;flex:none}
+.island{width:110px;height:30px;border-radius:20px;background:var(--frame)}
+.screen{flex:1;overflow-y:auto;padding:8px 18px 24px;scrollbar-width:none}
+.screen::-webkit-scrollbar{display:none}
+@media (max-width:480px){ body{padding-block:8px} .notes{display:none}
+  .phone{border-width:0;border-radius:24px;height:calc(100dvh - 16px);min-height:560px;box-shadow:none} .statusbar{display:none} }
+
+.tabbar{flex:none;display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);background:var(--card);padding:8px 6px 22px}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.7rem;font-weight:600;color:var(--muted);padding:4px}
+.tab svg{width:24px;height:24px}
+.tab[aria-selected="true"]{color:var(--leaf)}
+
+/* Piezas comunes */
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin:6px 0 16px}
+.hdr small{display:block;color:var(--muted);font-weight:600;font-size:.8rem}
+.hdr small::first-letter{text-transform:uppercase}
+.hdr h2{font-size:1.75rem;font-weight:800;line-height:1.1}
+.iconbtn{width:40px;height:40px;border-radius:50%;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;flex:none}
+.iconbtn svg{width:20px;height:20px}
+.card{background:var(--card);border-radius:22px;padding:16px;border:1px solid var(--line)}
+.stack{display:flex;flex-direction:column;gap:14px}
+.label{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--muted)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{padding:8px 14px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-weight:600;font-size:.85rem}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 18px;border-radius:16px;font-weight:700;background:var(--leaf);color:var(--on-accent)}
+.btn.block{width:100%}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.btn.sun{background:var(--sun);color:var(--on-accent)}
+.muted{color:var(--muted)}
+
+/* Hoy */
+.hero{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center}
+.ring{position:relative;width:104px;height:104px}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .num{position:absolute;inset:0;display:grid;place-items:center;text-align:center;font-family:var(--f-display);font-weight:800;font-size:1.6rem;line-height:1}
+.ring .num span{display:block;font-family:var(--f-body);font-size:.68rem;font-weight:600;color:var(--muted);margin-top:2px}
+.streak{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--sun);font-size:.9rem}
+.step{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.label + .step{border-top:0}
+.check{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;flex:none}
+.check svg{width:16px;height:16px;opacity:0}
+.check[aria-checked="true"]{background:var(--leaf);border-color:var(--leaf);color:var(--on-accent)}
+.check[aria-checked="true"] svg{opacity:1}
+.step b{display:block;font-weight:600}
+.step small{color:var(--muted);font-size:.8rem}
+.step.done b{text-decoration:line-through;color:var(--muted)}
+.mini{padding:7px 12px;border-radius:12px;font-weight:700;font-size:.8rem;background:var(--sun-soft);color:var(--sun)}
+.glasses{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.glass{width:34px;height:42px;border-radius:6px 6px 10px 10px;border:2px solid var(--sky);position:relative;overflow:hidden;background:transparent}
+.glass::after{content:"";position:absolute;inset:auto 0 0 0;height:0;background:var(--sky);transition:height .3s}
+.glass.filled::after{height:78%}
+.banner{border-radius:22px;padding:16px;background:var(--sky-soft);line-height:1.45}
+.banner.sun{background:var(--sun-soft)}
+.banner.leaf{background:var(--leaf-soft)}
+.banner b{display:block;font-family:var(--f-display);font-size:1.05rem;margin-bottom:4px}
+
+/* Comer */
+.plate{display:grid;grid-template-columns:130px 1fr;gap:14px;align-items:center}
+.legend{display:flex;flex-direction:column;gap:8px;font-size:.85rem}
+.legend span{display:flex;gap:8px;align-items:center}
+.legend i{width:12px;height:12px;border-radius:4px;flex:none}
+.recipe{display:grid;grid-template-columns:56px 1fr auto;gap:12px;align-items:center;text-align:left;width:100%;padding:10px;border-radius:18px;background:var(--card);border:1px solid var(--line)}
+.thumb{width:56px;height:56px;border-radius:14px;display:grid;place-items:center;font-family:var(--f-display);font-weight:800;font-size:1.2rem}
+.recipe b{display:block;font-weight:600;line-height:1.25}
+.recipe small{color:var(--muted);font-size:.78rem}
+.pill{font-size:.72rem;font-weight:700;padding:4px 8px;border-radius:8px;background:var(--leaf-soft);color:var(--leaf);white-space:nowrap}
+.swap{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;font-size:.85rem;padding:10px 0;border-top:1px solid var(--line)}
+.swap:first-child{border-top:0}
+.swap .from{color:var(--muted);text-decoration:line-through}
+.swap .to{font-weight:600}
+
+/* Moverme */
+.energy{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.energy button{padding:12px 6px;border-radius:16px;border:1px solid var(--line);background:var(--card);display:flex;flex-direction:column;align-items:center;gap:4px;font-weight:700}
+.energy button small{font-weight:500;color:var(--muted);font-size:.75rem}
+.energy button[aria-pressed="true"]{border-color:var(--sun);background:var(--sun-soft)}
+.ex{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line);font-size:.92rem}
+.ex:first-child{border-top:0}
+.ex .n{width:28px;height:28px;border-radius:50%;background:var(--sun-soft);color:var(--sun);display:grid;place-items:center;font-weight:800;font-size:.8rem}
+.ex .t{color:var(--muted);font-variant-numeric:tabular-nums;font-size:.85rem}
+
+/* Progreso */
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;align-items:end;height:140px;margin-top:12px}
+.bar{display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end;font-size:.75rem;font-weight:600;color:var(--muted)}
+.bar i{width:100%;max-width:30px;border-radius:9px;background:var(--leaf);min-height:6px}
+.bar.empty i{background:var(--line)}
+.bar.today{color:var(--ink)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{padding:14px;border-radius:18px;background:var(--card);border:1px solid var(--line)}
+.stat b{display:block;font-family:var(--f-display);font-size:1.6rem;font-weight:800;font-variant-numeric:tabular-nums}
+.stat small{color:var(--muted);font-size:.8rem}
+.badges{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.badge{text-align:center;font-size:.75rem;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:6px}
+.badge .medal{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-display);font-weight:800;font-size:1.1rem;background:var(--leaf-soft);color:var(--leaf)}
+.badge.locked{color:var(--muted)} .badge.locked .medal{background:var(--line);color:var(--muted)}
+
+/* Hojas superpuestas */
+.overlay{position:absolute;inset:0;background:rgba(10,20,14,.45);display:flex;align-items:flex-end;z-index:5}
+.sheet{background:var(--bg);width:100%;max-height:88%;overflow-y:auto;border-radius:28px 28px 0 0;padding:10px 20px 28px;animation:up .28s ease-out}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 14px}
+.sheet h3{font-size:1.45rem;font-weight:800;margin-bottom:6px}
+.sheet ul,.sheet ol{padding-left:1.2em;margin:.4em 0 1em;line-height:1.6}
+.full{position:absolute;inset:0;background:var(--bg);z-index:6;display:flex;flex-direction:column;padding:56px 22px 32px;animation:fade .25s}
+@keyframes up{from{transform:translateY(40px);opacity:.4}}
+@keyframes fade{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.timer{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center}
+.timer .big{position:relative;width:230px;height:230px}
+.timer .big svg{width:100%;height:100%;transform:rotate(-90deg)}
+.timer .secs{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--f-display);font-weight:800;font-size:4rem;font-variant-numeric:tabular-nums}
+.timer h3{font-size:1.6rem;font-weight:800}
+.row{display:flex;gap:10px;width:100%}
+.row .btn{flex:1}
+.dots{display:flex;gap:6px;justify-content:center}
+.dots i{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.dots i.on{background:var(--sun)}
+
+.ob-opts{display:flex;flex-direction:column;gap:10px;margin-top:18px}
+.ob-opts button{text-align:left;padding:16px;border-radius:18px;border:1.5px solid var(--line);background:var(--card);font-weight:600}
+.ob-opts button small{display:block;font-weight:400;color:var(--muted);margin-top:2px}
+.ob-opts button[aria-pressed="true"]{border-color:var(--leaf);background:var(--leaf-soft)}
+</style>
+
+<div class="stage">
+  <div class="phone" id="phone">
+    <div class="statusbar"><span>9:41</span><span class="island"></span><span>100%</span></div>
+    <main class="screen" id="screen"></main>
+    <nav class="tabbar" id="tabbar" role="tablist"></nav>
+    <div id="layer"></div>
+  </div>
+
+  <aside class="notes">
+    <span class="tag">Prototipo v0.1</span>
+    <h1>Pasito</h1>
+    <p>Dieta y ejercicio para quien le cuesta empezar. Nada de contar calorías ni rutinas de una hora: tres pasos pequeños al día y una racha que te anima a volver mañana.</p>
+    <p><b>Prueba esto:</b></p>
+    <ol>
+      <li><b>Hoy:</b> toca los vasos de agua y marca los pasos. Elige «Sin ganas» y mira cómo el plan se hace más pequeño.</li>
+      <li><b>Comer:</b> filtra recetas y abre una. Pulsa «La he hecho».</li>
+      <li><b>Moverme:</b> elige tu energía y empieza la rutina con temporizador.</li>
+      <li><b>Progreso:</b> semana, racha y logros.</li>
+      <li>El botón de perfil (arriba a la derecha en Hoy) abre la bienvenida.</li>
+    </ol>
+    <p>Los datos de la semana son de ejemplo. Dime qué cambiar y lo vamos depurando.</p>
+  </aside>
+</div>
+
+<script>
+const I = {
+  hoy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+  comer:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="7"/><circle cx="12" cy="13" r="3.5"/><path d="M12 2v3"/></svg>',
+  mover:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="14" cy="4" r="2"/><path d="M8 21l3-6 3 2v5M6 12l3-4 4 1 3 3 3-1M11 15l2-6"/></svg>',
+  prog:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>',
+  flame:'<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2.5 1.5-4 2.5-5 .3 2 1.5 3 2.5 3-1.5-3 0-6 0-9z"/></svg>',
+  clock:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'
+};
+
+const RECIPES = [
+  {id:'tostada',name:'Tostada de aguacate y huevo',meal:'Desayuno',min:7,kcal:380,c:'leaf',
+   ing:['1 rebanada de pan integral','½ aguacate maduro','1 huevo','Sal, pimienta y unas gotas de limón'],
+   steps:['Tuesta el pan.','Machaca el aguacate con limón y sal.','Haz el huevo a la plancha o cocido.','Monta y a comer.']},
+  {id:'yogur',name:'Yogur natural con fruta y avena',meal:'Desayuno',min:3,kcal:290,c:'sky',
+   ing:['1 yogur natural sin azúcar','1 plátano o un puñado de fresas','2 cucharadas de copos de avena','Canela al gusto'],
+   steps:['Echa el yogur en un bol.','Corta la fruta por encima.','Añade la avena y la canela.']},
+  {id:'garbanzos',name:'Bol de garbanzos con atún',meal:'Comida',min:10,kcal:520,c:'sun',
+   ing:['1 bote de garbanzos cocidos (lavados)','1 lata de atún al natural','Tomates cherry','½ pepino','Aceite de oliva y limón'],
+   steps:['Escurre y lava los garbanzos.','Corta tomate y pepino.','Mezcla todo con el atún.','Aliña con aceite, limón y sal.']},
+  {id:'pollo',name:'Pollo a la plancha con verduras de bolsa',meal:'Comida',min:15,kcal:480,c:'wheat',
+   ing:['1 pechuga de pollo en filetes','1 bolsa de verduras para saltear','1 cucharada de aceite de oliva','Especias: pimentón, ajo en polvo'],
+   steps:['Sazona el pollo con las especias.','Hazlo a la plancha 4 min por lado.','En la misma sartén saltea las verduras 6 min.','Sirve: media mitad del plato verdura.']},
+  {id:'tortilla',name:'Tortilla francesa con espinacas',meal:'Cena',min:8,kcal:310,c:'leaf',
+   ing:['2 huevos','Un puñado de espinacas frescas','Queso fresco (opcional)','Sal'],
+   steps:['Saltea las espinacas 1 minuto.','Bate los huevos con sal.','Vierte sobre las espinacas y dobla la tortilla.']},
+  {id:'crema',name:'Crema de calabacín exprés',meal:'Cena',min:15,kcal:220,c:'sky',
+   ing:['2 calabacines','½ cebolla','1 patata pequeña','Agua o caldo','1 quesito (opcional)'],
+   steps:['Trocea todo y cúbrelo de agua.','Cuece 12 minutos (o 5 en olla rápida).','Tritura con el quesito y la sal.']},
+  {id:'manzana',name:'Manzana con crema de cacahuete',meal:'Picoteo',min:2,kcal:200,c:'sun',
+   ing:['1 manzana','1 cucharada de crema de cacahuete 100%'],
+   steps:['Corta la manzana en gajos.','Moja cada gajo en la crema.']},
+  {id:'hummus',name:'Palitos de zanahoria con hummus',meal:'Picoteo',min:3,kcal:180,c:'wheat',
+   ing:['2 zanahorias','3 cucharadas de hummus'],
+   steps:['Pela y corta las zanahorias en palitos.','Sírvelas con el hummus.']}
+];
+const SWAPS = [['Refresco','Agua con gas y limón'],['Bollería','Tostada con tomate'],['Patatas de bolsa','Puñado de frutos secos'],['Picar sin hambre','Fruta lavada a la vista']];
+const ROUTINES = {
+  poca:{label:'Poca',min:5,desc:'Suave, sin sudar',ex:[['Marcha en el sitio',60,'Levanta las rodillas a tu ritmo.'],['Sentarse y levantarse de la silla',45,'Despacio, sin dejarte caer.'],['Flexiones contra la pared',45,'Brazos a la altura del pecho.'],['Círculos de brazos',45,'Hacia delante y hacia atrás.'],['Estiramiento y respiración',60,'Inspira en 4, suelta en 6.']]},
+  normal:{label:'Normal',min:10,desc:'Activa el cuerpo',ex:[['Marcha rápida en el sitio',60,'Mueve también los brazos.'],['Sentadillas',45,'Como si te sentaras en una silla.'],['Flexiones inclinadas en la mesa',45,'Cuerpo recto como una tabla.'],['Zancadas alternas',60,'Paso largo, rodilla de atrás hacia el suelo.'],['Plancha con rodillas',30,'Aprieta el abdomen.'],['Puente de glúteo',45,'Sube la cadera y aprieta.'],['Jumping jacks suaves',45,'O abre y cierra sin saltar.'],['Estiramiento final',60,'Piernas, espalda y cuello.']]},
+  mucha:{label:'Mucha',min:15,desc:'Para días buenos',ex:[['Calentamiento: marcha',60,'Sube el ritmo poco a poco.'],['Sentadillas',60,'Baja controlando.'],['Flexiones',45,'Con rodillas si lo necesitas.'],['Zancadas',60,'Alterna piernas.'],['Escaladores',40,'Rodillas al pecho, rápido.'],['Plancha',45,'Cuerpo recto.'],['Burpees sin salto',45,'Baja, estira, sube.'],['Puente de glúteo',60,'Pausa arriba 1 segundo.'],['Jumping jacks',60,'¡Último empujón!'],['Estiramiento final',90,'Respira hondo.']]}
+};
+const WEEK = [{d:'L',v:3},{d:'M',v:2},{d:'X',v:3},{d:'J',v:1},{d:'V',v:3},{d:'S',v:2},{d:'D',v:null}];
+const COLOR = {leaf:['--leaf-soft','--leaf'],sky:['--sky-soft','--sky'],sun:['--sun-soft','--sun'],wheat:['--sun-soft','--wheat']};
+
+const S = {tab:'hoy',water:3,veg:false,move:false,mood:null,energy:'normal',filter:'Todo',cooked:[],streak:4,sheet:null,timer:null,ob:null,goal:'las dos',time:10};
+
+const $ = s => document.querySelector(s);
+const minimal = () => S.mood === 'sin';
+const waterGoal = () => minimal() ? 4 : 6;
+const doneCount = () => (S.water >= waterGoal()) + S.veg + S.move;
+const allDone = () => doneCount() === 3;
+
+function ring(pct, size, stroke, color){
+  const r = (size - stroke)/2, c = 2*Math.PI*r;
+  return `<svg viewBox="0 0 ${size} ${size}"><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--line)" stroke-width="${stroke}"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(${color})" stroke-width="${stroke}" stroke-linecap="round"
+    stroke-dasharray="${c}" stroke-dashoffset="${c*(1-pct)}" style="transition:stroke-dashoffset .5s"/></svg>`;
+}
+const check = (on, act) => `<button class="check" role="checkbox" aria-checked="${on}" data-act="${act}" aria-label="Marcar">${I.check}</button>`;
+
+function viewHoy(){
+  const today = new Date().toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});
+  const hour = new Date().getHours();
+  const hi = hour < 13 ? 'Buenos días' : hour < 20 ? 'Buenas tardes' : 'Buenas noches';
+  const g = waterGoal(), m = ROUTINES[S.energy].min;
+  const glasses = Array.from({length:g},(_,i)=>`<button class="glass ${i<S.water?'filled':''}" data-act="water" data-i="${i}" aria-label="Vaso ${i+1}"></button>`).join('');
+  const moods = [['ganas','Con ganas'],['normal','Normal'],['sin','Sin ganas']]
+    .map(([k,l])=>`<button class="chip" aria-pressed="${S.mood===k}" data-act="mood" data-v="${k}">${l}</button>`).join('');
+  const streak = S.streak + (allDone()?1:0);
+  return `
+  <div class="hdr"><div><small>${today}</small><h2>${hi}</h2></div><button class="iconbtn" data-act="onboard" aria-label="Perfil">${I.user}</button></div>
+  <div class="stack">
+    <div class="card hero">
+      <div class="ring">${ring(doneCount()/3,104,12,'--leaf')}<div class="num"><div>${doneCount()}/3<span>pasos</span></div></div></div>
+      <div><span class="streak">${I.flame} ${streak} días seguidos</span>
+        <p class="muted" style="margin:.4em 0 0;line-height:1.4">${allDone()?'Día completado. Mañana, otro pasito.':minimal()?'Plan mínimo activado. Hoy vale con poco.':'Tres cosas pequeñas. Ninguna lleva más de 15 minutos.'}</p></div>
+    </div>
+
+    <div class="card">
+      <div class="label">¿Cómo te sientes hoy?</div>
+      <div class="chips" style="margin-top:10px">${moods}</div>
+    </div>
+
+    ${minimal()?`<div class="banner sun"><b>Hoy, lo mínimo también cuenta</b>Hemos encogido tu plan: menos agua, una fruta y dos minutos de estirar. Lo importante es no romper la racha.</div>`:''}
+
+    <div class="card">
+      <div class="label">Tu plan de hoy</div>
+      <div class="step ${S.water>=g?'done':''}">
+        ${check(S.water>=g,'waterall')}
+        <div><b>Bebe ${g} vasos de agua</b><small>${S.water} de ${g} · toca un vaso para sumarlo</small><div class="glasses">${glasses}</div></div><span></span>
+      </div>
+      <div class="step ${S.veg?'done':''}">
+        ${check(S.veg,'veg')}
+        <div><b>${minimal()?'Come una pieza de fruta':'Pon verdura en una comida'}</b><small>${minimal()?'La que tengas a mano':'Media mitad del plato, como en «Comer»'}</small></div>
+        <button class="mini" data-act="go" data-v="comer">Ideas</button>
+      </div>
+      <div class="step ${S.move?'done':''}">
+        ${check(S.move,'move')}
+        <div><b>${minimal()?'Estira 2 minutos':`Muévete ${m} minutos`}</b><small>${minimal()?'Sin levantarte del sofá, si quieres':'Rutina guiada, sin material'}</small></div>
+        <button class="mini" data-act="${minimal()?'stretch':'start'}">Empezar</button>
+      </div>
+    </div>
+
+    ${allDone()?`<div class="banner leaf"><b>¡Bien hecho!</b>Has completado tus tres pasos. Tu racha sube a ${streak} días.</div>`:''}
+
+    <div class="banner"><b>Consejo del día</b>Deja una botella de agua llena encima de la mesa. Si la ves, la bebes.</div>
+  </div>`;
+}
+
+function plateSVG(){
+  return `<svg viewBox="0 0 200 200" width="130" height="130" role="img" aria-label="Plato: mitad verdura, un cuarto proteína, un cuarto hidratos">
+    <circle cx="100" cy="100" r="98" fill="var(--card)" stroke="var(--line)" stroke-width="2"/>
+    <path d="M100,100 L100,14 A86,86 0 0,0 100,186 Z" fill="var(--leaf)"/>
+    <path d="M100,100 L100,14 A86,86 0 0,1 186,100 Z" fill="var(--sun)"/>
+    <path d="M100,100 L186,100 A86,86 0 0,1 100,186 Z" fill="var(--wheat)"/>
+    <path d="M100,14 V186 M100,100 H186" stroke="var(--card)" stroke-width="4"/></svg>`;
+}
+
+function viewComer(){
+  const filters = ['Todo','Desayuno','Comida','Cena','Picoteo'];
+  const list = RECIPES.filter(r => S.filter==='Todo' || r.meal===S.filter);
+  return `
+  <div class="hdr"><div><small>Comer bien, sin dietas raras</small><h2>Comer</h2></div></div>
+  <div class="stack">
+    <div class="card">
+      <div class="label">El plato fácil</div>
+      <div class="plate" style="margin-top:10px">${plateSVG()}
+        <div class="legend">
+          <span><i style="background:var(--leaf)"></i><span><b>½ verdura</b> o ensalada</span></span>
+          <span><i style="background:var(--sun)"></i><span><b>¼ proteína</b>: huevo, pollo, pescado, legumbre</span></span>
+          <span><i style="background:var(--wheat)"></i><span><b>¼ hidratos</b>: arroz, pan, patata</span></span>
+        </div></div>
+    </div>
+    <div class="label">Recetas en 15 minutos o menos</div>
+    <div class="chips">${filters.map(f=>`<button class="chip" aria-pressed="${S.filter===f}" data-act="filter" data-v="${f}">${f}</button>`).join('')}</div>
+    ${list.map(r=>{const [bg,fg]=COLOR[r.c];const done=S.cooked.includes(r.id);return `
+      <button class="recipe" data-act="recipe" data-v="${r.id}">
+        <span class="thumb" style="background:var(${bg});color:var(${fg})">${done?I.check.replace('<svg','<svg width="24" height="24"'):r.name[0]}</span>
+        <span><b>${r.name}</b><small>${r.meal} · ${r.ing.length} ingredientes</small></span>
+        <span class="pill">${r.min} min</span></button>`}).join('')}
+    <div class="card">
+      <div class="label">Cambios pequeños</div>
+      <div style="margin-top:6px">${SWAPS.map(([a,b])=>`<div class="swap"><span class="from">${a}</span><span class="muted">→</span><span class="to">${b}</span></div>`).join('')}</div>
+    </div>
+  </div>`;
+}
+
+function viewMover(){
+  const R = ROUTINES[S.energy];
+  const total = R.ex.reduce((a,e)=>a+e[1],0);
+  return `
+  <div class="hdr"><div><small>Sin gimnasio y sin material</small><h2>Moverme</h2></div></div>
+  <div class="stack">
+    <div class="label">¿Cuánta energía tienes?</div>
+    <div class="energy">${Object.entries(ROUTINES).map(([k,r])=>`<button aria-pressed="${S.energy===k}" data-act="energy" data-v="${k}">${r.label}<small>${r.min} min</small></button>`).join('')}</div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+        <h3 style="font-size:1.25rem">Rutina de ${R.min} minutos</h3><span class="muted" style="font-size:.85rem">${R.desc}</span></div>
+      <div style="margin:10px 0 14px">${R.ex.map((e,i)=>`<div class="ex"><span class="n">${i+1}</span><span>${e[0]}</span><span class="t">${e[1]} s</span></div>`).join('')}</div>
+      <button class="btn sun block" data-act="start">Empezar · ${Math.round(total/60)} min</button>
+    </div>
+    <div class="banner sun"><b>¿Hoy no puedes ni esto?</b>Sal a dar un paseo de 10 minutos después de comer. También cuenta como paso de hoy.
+      <div style="margin-top:10px"><button class="btn ghost" data-act="walk">He paseado 10 min</button></div></div>
+  </div>`;
+}
+
+function viewProg(){
+  const wk = WEEK.map((d,i)=> i===6 ? {...d,v:doneCount()} : d);
+  const days = wk.filter(d=>d.v===3).length;
+  return `
+  <div class="hdr"><div><small>Lo que ya has conseguido</small><h2>Progreso</h2></div></div>
+  <div class="stack">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center"><div class="label">Esta semana</div><span class="muted" style="font-size:.75rem">Datos de ejemplo</span></div>
+      <div class="week">${wk.map((d,i)=>`<div class="bar ${!d.v?'empty':''} ${i===6?'today':''}"><i style="height:${Math.max(4,(d.v||0)/3*100)}%;${i===6?'background:var(--sun)':''}"></i>${d.d}</div>`).join('')}</div>
+      <p class="muted" style="margin:12px 0 0;font-size:.85rem">${days} días completos de 7. Los días a medias también suman.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><b>${S.streak + (allDone()?1:0)}</b><small>días de racha</small></div>
+      <div class="stat"><b>${38 + S.water}</b><small>vasos de agua esta semana</small></div>
+      <div class="stat"><b>${5 + S.cooked.length}</b><small>recetas cocinadas</small></div>
+      <div class="stat"><b>${52 + (S.move?ROUTINES[S.energy].min:0)}</b><small>minutos en movimiento</small></div>
+    </div>
+    <div class="card">
+      <div class="label">Logros</div>
+      <div class="badges" style="margin-top:12px">
+        <div class="badge"><span class="medal">1</span>Primer día</div>
+        <div class="badge"><span class="medal">3</span>Racha de 3</div>
+        <div class="badge"><span class="medal">H₂O</span>Semana hidratada</div>
+        <div class="badge ${S.streak+(allDone()?1:0)>=7?'':'locked'}"><span class="medal">7</span>Racha de 7</div>
+        <div class="badge ${S.cooked.length>=3?'':'locked'}"><span class="medal">Chef</span>3 recetas nuevas</div>
+        <div class="badge locked"><span class="medal">30</span>Un mes</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function sheetRecipe(id){
+  const r = RECIPES.find(x=>x.id===id), done = S.cooked.includes(id);
+  return `<div class="overlay" data-act="close"><div class="sheet" data-stop>
+    <div class="grab"></div>
+    <span class="pill">${r.meal} · ${r.min} min · ~${r.kcal} kcal</span>
+    <h3 style="margin-top:10px">${r.name}</h3>
+    <div class="label" style="margin-top:14px">Ingredientes</div><ul>${r.ing.map(x=>`<li>${x}</li>`).join('')}</ul>
+    <div class="label">Pasos</div><ol>${r.steps.map(x=>`<li>${x}</li>`).join('')}</ol>
+    <button class="btn block" data-act="cook" data-v="${id}">${done?'Hecha ✓':'La he hecho'}</button>
+  </div></div>`;
+}
+
+function viewTimer(){
+  const t = S.timer, R = t.routine, e = R[t.idx];
+  if (t.finished) return `<div class="full"><div class="timer">
+      <div class="ring" style="width:140px;height:140px">${ring(1,140,14,'--leaf')}<div class="num">${I.check.replace('<svg','<svg width="56" height="56" style="color:var(--leaf)"')}</div></div>
+      <h3>¡Rutina hecha!</h3><p class="muted">Has marcado el paso de moverte de hoy. Tu cuerpo te lo agradece.</p></div>
+      <button class="btn block" data-act="timerclose">Volver</button></div>`;
+  const next = R[t.idx+1];
+  return `<div class="full">
+    <div style="display:flex;justify-content:space-between;align-items:center"><span class="label">Ejercicio ${t.idx+1} de ${R.length}</span>
+      <button class="iconbtn" data-act="timerclose" aria-label="Cerrar">✕</button></div>
+    <div class="timer">
+      <div class="big">${ring(t.left/e[1],230,16,'--sun')}<div class="secs">${t.left}</div></div>
+      <h3>${e[0]}</h3><p class="muted" style="margin:0">${e[2]}</p>
+      <div class="dots">${R.map((_,i)=>`<i class="${i<=t.idx?'on':''}"></i>`).join('')}</div>
+      <p class="muted" style="font-size:.85rem;margin:0">${next?`Después: ${next[0]}`:'Último ejercicio'}</p>
+    </div>
+    <div class="row"><button class="btn ghost" data-act="pause">${t.paused?'Seguir':'Pausa'}</button><button class="btn sun" data-act="skip">Siguiente</button></div>
+  </div>`;
+}
+
+const OB = [
+  {q:'¿Qué te cuesta más?',k:'goal',opts:[['comer','Comer bien','Pico entre horas o como lo primero que pillo'],['mover','Moverme','Me cuesta empezar a hacer ejercicio'],['las dos','Las dos cosas','Quiero cambiar un poco de todo']]},
+  {q:'¿Cuánto tiempo tienes al día?',k:'time',opts:[[5,'5 minutos','Lo justo para empezar'],[10,'10 minutos','Un hueco pequeño'],[15,'15 minutos','Puedo sacar un rato']]}
+];
+function viewOnboard(){
+  const i = S.ob;
+  if (i === OB.length) return `<div class="full"><div class="timer">
+      <div class="ring" style="width:140px;height:140px">${ring(1,140,14,'--leaf')}<div class="num" style="font-size:2.4rem">3</div></div>
+      <h3>Tres pasitos al día</h3><p class="muted" style="line-height:1.5;margin:0">Agua, algo verde y ${S.time} minutos de moverte. Si un día no puedes, hacemos el plan más pequeño, pero no lo dejamos.</p></div>
+      <button class="btn block" data-act="obdone">Empezar</button></div>`;
+  const o = OB[i];
+  return `<div class="full">
+    <div class="dots" style="justify-content:flex-start">${[0,1,2].map(n=>`<i class="${n<=i?'on':''}" style="${n<=i?'background:var(--leaf)':''}"></i>`).join('')}</div>
+    <h2 style="font-size:1.9rem;font-weight:800;margin-top:28px">${o.q}</h2>
+    <div class="ob-opts">${o.opts.map(([v,l,d])=>`<button aria-pressed="${S[o.k]===v}" data-act="obpick" data-k="${o.k}" data-v="${v}">${l}<small>${d}</small></button>`).join('')}</div>
+    <div style="flex:1"></div>
+    <button class="btn block" data-act="obnext">Siguiente</button></div>`;
+}
+
+const TABS = [['hoy','Hoy'],['comer','Comer'],['mover','Moverme'],['prog','Progreso']];
+function render(){
+  const sc = $('#screen'), top = sc.scrollTop, prevTab = sc.dataset.tab;
+  sc.innerHTML = {hoy:viewHoy,comer:viewComer,mover:viewMover,prog:viewProg}[S.tab]();
+  sc.dataset.tab = S.tab; sc.scrollTop = prevTab===S.tab ? top : 0;
+  $('#tabbar').innerHTML = TABS.map(([k,l])=>`<button class="tab" role="tab" aria-selected="${S.tab===k}" data-act="go" data-v="${k}">${I[k]}${l}</button>`).join('');
+  $('#layer').innerHTML = S.ob!==null ? viewOnboard() : S.timer ? viewTimer() : S.sheet ? sheetRecipe(S.sheet) : '';
+}
+
+let tick = null;
+function startRoutine(list){
+  S.timer = {routine:list, idx:0, left:list[0][1], paused:false, finished:false};
+  clearInterval(tick);
+  tick = setInterval(()=>{
+    const t = S.timer; if (!t || t.paused || t.finished) return;
+    if (--t.left <= 0) advance(); else render();
+  },1000);
+  render();
+}
+function advance(){
+  const t = S.timer;
+  if (t.idx+1 >= t.routine.length){ t.finished = true; S.move = true; clearInterval(tick); }
+  else { t.idx++; t.left = t.routine[t.idx][1]; }
+  render();
+}
+
+document.addEventListener('click', ev=>{
+  const el = ev.target.closest('[data-act]'); if (!el) return;
+  if (el.dataset.act==='close' && ev.target.closest('[data-stop]')) return;
+  const v = el.dataset.v;
+  switch(el.dataset.act){
+    case 'go': S.tab = v; break;
+    case 'water': { const i = +el.dataset.i; S.water = S.water===i+1 ? i : i+1; break; }
+    case 'waterall': S.water = S.water>=waterGoal() ? 0 : waterGoal(); break;
+    case 'veg': S.veg = !S.veg; break;
+    case 'move': S.move = !S.move; break;
+    case 'walk': S.move = true; S.tab = 'hoy'; break;
+    case 'mood': S.mood = S.mood===v ? null : v; break;
+    case 'filter': S.filter = v; break;
+    case 'energy': S.energy = v; break;
+    case 'recipe': S.sheet = v; break;
+    case 'close': S.sheet = null; break;
+    case 'cook': if (!S.cooked.includes(v)) S.cooked.push(v); S.veg = true; S.sheet = null; break;
+    case 'start': startRoutine(ROUTINES[S.energy].ex); return;
+    case 'stretch': startRoutine([['Estira brazos hacia el techo',30,'Crece hacia arriba.'],['Gira el cuello despacio',30,'Hacia los dos lados.'],['Toca las puntas de los pies',30,'Sin forzar, rodillas sueltas.'],['Respira hondo',30,'Inspira en 4, suelta en 6.']]); return;
+    case 'pause': S.timer.paused = !S.timer.paused; break;
+    case 'skip': advance(); return;
+    case 'timerclose': clearInterval(tick); S.timer = null; break;
+    case 'onboard': S.ob = 0; break;
+    case 'obpick': S[el.dataset.k] = el.dataset.k==='time' ? +v : v; break;
+    case 'obnext': S.ob++; break;
+    case 'obdone': S.ob = null; S.energy = S.time===5?'poca':S.time===15?'mucha':'normal'; S.tab='hoy'; break;
+  }
+  render();
+});
+render();
+</script>
