@@ -44,7 +44,8 @@ CENTRO_DIBUJO = 9.0          # altura del centro del dibujo en la cara
 FUENTE = AQUI / "GreatVibes-Regular.ttf"
 TEXTOS = [dict(texto="Marta y Borja", alto=8.0, y=-19.0), dict(texto="12/12/26", alto=5.2, y=-28.5)]
 ENGROSAR = 0.15              # se engordan los trazos finos de la caligrafía para que se impriman
-TRAZO = 0.9                  # ancho de la línea del dibujo (como el trazo de las letras)
+TRAZO = 1.25                 # ancho de la línea del dibujo: 3 líneas de 0,42 con boquilla de 0,4
+HUECO_MIN = 0.45             # huecos entre líneas más estrechos que esto se cierran
 INCRUSTE = 0.6               # hondo de la línea en la cara de atrás (3 capas)
 BOTONES = [(50, 378, 26), (582, 378, 26)]  # flechas de la captura que se borran (x, y, radio en píxeles)
 
@@ -75,6 +76,10 @@ def dibujo(ancho_mm):
     mm_px = ancho_mm / img.shape[1] / k
     r = max(int(round(TRAZO / 2 / mm_px)), 1)
     trazo = cv2.dilate(esqueleto.astype(np.uint8) * 255, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * r + 1, 2 * r + 1)))
+    # los huecos entre líneas más estrechos que una línea de boquilla (0,45 mm)
+    # no se imprimirían limpios: se cierran
+    h = max(int(round(HUECO_MIN / mm_px)), 1) | 1
+    trazo = cv2.morphologyEx(trazo, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (h, h)))
     contornos, _ = cv2.findContours(trazo, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
     polis = [c[:, 0, :].astype(float) * (mm_px, -mm_px) for c in contornos if len(c) >= 3]
     c = CrossSection(polis, FillRule.EvenOdd).simplify(0.02)
