@@ -38,14 +38,14 @@ AQUI = pathlib.Path(__file__).parent
 
 # --- Disco y dibujo ----------------------------------------------------------------------
 DISCO = dict(diametro=75.0, grosor=10.0, chaflan=0.8)
-ALTO_DIBUJO = 44.0           # dibujo arriba
-CENTRO_DIBUJO = 10.0         # altura del centro del dibujo en la cara
+ALTO_DIBUJO = 40.0           # dibujo arriba
+CENTRO_DIBUJO = 9.0          # altura del centro del dibujo en la cara
 # Nombres y fecha debajo del dibujo, en Great Vibes (caligráfica, OFL)
 FUENTE = AQUI / "GreatVibes-Regular.ttf"
 TEXTOS = [dict(texto="Marta y Borja", alto=8.0, y=-19.0), dict(texto="12/12/2026", alto=5.2, y=-28.5)]
 ENGROSAR = 0.15              # se engordan los trazos finos de la caligrafía para que se impriman
-TRAZO = 0.85                 # ancho real de la línea del dibujo: 2 líneas con boquilla de 0,4
-HUECO_MIN = 0.25             # solo se cierran rendijas que el laminador no podría imprimir
+TRAZO = 1.25                 # trazo con el dibujo a 100 mm de ancho; al reducirlo a su tamaño queda en ~0,45 mm (el que funciona bien)
+HUECO_MIN = 0.45             # huecos entre líneas más estrechos que esto se cierran (también a 100 mm de ancho)
 INCRUSTE = 0.6               # hondo de la línea en la cara de atrás (3 capas)
 BOTONES = [(50, 378, 26), (582, 378, 26)]  # flechas de la captura que se borran (x, y, radio en píxeles)
 
@@ -87,13 +87,6 @@ def dibujo(ancho_mm):
     return c.translate((-(x0 + x1) / 2, -(y0 + y1) / 2))
 
 
-def dibujo_a_tamano(alto):
-    """El dibujo con ALTO de alto y el trazo TRAZO ya a ese tamaño (el trazo se
-    aplica después de escalar, no antes, para que mida lo que dice TRAZO)."""
-    x0, y0, x1, y1 = dibujo(100.0).bounds()
-    return dibujo(100.0 * alto / (y1 - y0))
-
-
 def texto(cadena, alto):
     """Texto caligráfico con su caja centrada en x y en y = 0; «alto» es la
     altura total de la línea (de lo más bajo a lo más alto)."""
@@ -127,7 +120,10 @@ def construir():
               .translate((s * im["separacion"], 0, g - im["alto"] - im["holgura"])) for s in (-1, 1)]
     # dibujo y textos en la cara a la vista (z = 0), en espejo (se mira desde
     # ese lado), incrustados a ras
-    lineas = dibujo_a_tamano(ALTO_DIBUJO).translate((0, CENTRO_DIBUJO))
+    lineas = dibujo(100.0)
+    x0, y0, x1, y1 = lineas.bounds()
+    k = ALTO_DIBUJO / (y1 - y0)
+    lineas = lineas.scale((k, k)).translate((0, CENTRO_DIBUJO))
     for t in TEXTOS:
         lineas = lineas + texto(t["texto"], t["alto"]).translate((0, t["y"]))
     lineas = lineas.mirror((1, 0))
