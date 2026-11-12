@@ -7,8 +7,11 @@ Se imprime con la cara del dibujo sobre la cama (queda plana y a ras), sin sopor
 
     python abridor.py            # genera abridor_placa.stl y abridor_dibujo.stl
     python exportar_bambu.py     # crea abridor_boda_H2D.3mf
+    python espejo.py             # genera espejo_disco.stl y espejo_dibujo.stl
+    python exportar_bambu.py espejo   # crea espejo_boda_H2D.3mf
 """
 import json
+import sys
 import pathlib
 import zipfile
 
@@ -21,6 +24,10 @@ VERSION = "02.00.02.01"  # la de la plantilla
 CAMA = (350.0, 320.0)
 NOMBRE = "Abridor boda"
 PARTES = [("disco", "abridor_placa.stl", 1), ("dibujo", "abridor_dibujo.stl", 2)]
+if "espejo" in sys.argv:  # el espejo, compañero del abridor
+    DESTINO = AQUI / "espejo_boda_H2D.3mf"
+    NOMBRE = "Espejo boda"
+    PARTES = [("disco", "espejo_disco.stl", 1), ("dibujo", "espejo_dibujo.stl", 2)]
 COLORES = ["#FFFFFF", "#000000"]  # PLA Basic Jade White y Black
 AJUSTES = {"wall_loops": "3", "sparse_infill_density": "15%"}
 TORRE = ("260", "5")  # torre de purga en la esquina libre de la cama
