@@ -7,11 +7,13 @@ la que queda a la vista, el dibujo de los novios en línea continua.
   abridor  cara de los imanes: asiento redondo del grosor del abridor (queda a ras), hueco
            detrás de su boca para el borde de la chapa y agujeros guía para
            sus dos tornillos
-  dibujo   cara a la vista: la línea del dibujo (dibujo_novios.png) vectorizada (su
+  dibujo   cara a la vista, arriba: la línea del dibujo (dibujo_novios.png) vectorizada (su
            esqueleto con trazo uniforme) e incrustada a ras en la cara de
            atrás, en espejo para que se lea al darle la vuelta. En el 3MF es
            una pieza aparte de otro color; se imprime sobre la cama, así que
            queda plana y a ras
+  textos   debajo del dibujo, «Marta y Borja» y «12/12/26» en Great Vibes
+           (caligráfica de boda, OFL), incrustados igual que el dibujo
   imanes   en la cara del abridor, a izquierda y derecha: Ø 8 × 2 mm con
            0,1 mm de holgura
 
@@ -27,14 +29,21 @@ import pathlib
 import cv2
 import numpy as np
 import trimesh
-from manifold3d import CrossSection, FillRule, Manifold, OpType
+from manifold3d import CrossSection, FillRule, JoinType, Manifold, OpType
+from matplotlib.font_manager import FontProperties
+from matplotlib.textpath import TextPath
 from skimage.morphology import skeletonize
 
 AQUI = pathlib.Path(__file__).parent
 
 # --- Disco y dibujo ----------------------------------------------------------------------
 DISCO = dict(diametro=75.0, grosor=10.0, chaflan=0.8)
-ALTO_DIBUJO = 52.0           # cabe dentro de un círculo de Ø ~68
+ALTO_DIBUJO = 40.0           # dibujo arriba
+CENTRO_DIBUJO = 9.0          # altura del centro del dibujo en la cara
+# Nombres y fecha debajo del dibujo, en Great Vibes (caligráfica, OFL)
+FUENTE = AQUI / "GreatVibes-Regular.ttf"
+TEXTOS = [dict(texto="Marta y Borja", alto=8.0, y=-19.0), dict(texto="12/12/26", alto=5.2, y=-28.5)]
+ENGROSAR = 0.15              # se engordan los trazos finos de la caligrafía para que se impriman
 TRAZO = 0.6                  # ancho de la línea del dibujo
 INCRUSTE = 0.6               # hondo de la línea en la cara de atrás (3 capas)
 BOTONES = [(50, 378, 26), (582, 378, 26)]  # flechas de la captura que se borran (x, y, radio en píxeles)
@@ -73,6 +82,17 @@ def dibujo(ancho_mm):
     return c.translate((-(x0 + x1) / 2, -(y0 + y1) / 2))
 
 
+def texto(cadena, alto):
+    """Texto caligráfico con su caja centrada en x y en y = 0; «alto» es la
+    altura total de la línea (de lo más bajo a lo más alto)."""
+    prop = FontProperties(fname=str(FUENTE))
+    ruta = TextPath((0, 0), cadena, size=1.0, prop=prop)
+    c = CrossSection([p for p in ruta.to_polygons() if len(p) > 2], FillRule.EvenOdd)
+    x0, y0, x1, y1 = c.bounds()
+    c = c.translate((-(x0 + x1) / 2, -(y0 + y1) / 2)).scale((alto / (y1 - y0), alto / (y1 - y0)))
+    return c.offset(ENGROSAR, JoinType.Round)
+
+
 def construir():
     d = DISCO
     g, r, c = d["grosor"], d["diametro"] / 2, d["chaflan"]
@@ -93,11 +113,15 @@ def construir():
     r_im = (im["diametro"] + 2 * im["holgura"]) / 2
     imanes = [Manifold.cylinder(im["alto"] + im["holgura"] + 1, r_im, r_im, 64)
               .translate((s * im["separacion"], 0, g - im["alto"] - im["holgura"])) for s in (-1, 1)]
-    # dibujo en la cara a la vista (z = 0), en espejo (se mira desde ese lado), incrustado a ras
+    # dibujo y textos en la cara a la vista (z = 0), en espejo (se mira desde
+    # ese lado), incrustados a ras
     lineas = dibujo(100.0)
     x0, y0, x1, y1 = lineas.bounds()
     k = ALTO_DIBUJO / (y1 - y0)
-    lineas = lineas.scale((-k, k))
+    lineas = lineas.scale((k, k)).translate((0, CENTRO_DIBUJO))
+    for t in TEXTOS:
+        lineas = lineas + texto(t["texto"], t["alto"]).translate((0, t["y"]))
+    lineas = lineas.mirror((1, 0))
     dib = lineas.extrude(INCRUSTE + 1).translate((0, 0, -1)) ^ disco
     disco = disco - asiento - chapa - Manifold.batch_boolean(guias + imanes, OpType.Add)
     cuerpo = disco - dib          # con el hueco del dibujo (3MF de dos colores)
