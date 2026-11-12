@@ -1,16 +1,18 @@
-"""Abridor de regalo de boda: placa con el dibujo de los novios en línea
-continua en relieve, el asiento para el abridor redondo de acero comprado
-(encastrado a ras, con su hueco detrás para la chapa) y dos imanes de 8 × 2 mm
-por detrás, a los lados del abridor, como en la foto de referencia.
+"""Abridor de regalo de boda: disco de Ø 75 mm, como los abridores imán
+personalizados, con el abridor redondo de acero comprado encastrado delante y,
+en la cara de atrás, el dibujo de los novios en línea continua y dos imanes de
+8 × 2 mm a los lados.
 
-  placa    rectángulo redondeado; el dibujo arriba y el abridor abajo
-  dibujo   la línea del dibujo (dibujo_novios.png) vectorizada: se saca su
-           esqueleto y se le da un trazo uniforme, en relieve sobre la placa
-           (pieza aparte en el 3MF, para imprimirla en otro color)
-  abridor  asiento redondo del grosor del abridor, hueco detrás de su boca
-           para que entre el borde de la chapa y dos agujeros guía para sus
-           tornillos
-  imanes   dos alojamientos de Ø 8 × 2 mm (con 0,1 mm de holgura) por detrás
+  disco    Ø 75 × 10 mm
+  abridor  delante: asiento redondo del grosor del abridor (queda a ras), hueco
+           detrás de su boca para el borde de la chapa y agujeros guía para
+           sus dos tornillos
+  dibujo   detrás: la línea del dibujo (dibujo_novios.png) vectorizada (su
+           esqueleto con trazo uniforme) e incrustada a ras en la cara de
+           atrás, en espejo para que se lea al darle la vuelta. En el 3MF es
+           una pieza aparte de otro color; al imprimirse sobre la cama queda
+           plana y la cara de atrás sigue lisa para los imanes
+  imanes   detrás, a izquierda y derecha: Ø 8 × 2 mm con 0,1 mm de holgura
 
 MEDIDAS DEL ABRIDOR: son una estimación hecha a partir de la foto; con el
 abridor en la mano se ajustan en ABRIDOR y se vuelve a generar.
@@ -28,22 +30,21 @@ from skimage.morphology import skeletonize
 
 AQUI = pathlib.Path(__file__).parent
 
-# --- Placa y dibujo ---------------------------------------------------------------------
-PLACA = dict(ancho=110.0, alto=170.0, grosor=9.0, radio=10.0)
-MARGEN = 5.0                 # borde liso alrededor del dibujo
-ZONA_DIBUJO = 120.0          # alto que ocupa el dibujo (arriba)
-TRAZO = 1.1                  # ancho de la línea del dibujo
-RELIEVE = 0.8                # cuánto sobresale la línea
+# --- Disco y dibujo ----------------------------------------------------------------------
+DISCO = dict(diametro=75.0, grosor=10.0, chaflan=0.8)
+ALTO_DIBUJO = 49.0           # cabe entre los imanes dentro de un círculo de Ø 66
+TRAZO = 0.6                  # ancho de la línea del dibujo
+INCRUSTE = 0.6               # hondo de la línea en la cara de atrás (3 capas)
 BOTONES = [(50, 378, 26), (582, 378, 26)]  # flechas de la captura que se borran (x, y, radio en píxeles)
 
 # --- Abridor comprado (estimación: COMPRUEBA CON EL ABRIDOR EN LA MANO) ---------------------
-ABRIDOR = dict(diametro=41.0, grosor=2.5, boca=(24.0, 17.0), radio_boca=3.0, tornillos=15.5, centro_y=30.0)
+ABRIDOR = dict(diametro=41.0, grosor=2.5, boca=(24.0, 17.0), radio_boca=3.0, tornillos=15.5)
 HOLGURA = 0.3                # en el diámetro del asiento
 HUECO_CHAPA = 5.0            # hondo del hueco detrás de la boca del abridor (deja 1,5 mm de fondo)
 GUIA_TORNILLO = dict(diametro=2.0, hondo=5.0)
 
 # --- Imanes -----------------------------------------------------------------------------
-IMAN = dict(diametro=8.0, alto=2.0, holgura=0.1, separacion=31.0)  # separación desde el centro del abridor
+IMAN = dict(diametro=8.0, alto=2.0, holgura=0.1, separacion=29.5)  # desde el centro del disco
 
 
 def rect_redondeado(ancho, alto, radio):
@@ -71,39 +72,34 @@ def dibujo(ancho_mm):
 
 
 def construir():
-    p = PLACA
-    g = p["grosor"]
-    placa = rect_redondeado(p["ancho"], p["alto"], p["radio"]).extrude(g)
-    # dibujo arriba, dentro del margen
-    ancho_dib = p["ancho"] - 2 * MARGEN
-    lineas = dibujo(ancho_dib)
-    x0, y0, x1, y1 = lineas.bounds()
-    escala = min(1.0, ZONA_DIBUJO / (y1 - y0))
-    lineas = lineas.scale((escala, escala))
-    y_dib = p["alto"] / 2 - MARGEN - ZONA_DIBUJO / 2
-    lineas = lineas.translate((0, y_dib)) ^ rect_redondeado(p["ancho"] - 2 * MARGEN, p["alto"] - 2 * MARGEN, p["radio"] - MARGEN / 2)
-    relieve = lineas.extrude(RELIEVE + 0.5).translate((0, 0, g - 0.5))
-    # abridor
+    d = DISCO
+    g, r, c = d["grosor"], d["diametro"] / 2, d["chaflan"]
+    # disco con los dos cantos achaflanados
+    disco = Manifold.batch_hull([Manifold.cylinder(g - 2 * c, r, r, 256).translate((0, 0, c)),
+                                 Manifold.cylinder(g, r - c, r - c, 256)])
+    # abridor delante (arriba, z = g)
     a = ABRIDOR
-    cy = -p["alto"] / 2 + a["centro_y"]
     asiento = Manifold.cylinder(a["grosor"] + 1, (a["diametro"] + HOLGURA) / 2, (a["diametro"] + HOLGURA) / 2, 180) \
-        .translate((0, cy, g - a["grosor"]))
+        .translate((0, 0, g - a["grosor"]))
     bw, bh = a["boca"]
     chapa = rect_redondeado(bw + 2, bh + 4, a["radio_boca"] + 1).extrude(HUECO_CHAPA + 1) \
-        .translate((0, cy, g - a["grosor"] - HUECO_CHAPA))
+        .translate((0, 0, g - a["grosor"] - HUECO_CHAPA))
     guias = [Manifold.cylinder(GUIA_TORNILLO["hondo"] + 1, GUIA_TORNILLO["diametro"] / 2, GUIA_TORNILLO["diametro"] / 2, 32)
-             .translate((0, cy + s * a["tornillos"], g - a["grosor"] - GUIA_TORNILLO["hondo"])) for s in (-1, 1)]
-    # imanes por detrás, a los lados del abridor
+             .translate((0, s * a["tornillos"], g - a["grosor"] - GUIA_TORNILLO["hondo"])) for s in (-1, 1)]
+    # imanes detrás (z = 0), a izquierda y derecha
     im = IMAN
     r_im = (im["diametro"] + 2 * im["holgura"]) / 2
-    imanes = [Manifold.cylinder(im["alto"] + im["holgura"] + 1, r_im, r_im, 64).translate((s * im["separacion"], cy, -1))
+    imanes = [Manifold.cylinder(im["alto"] + im["holgura"] + 1, r_im, r_im, 64).translate((s * im["separacion"], 0, -1))
               for s in (-1, 1)]
-    placa = placa - asiento - chapa - Manifold.batch_boolean(guias + imanes, OpType.Add)
-    # en una pieza: la línea entra 0,5 mm en la placa y se funde con ella
-    junta = placa + (relieve - asiento)
-    # para el 3MF de dos colores: la línea solo por encima de la placa
-    relieve = relieve - placa - asiento
-    return placa, relieve, junta
+    # dibujo detrás, en espejo (se mira desde atrás), incrustado a ras
+    lineas = dibujo(100.0)
+    x0, y0, x1, y1 = lineas.bounds()
+    k = ALTO_DIBUJO / (y1 - y0)
+    lineas = lineas.scale((-k, k))
+    dib = lineas.extrude(INCRUSTE + 1).translate((0, 0, -1)) ^ disco
+    disco = disco - asiento - chapa - Manifold.batch_boolean(guias + imanes, OpType.Add)
+    cuerpo = disco - dib          # con el hueco del dibujo (3MF de dos colores)
+    return cuerpo, dib, disco     # disco: una pieza, de un color (sin el dibujo)
 
 
 def a_trimesh(m):
@@ -112,10 +108,11 @@ def a_trimesh(m):
 
 
 if __name__ == "__main__":
-    placa, relieve, junta = construir()
-    tp, tr = a_trimesh(placa), a_trimesh(relieve)
+    cuerpo, dib, entero = construir()
+    tp, tr = a_trimesh(cuerpo), a_trimesh(dib)
     tp.export(AQUI / "abridor_placa.stl")
     tr.export(AQUI / "abridor_dibujo.stl")
-    a_trimesh(junta).export(AQUI / "abridor_boda.stl")
+    # una pieza: el dibujo grabado en la cara de atrás
+    a_trimesh(cuerpo).export(AQUI / "abridor_boda.stl")
     print("placa:", tp.is_watertight, np.round(tp.extents, 1), "| dibujo:", tr.is_watertight, np.round(tr.extents, 1),
           "cuerpos", tr.body_count)
