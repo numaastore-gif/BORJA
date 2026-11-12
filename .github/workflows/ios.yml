@@ -1,0 +1,110 @@
+# Compila la app Pasito en cada cambio y, si están configuradas las claves
+# de App Store Connect, la sube a TestFlight como una actualización nueva.
+name: App iOS
+
+on:
+  push:
+    branches: [main, "claude/**"]
+    paths: ["pasito/**", ".github/workflows/ios.yml"]
+  workflow_dispatch:
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  compilar:
+    name: Compilar
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: pasito
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar XcodeGen
+        run: brew install xcodegen
+      - name: Generar el proyecto de Xcode
+        run: xcodegen generate
+      - name: Compilar para el simulador
+        run: |
+          xcodebuild build -project Pasito.xcodeproj -scheme Pasito \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO > build.log 2>&1 || {
+              echo "::group::Errores de compilación"
+              grep -E "error:" -A4 build.log | head -200
+              echo "::endgroup::"
+              tail -40 build.log
+              exit 1
+            }
+          grep -E "warning:" build.log | sort -u | head -60 || true
+          echo "Compilación correcta"
+
+  publicar:
+    name: Publicar en TestFlight
+    needs: compilar
+    runs-on: macos-15
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+      TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      BUNDLE_ID: ${{ vars.BUNDLE_ID || 'com.pasito.app' }}
+      BUILD_NUMBER: ${{ github.run_number }}
+    defaults:
+      run:
+        working-directory: pasito
+    steps:
+      - name: Comprobar las claves de Apple
+        id: claves
+        working-directory: .
+        run: |
+          if [ -n "$ASC_KEY_ID" ] && [ -n "$ASC_ISSUER_ID" ] && [ -n "$ASC_KEY_P8" ] && [ -n "$TEAM_ID" ]; then
+            echo "listo=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "listo=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Faltan las claves de App Store Connect. La app se ha compilado, pero no se publica. Mira pasito/README.md, sección Publicar."
+          fi
+      - uses: actions/checkout@v4
+        if: steps.claves.outputs.listo == 'true'
+      - name: Preparar
+        if: steps.claves.outputs.listo == 'true'
+        run: |
+          brew install xcodegen
+          xcodegen generate
+          mkdir -p "$HOME/private_keys"
+          printf '%s\n' "$ASC_KEY_P8" > "$HOME/private_keys/AuthKey_$ASC_KEY_ID.p8"
+          cat > ExportOptions.plist <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$TEAM_ID</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          PLIST
+      - name: Archivar
+        if: steps.claves.outputs.listo == 'true'
+        run: |
+          xcodebuild archive -project Pasito.xcodeproj -scheme Pasito \
+            -destination 'generic/platform=iOS' -archivePath build/Pasito.xcarchive \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$HOME/private_keys/AuthKey_$ASC_KEY_ID.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            DEVELOPMENT_TEAM="$TEAM_ID" PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" CODE_SIGN_STYLE=Automatic > archive.log 2>&1 || {
+              grep -E "error:" -A4 archive.log | head -100; tail -40 archive.log; exit 1; }
+      - name: Subir a TestFlight
+        if: steps.claves.outputs.listo == 'true'
+        run: |
+          xcodebuild -exportArchive -archivePath build/Pasito.xcarchive \
+            -exportOptionsPlist ExportOptions.plist -exportPath build/export \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$HOME/private_keys/AuthKey_$ASC_KEY_ID.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+          echo "::notice::Compilación $BUILD_NUMBER subida a TestFlight. Aparecerá en la app TestFlight en unos 10–30 minutos."
+      - name: Borrar la clave
+        if: always()
+        working-directory: .
+        run: rm -rf "$HOME/private_keys"

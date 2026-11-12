@@ -46,13 +46,55 @@ Elige un simulador de iPhone y pulsa ▶︎. Para probar en tu propio iPhone, en
 Sin XcodeGen: crea un proyecto nuevo *iOS App* (SwiftUI) llamado Pasito, borra los
 archivos que trae y arrastra dentro la carpeta `Pasito/`.
 
+## Actualizar la app desde el chat
+
+Cada vez que pides un cambio en el chat, Claude:
+
+1. Cambia el código de la app (`Pasito/`) y la maqueta (`prototipo/`).
+2. Vuelve a publicar la maqueta en el mismo enlace.
+3. Hace push. GitHub compila la app en un Mac (workflow «App iOS») y, si las claves
+   de Apple están configuradas, **sube la nueva versión a TestFlight**. A los 10–30 minutos
+   te llega a tu iPhone en la app TestFlight.
+
+## Publicar: configuración inicial (una sola vez)
+
+Para que GitHub pueda subir la app hacen falta una cuenta de desarrollador de Apple y cuatro secretos.
+
+1. **Apple Developer Program** (99 €/año): https://developer.apple.com/programs/
+2. **Crea la app en App Store Connect** → Apps → «+» → Nueva app. Plataforma iOS,
+   nombre «Pasito» (o el que quieras, si está cogido), idioma español.
+   Identificador del paquete: regístralo en
+   https://developer.apple.com/account/resources/identifiers con un valor único, por ejemplo
+   `com.tunombre.pasito`.
+3. **Clave de API**: App Store Connect → Usuarios y acceso → Integraciones →
+   App Store Connect API → «+». Acceso: **Administrador**. Descarga el archivo `.p8`
+   (solo se puede descargar una vez) y apunta el *Key ID* y el *Issuer ID*.
+4. **Team ID**: https://developer.apple.com/account → Membresía.
+5. En GitHub: repositorio → Settings → Secrets and variables → Actions.
+   - Pestaña **Secrets** → New repository secret:
+
+     | Nombre | Valor |
+     |--------|-------|
+     | `ASC_KEY_ID` | Key ID de la clave |
+     | `ASC_ISSUER_ID` | Issuer ID |
+     | `ASC_KEY_P8` | Contenido completo del archivo `.p8` (abre con un editor de texto y copia todo) |
+     | `APPLE_TEAM_ID` | Team ID |
+
+   - Pestaña **Variables** → New repository variable: `BUNDLE_ID` = el identificador del paso 2.
+6. En TestFlight (dentro de la app en App Store Connect) añádete como probador interno
+   e instala la app **TestFlight** en el iPhone.
+
+Mientras no estén los secretos, el workflow solo compila (sirve para comprobar que el código está bien).
+Las versiones llegan a **TestFlight**; mandarlas a revisión para la App Store pública se hace
+desde App Store Connect (la primera vez hay que rellenar ficha, capturas y privacidad).
+
 ## Estructura
 
 ```
 Pasito/
   PasitoApp.swift          Punto de entrada; aplica la apariencia elegida
   Tema.swift               Colores claro/oscuro, apariencia y componentes comunes
-  Assets.xcassets          Imágenes de los platos (una por receta, mismo nombre que su id)
+  Assets.xcassets          Icono de la app e imágenes de los platos (una por receta, mismo nombre que su id)
   Modelo/
     Modelos.swift          Perfil, nutrientes, recetas, registros
     Alimentos.swift        Tabla de alimentos por 100 g

@@ -8,14 +8,19 @@ targets:
     type: application
     platform: iOS
     sources: [Pasito]
+    scheme: {}
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.pasito.app
-        MARKETING_VERSION: "0.1"
+        MARKETING_VERSION: "0.3"
         CURRENT_PROJECT_VERSION: "1"
         GENERATE_INFOPLIST_FILE: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_CFBundleDisplayName: Pasito
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.healthcare-fitness
         TARGETED_DEVICE_FAMILY: "1"
         SWIFT_VERSION: "5.9"
+        CODE_SIGN_STYLE: Automatic
