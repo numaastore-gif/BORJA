@@ -44,7 +44,7 @@ CENTRO_DIBUJO = 9.0          # altura del centro del dibujo en la cara
 FUENTE = AQUI / "GreatVibes-Regular.ttf"
 TEXTOS = [dict(texto="Marta y Borja", alto=8.0, y=-19.0), dict(texto="12/12/26", alto=5.2, y=-28.5)]
 ENGROSAR = 0.15              # se engordan los trazos finos de la caligrafía para que se impriman
-TRAZO = 0.6                  # ancho de la línea del dibujo
+TRAZO = 0.9                  # ancho de la línea del dibujo (como el trazo de las letras)
 INCRUSTE = 0.6               # hondo de la línea en la cara de atrás (3 capas)
 BOTONES = [(50, 378, 26), (582, 378, 26)]  # flechas de la captura que se borran (x, y, radio en píxeles)
 
