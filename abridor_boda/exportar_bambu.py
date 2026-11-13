@@ -29,7 +29,18 @@ if "espejo" in sys.argv:  # el espejo, compañero del abridor
     NOMBRE = "Espejo boda"
     PARTES = [("disco", "espejo_disco.stl", 1), ("dibujo", "espejo_dibujo.stl", 2)]
 COLORES = ["#FFFFFF", "#000000"]  # PLA Basic Jade White y Black
-AJUSTES = {"wall_loops": "3", "sparse_infill_density": "15%"}
+AJUSTES = {"wall_loops": "3", "sparse_infill_density": "15%",
+           # la compensación de pata de elefante recorta 0,15 mm por lado el
+           # negro de la primera capa: las líneas finas desaparecían o salían a
+           # borrones. El dibujo va en la primera capa, así que se anula.
+           "elefant_foot_compensation": "0"}
+# Primera capa, donde va todo el dibujo (solo en el proyecto, no por pieza):
+# línea de 0,42 en vez de 0,5 para dibujar detalle, más despacio y algo menos
+# de flujo para que el negro no se aplaste y manche el blanco, y sin cruzar
+# paredes en los desplazamientos (menos arrastres).
+PRIMERA_CAPA = {"initial_layer_line_width": "0.42", "initial_layer_speed": ["30"] * 4,
+                "initial_layer_infill_speed": ["40"] * 4, "initial_layer_flow_ratio": "0.95",
+                "reduce_crossing_wall": "1"}
 TORRE = ("260", "5")  # torre de purga en la esquina libre de la cama
 
 NS = ('xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" '
@@ -80,9 +91,9 @@ def configuracion():
     d["flush_volumes_matrix"] = ["0", "400", "150", "0"] * bloques
     d["filament_colour"] = COLORES
     d["filament_map"] = ["1", "2"]
-    d["different_settings_to_system"] = [
-        "enable_prime_tower;wall_generator;wall_loops", "", "", ""]
     d.update(AJUSTES)
+    d.update(PRIMERA_CAPA)
+    d["different_settings_to_system"] = [";".join(sorted(set(AJUSTES) | set(PRIMERA_CAPA) | {"enable_prime_tower", "wall_generator"})), "", "", ""]
     d["enable_prime_tower"] = "1"
     d["wipe_tower_x"], d["wipe_tower_y"] = [TORRE[0]], [TORRE[1]]
     return json.dumps(d, indent=4, ensure_ascii=False)
@@ -138,10 +149,11 @@ def exportar():
   </object>
   <plate>
     <metadata key="plater_id" value="1"/>
-    <metadata key="plater_name" value="Cubitera"/>
+    <metadata key="plater_name" value="{NOMBRE}"/>
     <metadata key="locked" value="false"/>
     <metadata key="filament_map_mode" value="Auto For Flush"/>
     <metadata key="filament_maps" value="1 2"/>
+    <metadata key="first_layer_print_sequence" value="2 1"/>
     <model_instance>
       <metadata key="object_id" value="{oid}"/>
       <metadata key="instance_id" value="0"/>

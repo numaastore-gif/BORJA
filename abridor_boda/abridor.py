@@ -43,9 +43,14 @@ CENTRO_DIBUJO = 10.5         # altura del centro del dibujo en la cara
 # Nombres y fecha debajo del dibujo, en Great Vibes (caligráfica, OFL)
 FUENTE = AQUI / "GreatVibes-Regular.ttf"
 TEXTOS = [dict(texto="Marta y Borja", alto=9.2, y=-19.8), dict(texto="12/12/2026", alto=5.8, y=-28.7)]
-ENGROSAR = 0.15              # se engordan los trazos finos de la caligrafía para que se impriman
-TRAZO = 1.25                 # trazo con el dibujo a 100 mm de ancho; al reducirlo a su tamaño queda en ~0,45 mm (el que funciona bien)
-HUECO_MIN = 0.45             # huecos entre líneas más estrechos que esto se cierran (también a 100 mm de ancho)
+ENGROSAR = 0.3               # por lado: los trazos finos de la caligrafía pasan de ~0,25 a ~0,85 mm
+# Trazo de TODO lo incrustado (dibujo, nombres y fecha), medido ya a tamaño
+# real: una línea uniforme de 0,9 mm, el doble de una línea de la boquilla de
+# 0,4. Con trazos de 0,3-0,5 mm (lo que había antes), la primera capa no los
+# puede dibujar limpios y salen borrones.
+TRAZO = 0.9
+HUECO_MIN = 0.5              # rendijas entre líneas más estrechas que esto se cierran
+PX_MM = 25                   # resolución del rasterizado de la composición
 INCRUSTE = 0.6               # hondo de la línea en la cara de atrás (3 capas)
 BOTONES = [(50, 378, 26), (582, 378, 26)]  # flechas de la captura que se borran (x, y, radio en píxeles)
 
@@ -98,6 +103,50 @@ def texto(cadena, alto):
     return c.offset(ENGROSAR, JoinType.Round)
 
 
+def composicion():
+    """Dibujo, nombres y fecha en mm, en su sitio (vista de frente), todo como
+    una línea de trazo uniforme TRAZO a tamaño real: se rasteriza, se saca el
+    esqueleto (la línea central) y se le vuelve a dar grosor."""
+    lado = 80.0
+    n = int(lado * PX_MM)
+    lienzo = np.zeros((n, n), np.uint8)
+
+    def a_px(x, y):
+        return np.c_[(np.asarray(x) + lado / 2) * PX_MM, (lado / 2 - np.asarray(y)) * PX_MM]
+
+    # dibujo: la imagen escalada para que sus líneas midan ALTO_DIBUJO de alto
+    img = cv2.imread(str(AQUI / "dibujo_novios.png"), cv2.IMREAD_GRAYSCALE)
+    for x, y, r in BOTONES:
+        cv2.circle(img, (x, y), r, 255, -1)
+    ys, xs = np.nonzero(img < 140)
+    esc = ALTO_DIBUJO * PX_MM / (ys.max() - ys.min() + 1)
+    grande = cv2.resize(img, None, fx=esc, fy=esc, interpolation=cv2.INTER_LINEAR) < 170
+    gy, gx = np.nonzero(grande)
+    cy, cx = (gy.min() + gy.max()) / 2, (gx.min() + gx.max()) / 2
+    oy, ox = int(round(n / 2 - CENTRO_DIBUJO * PX_MM - cy)), int(round(n / 2 - cx))
+    ok = (gy + oy >= 0) & (gy + oy < n) & (gx + ox >= 0) & (gx + ox < n)
+    lienzo[gy[ok] + oy, gx[ok] + ox] = 255
+    # línea central y trazo uniforme
+    esqueleto = skeletonize(lienzo > 0).astype(np.uint8) * 255
+    r = int(round(TRAZO / 2 * PX_MM))
+    trazo = cv2.dilate(esqueleto, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * r + 1, 2 * r + 1)))
+    h = int(round(HUECO_MIN * PX_MM)) | 1
+    trazo = cv2.morphologyEx(trazo, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (h, h)))
+    contornos, _ = cv2.findContours(trazo, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+    polis = []
+    for c in contornos:
+        if len(c) < 3:
+            continue
+        p = c[:, 0, :].astype(float)
+        polis.append(np.c_[p[:, 0] / PX_MM - lado / 2, lado / 2 - p[:, 1] / PX_MM])
+    dib = CrossSection(polis, FillRule.EvenOdd).simplify(0.02)
+    # textos: la caligrafía no admite una línea central (se vuelve ilegible),
+    # así que va rellena y con los trazos finos engordados ENGROSAR por lado
+    for t in TEXTOS:
+        dib = dib + texto(t["texto"], t["alto"]).translate((0, t["y"]))
+    return dib
+
+
 def construir():
     d = DISCO
     g, r, c = d["grosor"], d["diametro"] / 2, d["chaflan"]
@@ -120,13 +169,7 @@ def construir():
               .translate((s * im["separacion"], 0, g - im["alto"] - im["holgura"])) for s in (-1, 1)]
     # dibujo y textos en la cara a la vista (z = 0), en espejo (se mira desde
     # ese lado), incrustados a ras
-    lineas = dibujo(100.0)
-    x0, y0, x1, y1 = lineas.bounds()
-    k = ALTO_DIBUJO / (y1 - y0)
-    lineas = lineas.scale((k, k)).translate((0, CENTRO_DIBUJO))
-    for t in TEXTOS:
-        lineas = lineas + texto(t["texto"], t["alto"]).translate((0, t["y"]))
-    lineas = lineas.mirror((1, 0))
+    lineas = composicion().mirror((1, 0))
     dib = lineas.extrude(INCRUSTE + 1).translate((0, 0, -1)) ^ disco
     disco = disco - asiento - chapa - Manifold.batch_boolean(guias + imanes, OpType.Add)
     cuerpo = disco - dib          # con el hueco del dibujo (3MF de dos colores)

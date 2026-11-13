@@ -30,13 +30,7 @@ def construir():
     hondo = e["grosor"] + e["pegamento"]
     hueco = Manifold.cylinder(hondo + 1, rh, rh, 256).translate((0, 0, g - hondo))
     # la misma cara del dibujo que el abridor
-    lineas = A.dibujo(100.0)
-    x0, y0, x1, y1 = lineas.bounds()
-    k = A.ALTO_DIBUJO / (y1 - y0)
-    lineas = lineas.scale((k, k)).translate((0, A.CENTRO_DIBUJO))
-    for t in A.TEXTOS:
-        lineas = lineas + A.texto(t["texto"], t["alto"]).translate((0, t["y"]))
-    lineas = lineas.mirror((1, 0))
+    lineas = A.composicion().mirror((1, 0))
     dib = lineas.extrude(A.INCRUSTE + 1).translate((0, 0, -1)) ^ disco
     disco = disco - hueco
     return disco - dib, dib
