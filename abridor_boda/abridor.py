@@ -38,11 +38,11 @@ AQUI = pathlib.Path(__file__).parent
 
 # --- Disco y dibujo ----------------------------------------------------------------------
 DISCO = dict(diametro=75.0, grosor=10.0, chaflan=0.8)
-ALTO_DIBUJO = 40.0           # dibujo arriba
-CENTRO_DIBUJO = 9.0          # altura del centro del dibujo en la cara
+ALTO_DIBUJO = 45.0           # dibujo arriba
+CENTRO_DIBUJO = 10.5         # altura del centro del dibujo en la cara
 # Nombres y fecha debajo del dibujo, en Great Vibes (caligráfica, OFL)
 FUENTE = AQUI / "GreatVibes-Regular.ttf"
-TEXTOS = [dict(texto="Marta y Borja", alto=8.0, y=-19.0), dict(texto="12/12/2026", alto=5.2, y=-28.5)]
+TEXTOS = [dict(texto="Marta y Borja", alto=9.2, y=-19.8), dict(texto="12/12/2026", alto=5.8, y=-28.7)]
 ENGROSAR = 0.15              # se engordan los trazos finos de la caligrafía para que se impriman
 TRAZO = 1.25                 # trazo con el dibujo a 100 mm de ancho; al reducirlo a su tamaño queda en ~0,45 mm (el que funciona bien)
 HUECO_MIN = 0.45             # huecos entre líneas más estrechos que esto se cierran (también a 100 mm de ancho)
