@@ -218,17 +218,35 @@
     "partes": [
       {
         "archivo": "modelos/espejo_disco.txt",
-        "origen": "abridor_boda/vista_espejo_disco.stl",
+        "origen": "abridor_boda/vista_espejo_tapa_disco.stl",
         "color": "#FFFFFF",
-        "nombre": "Disco · PLA Basic Jade White"
+        "nombre": "Disco · blanco"
       },
       {
         "archivo": "modelos/espejo_dibujo.txt",
-        "origen": "abridor_boda/vista_espejo_dibujo.stl",
+        "origen": "abridor_boda/vista_espejo_tapa_dibujo.stl",
         "color": "#000000",
-        "nombre": "Dibujo y nombres · PLA Basic Black"
+        "nombre": "Dibujo y nombres · negro (cara de abajo)"
+      },
+      {
+        "archivo": "modelos/espejo_cristal.txt",
+        "origen": "abridor_boda/vista_espejo_tapa_cristal.stl",
+        "color": "#C9CDD2",
+        "nombre": "Espejo Ø 50 (comprado)"
+      },
+      {
+        "archivo": "modelos/espejo_tapa.txt",
+        "origen": "abridor_boda/vista_espejo_tapa_tapa.stl",
+        "color": "#FFFFFF",
+        "nombre": "Tapa giratoria (abierta)"
+      },
+      {
+        "archivo": "modelos/espejo_pasador.txt",
+        "origen": "abridor_boda/vista_espejo_tapa_pasador.stl",
+        "color": "#FFFFFF",
+        "nombre": "Pasador del eje"
       }
     ],
-    "notas": "Compañero del abridor: el mismo disco de Ø 75 × 10 mm con la misma cara del dibujo (45 mm de alto, la versión que salió bien impresa), «Marta y Borja» y «12/12/2026» incrustados a ras, y en la otra cara el hueco para un espejo redondo de Ø 50 × 1 mm (hueco de Ø 49,9 × 1,5 mm, ajustado a los espejos recibidos; el espejo queda 0,5 mm hundido). Sin imanes. Se imprime con la cara del dibujo sobre la cama, sin soportes. Proyecto para la A1 con boquilla de 0,2 mm (capa de 0,1 mm), con los ajustes con los que salió bien. En el visor se muestra con la cara del dibujo hacia arriba."
+    "notas": "Compañero del abridor: disco de Ø 75 × 10 mm con el dibujo de los novios, «Marta y Borja» y «12/12/2026» incrustados en la cara de abajo, y en la de arriba el hueco del espejo redondo (Ø 49,9 × 1,5 mm). Tapa giratoria de Ø 75 × 3 mm, como los espejos de bolsillo: gira sobre un pasador impreso (cabeza de Ø 6 a ras de la tapa, vástago de Ø 3; sirve también un remache o tornillo M3) a 30,8 mm del centro, y un par de imanes de 8 × 2 mm al otro lado la mantiene cerrada. Se ve con la tapa abierta. Tapa y pasador se imprimen con la cara de arriba / la cabeza sobre la cama."
   }
 ]
