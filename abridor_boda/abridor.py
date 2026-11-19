@@ -50,7 +50,9 @@ INCRUSTE = 0.6               # hondo de la línea en la cara de atrás (3 capas)
 BOTONES = [(50, 378, 26), (582, 378, 26)]  # flechas de la captura que se borran (x, y, radio en píxeles)
 
 # --- Abridor comprado (estimación: COMPRUEBA CON EL ABRIDOR EN LA MANO) ---------------------
-ABRIDOR = dict(diametro=50.0, grosor=2.5, boca=(25.0, 16.0), radio_boca=3.0, tornillos=18.5)
+# medido en el abridor recibido: Ø 40 mm y los tornillos a 5 mm del borde (a 15 mm del centro);
+# la boca, a escala de las fotos
+ABRIDOR = dict(diametro=40.0, grosor=2.5, boca=(20.0, 12.8), radio_boca=2.5, tornillos=15.0)
 HOLGURA = 0.3                # en el diámetro del asiento
 HUECO_CHAPA = 5.0            # hondo del hueco detrás de la boca del abridor (deja 1,5 mm de fondo)
 GUIA_TORNILLO = dict(diametro=2.0, hondo=5.0)
